@@ -11,3 +11,13 @@
 *.lai
 *.la
 *.a
+
+Queen/3rdParty
+Queen/Debug
+Queen/ipch
+Queen/UnitTest1
+Queen/Media
+Queen/Queen/Debug
+Queen/MathLib/Debug
+Queen/Queen.sdf
+/Queen/MathLib/Debug

@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Queen", "Queen\Queen.vcxproj", "{9D1D5180-9825-4314-B6E6-9782EE040E47}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MathLib", "MathLib\MathLib.vcxproj", "{DFBA7BDF-55D3-492C-ACD6-28D81DB0BC99}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UnitTest1", "UnitTest1\UnitTest1.vcxproj", "{6B978E65-5F86-4191-8C9A-BA27517B6DFB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9D1D5180-9825-4314-B6E6-9782EE040E47}.Debug|Win32.ActiveCfg = Debug|Win32
+		{9D1D5180-9825-4314-B6E6-9782EE040E47}.Debug|Win32.Build.0 = Debug|Win32
+		{9D1D5180-9825-4314-B6E6-9782EE040E47}.Release|Win32.ActiveCfg = Release|Win32
+		{9D1D5180-9825-4314-B6E6-9782EE040E47}.Release|Win32.Build.0 = Release|Win32
+		{DFBA7BDF-55D3-492C-ACD6-28D81DB0BC99}.Debug|Win32.ActiveCfg = Debug|Win32
+		{DFBA7BDF-55D3-492C-ACD6-28D81DB0BC99}.Debug|Win32.Build.0 = Debug|Win32
+		{DFBA7BDF-55D3-492C-ACD6-28D81DB0BC99}.Release|Win32.ActiveCfg = Release|Win32
+		{DFBA7BDF-55D3-492C-ACD6-28D81DB0BC99}.Release|Win32.Build.0 = Release|Win32
+		{6B978E65-5F86-4191-8C9A-BA27517B6DFB}.Debug|Win32.ActiveCfg = Debug|Win32
+		{6B978E65-5F86-4191-8C9A-BA27517B6DFB}.Debug|Win32.Build.0 = Debug|Win32
+		{6B978E65-5F86-4191-8C9A-BA27517B6DFB}.Release|Win32.ActiveCfg = Release|Win32
+		{6B978E65-5F86-4191-8C9A-BA27517B6DFB}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
