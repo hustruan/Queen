@@ -12,12 +12,17 @@
 *.la
 *.a
 
-Queen/3rdParty
-Queen/Debug
-Queen/ipch
-Queen/UnitTest1/Debug
-Queen/Media
-Queen/Queen/Debug
-Queen/MathLib/Debug
-Queen/Queen.sdf
-Queen/MathLib/Debug
+# Visual Studio files
+*.sdf
+*.tlog
+*.log
+*.lastbuildstate
+*.idb
+*.pdb
+*.v11.suo
+*.obj
+*.lib
+*.dll
+*.ilk
+*.exe
+
