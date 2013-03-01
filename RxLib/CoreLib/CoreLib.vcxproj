@@ -11,19 +11,19 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{9D1D5180-9825-4314-B6E6-9782EE040E47}</ProjectGuid>
+    <ProjectGuid>{F63EBE70-225E-439F-A050-AF46BD2EF1FA}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>Queen</RootNamespace>
+    <RootNamespace>CoreLib</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v110</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v110</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -39,28 +39,18 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LinkIncremental>true</LinkIncremental>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LinkIncremental>false</LinkIncremental>
-  </PropertyGroup>
+  <PropertyGroup />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../;../../3rdParty/boost;../../3rdParty/threadpool;../../3rdParty/nvSDK;../../3rdParty/nvModel/include;../../RxLib/CoreLib;../../RxLib/MathLib</AdditionalIncludeDirectories>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <MinimalRebuild>false</MinimalRebuild>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>../../3rdParty/nvModel/lib;../../3rdParty/boost/lib_vc11_x86/lib;../../RxLib/Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>nvModel.lib;libboost_thread-vc110-mt-gd-1_49.lib;MathLib.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -71,54 +61,22 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Applicaton.h" />
-    <ClInclude Include="Cache.hpp" />
-    <ClInclude Include="Context.h" />
-    <ClInclude Include="FrameBuffer.h" />
-    <ClInclude Include="GraphicsBuffer.h" />
-    <ClInclude Include="GraphicCommon.h" />
-    <ClInclude Include="Model.h" />
-    <ClInclude Include="pfm.h" />
-    <ClInclude Include="PixelFormat.h" />
-    <ClInclude Include="Prerequisite.h" />
-    <ClInclude Include="Profiler.h" />
-    <ClInclude Include="Rasterizer.h" />
-    <ClInclude Include="RenderDevice.h" />
-    <ClInclude Include="RenderFactory.h" />
-    <ClInclude Include="RenderStage.h" />
-    <ClInclude Include="RenderState.h" />
-    <ClInclude Include="Shader.h" />
-    <ClInclude Include="Texture.h" />
-    <ClInclude Include="threadpool.h" />
-    <ClInclude Include="VertexDeclaration.h" />
+    <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Applicaton.cpp" />
-    <ClCompile Include="Context.cpp" />
-    <ClCompile Include="FrameBuffer.cpp" />
-    <ClCompile Include="GraphicsBuffer.cpp" />
-    <ClCompile Include="Main2.cpp" />
-    <ClCompile Include="Model.cpp" />
-    <ClCompile Include="pfm.cpp" />
-    <ClCompile Include="PixelFormat.cpp" />
-    <ClCompile Include="Profiler.cpp" />
-    <ClCompile Include="Rasterizer.cpp" />
-    <ClCompile Include="RenderDevice.cpp" />
-    <ClCompile Include="RenderFactory.cpp" />
-    <ClCompile Include="RenderStage.cpp" />
-    <ClCompile Include="Shader.cpp" />
-    <ClCompile Include="Texture.cpp" />
-    <ClCompile Include="VertexDeclaration.cpp" />
+    <ClInclude Include="aligned_allocator.h" />
+    <ClInclude Include="Singleton.h" />
+    <ClInclude Include="stack_pool.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

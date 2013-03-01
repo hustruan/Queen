@@ -4,15 +4,15 @@
 #include "Prerequisite.h"
 #include "GraphicCommon.h"
 #include "RenderStage.h"
-#include "MathLib/Vector.hpp"
-#include "MathLib/ColorRGBA.hpp"
+#include <Vector.hpp>
+#include <ColorRGBA.hpp>
 
 #define MaxVSInput 16
 #define MaxVSOutput 32
 #define MaxPSOutput 8
 
-using MathLib::float4;
-using MathLib::ColorRGBA;
+using RxLib::float4;
+using RxLib::ColorRGBA;
 
 typedef float4 ShaderRegister;
 

@@ -9,7 +9,7 @@
 #define MaxVertexStreams 8
 #define MaxTextureUnits 8
 
-using namespace MathLib;
+using namespace RxLib;
 
 class Rasterizer;
 

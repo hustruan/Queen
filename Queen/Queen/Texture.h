@@ -4,9 +4,9 @@
 #include "Prerequisite.h"
 #include "GraphicCommon.h"
 #include "PixelFormat.h"
-#include "MathLib/ColorRGBA.hpp"
+#include <ColorRGBA.hpp>
 
-using MathLib::ColorRGBA;
+using RxLib::ColorRGBA;
 
 class Texture
 {

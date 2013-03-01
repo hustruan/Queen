@@ -2,9 +2,9 @@
 #define Context_h__
 
 #include "Prerequisite.h"
-#include "Singleton.h"
+#include <Singleton.h>
 
-class Context : public Singleton<Context>
+class Context : public RxLib::Singleton<Context>
 {
 public:
 	SINGLETON_DECL_HEADER(Context)

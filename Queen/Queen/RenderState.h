@@ -3,7 +3,7 @@
 
 #include "Prerequisite.h"
 #include "GraphicCommon.h"
-#include "MathLib/ColorRGBA.hpp"
+#include <ColorRGBA.hpp>
 
 struct RasterizerState
 {
@@ -134,7 +134,7 @@ public:
 	float                      MinLOD;
 	float                      MaxLOD;
 
-	MathLib::ColorRGBA				   BorderColor;	
+	RxLib::ColorRGBA				   BorderColor;	
 };
 
 #endif // RenderState_h__

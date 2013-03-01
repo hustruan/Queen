@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MathLib", "MathLib\MathLib.vcxproj", "{DFBA7BDF-55D3-492C-ACD6-28D81DB0BC99}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CoreLib", "CoreLib\CoreLib.vcxproj", "{F63EBE70-225E-439F-A050-AF46BD2EF1FA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DFBA7BDF-55D3-492C-ACD6-28D81DB0BC99}.Debug|Win32.ActiveCfg = Debug|Win32
+		{DFBA7BDF-55D3-492C-ACD6-28D81DB0BC99}.Debug|Win32.Build.0 = Debug|Win32
+		{DFBA7BDF-55D3-492C-ACD6-28D81DB0BC99}.Release|Win32.ActiveCfg = Release|Win32
+		{DFBA7BDF-55D3-492C-ACD6-28D81DB0BC99}.Release|Win32.Build.0 = Release|Win32
+		{F63EBE70-225E-439F-A050-AF46BD2EF1FA}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F63EBE70-225E-439F-A050-AF46BD2EF1FA}.Debug|Win32.Build.0 = Debug|Win32
+		{F63EBE70-225E-439F-A050-AF46BD2EF1FA}.Release|Win32.ActiveCfg = Release|Win32
+		{F63EBE70-225E-439F-A050-AF46BD2EF1FA}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

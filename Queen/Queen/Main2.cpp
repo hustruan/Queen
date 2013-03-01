@@ -1,18 +1,15 @@
 #include "Prerequisite.h"
-#include "MathLib/Vector.hpp"
-#include "MathLib/Matrix.hpp"
-#include "MathLib/MathUtil.hpp"
-#include "MathLib/ColorRGBA.hpp"
 #include "RenderDevice.h"
 #include "Model.h"
 #include "RenderFactory.h"
 #include "FrameBuffer.h"
 #include "Applicaton.h"
+#include <MathUtil.hpp>
 
 #include "GraphicsBuffer.h"
 #include "Context.h"
 
-using namespace MathLib;
+using namespace RxLib;
 
 #define Queue_PI    (3.14159265358979323846)
 
@@ -64,8 +61,8 @@ public:
 
 		float NdotL = Dot(N, L);
 
-		ColorRGBA color = ColorRGBA(1, 1, 1, 1);
-		output->Color[0] = Saturate(color * NdotL);
+		//ColorRGBA color = ColorRGBA(1, 1, 1, 1);
+		output->Color[0] = Saturate(ColorRGBA::Green * NdotL);
 
 		return true;
 	}

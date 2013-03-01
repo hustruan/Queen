@@ -5,7 +5,7 @@
 #include "Context.h"
 #include "Shader.h"
 #include "threadpool.h"
-#include "MathLib/MathUtil.hpp"
+#include <MathUtil.hpp>
 
 namespace {
 
@@ -128,7 +128,7 @@ FrameBuffer::FrameBuffer( int32_t width, int32_t height )
 	mViewport.Top = 0;
 	mViewport.Height = height;
 
-	mViewportMatrix = MathLib::CreateViewportMatrixD3D(0.0f, 0.0f, (float)width, (float)height);
+	mViewportMatrix = RxLib::CreateViewportMatrixD3D(0.0f, 0.0f, (float)width, (float)height);
 }
 
 

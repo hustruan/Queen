@@ -4,11 +4,11 @@
 #include "Prerequisite.h"
 #include "GraphicCommon.h"
 #include "PixelFormat.h"
-#include "MathLib/Matrix.hpp"
-#include "MathLib/ColorRGBA.hpp"
+#include <Matrix.hpp>
+#include <ColorRGBA.hpp>
 
-using MathLib::float44;
-using MathLib::ColorRGBA;
+using RxLib::float44;
+using RxLib::ColorRGBA;
 
 struct PS_Output;
 struct BlendState;

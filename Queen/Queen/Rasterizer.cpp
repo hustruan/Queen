@@ -3,9 +3,9 @@
 #include "FrameBuffer.h"
 #include "Cache.hpp"
 #include "threadpool.h"
-#include "stack_pool.hpp"
+#include "stack_pool.h"
 
-using namespace MathLib;
+using namespace RxLib;
 
 #define InRange(v, a, b) ((a) <= (v) && (v) <= (b))
 

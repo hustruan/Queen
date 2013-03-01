@@ -3,6 +3,8 @@
 
 #include <cassert>
 
+namespace RxLib {
+
 template<typename ObjectT, int MaxCount>
 class stack_pool
 {
@@ -11,7 +13,7 @@ public:
 	{
 		memset(used, 0, sizeof(used));
 	}
-	
+
 	ObjectT* malloc()
 	{
 		for (size_t i = 0; i < MaxCount; ++i)
@@ -31,7 +33,7 @@ public:
 		assert(p != NULL);
 
 		uintptr_t diff = (uintptr_t)p - (uintptr_t)elements;
-		
+
 		if ( 0 <= diff && diff <= sizeof(elements))
 		{
 			used[diff / ObjectSize] = false;
@@ -46,6 +48,6 @@ protected:
 	bool used[MaxCount];
 };
 
-
+}
 
 #endif // stack_pool_h__

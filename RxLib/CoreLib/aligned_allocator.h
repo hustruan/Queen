@@ -4,6 +4,8 @@
 #include <limits>
 #include <cstdint>
 
+namespace RxLib {
+
 template<typename T, int alignment>
 class aligned_allocator
 {
@@ -17,18 +19,18 @@ public:
 	typedef ptrdiff_t difference_type;
 
 	enum { Alignment = alignment };
-	
+
 	template<class U>
 	struct rebind
 	{
 		typedef aligned_allocator<U, alignment> other;
 	};
-	
+
 	pointer address( reference value ) const
 	{
 		return &value;
 	}
-	
+
 	aligned_allocator() {}
 
 	aligned_allocator( const aligned_allocator<T, alignment>& ) {}
@@ -38,7 +40,7 @@ public:
 	{
 		return *this;
 	}
-	 
+
 	~aligned_allocator() { }
 
 	size_type max_size() const
@@ -56,7 +58,7 @@ public:
 			return NULL;
 
 		pAligned = (uint8_t*)(((size_t)pStart + (alignment-1) + sizeof(uint16_t)) & ~(alignment-1));
-		
+
 		*((uint16_t*)pAligned -1) = uint16_t(pAligned - pStart); 
 
 		return reinterpret_cast<pointer>(pAligned);
@@ -91,6 +93,10 @@ public:
 		return true;
 	}
 };
+
+
+}
+
 
 
 #endif // aligned_allocator_h__

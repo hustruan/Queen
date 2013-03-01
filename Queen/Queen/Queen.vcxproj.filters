@@ -48,22 +48,13 @@
     <ClInclude Include="Applicaton.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Singleton.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Context.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="threadpool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="aligned_allocator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Cache.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="stack_pool.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="RenderStage.h">
