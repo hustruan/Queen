@@ -62,7 +62,7 @@ public:
 		float NdotL = Dot(N, L);
 
 		//ColorRGBA color = ColorRGBA(1, 1, 1, 1);
-		output->Color[0] = Saturate(ColorRGBA::Green * NdotL);
+		output->Color[0] = Saturate(ColorRGBA::White * NdotL);
 
 		return true;
 	}
@@ -91,7 +91,7 @@ public:
 
 	void LoadContent()
 	{
-		mModel.loadModelFromFile("../Media/Infinite-Level_02.OBJ");
+		bool loaded = mModel.loadModelFromFile("../../Media/Infinite-Level_02.OBJ");
 
 		if(!mModel.hasNormals())
 			mModel.computeNormals();
