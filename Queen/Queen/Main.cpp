@@ -1,18 +1,15 @@
 #include "Prerequisite.h"
-#include "MathLib/Vector.hpp"
-#include "MathLib/Matrix.hpp"
-#include "MathLib/MathUtil.hpp"
-#include "MathLib/ColorRGBA.hpp"
 #include "RenderDevice.h"
 #include "Model.h"
 #include "RenderFactory.h"
 #include "FrameBuffer.h"
 #include "Applicaton.h"
+#include <MathUtil.hpp>
 
 #include "GraphicsBuffer.h"
 #include "Context.h"
 
-using namespace MathLib;
+using namespace RxLib;
 
 #define Queue_PI    (3.14159265358979323846)
 

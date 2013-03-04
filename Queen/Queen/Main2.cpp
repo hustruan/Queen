@@ -62,7 +62,7 @@ public:
 		float NdotL = Dot(N, L);
 
 		//ColorRGBA color = ColorRGBA(1, 1, 1, 1);
-		output->Color[0] = Saturate(ColorRGBA::Green * NdotL);
+		output->Color[0] = Saturate(ColorRGBA::White * NdotL);
 
 		return true;
 	}
