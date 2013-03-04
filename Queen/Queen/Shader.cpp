@@ -260,16 +260,25 @@ ColorRGBA Shader::Sample( uint32_t texUint, uint32_t samplerUnit, float U, float
 }
 
 
-//VertexShader::VertexShader()
-//{
-//
-//}
-//
-//VertexShader::~VertexShader()
-//{
-//
-//}
+VertexShader::VertexShader() 
+{
 
+}
+
+VertexShader::~VertexShader()
+{
+
+}
+
+PixelShader::PixelShader()
+{
+
+}
+
+PixelShader::~PixelShader()
+{
+
+}
 
 VertexShaderStage::VertexShaderStage( RenderDevice& device )
 	: RenderStage(device)
@@ -305,3 +314,7 @@ void PixelShaderStage::SetPixelShader( const shared_ptr<PixelShader>& ps )
 	uint32_t numOutput = ps->GetOutputCount();
 	mShader = ps;
 }
+
+
+
+

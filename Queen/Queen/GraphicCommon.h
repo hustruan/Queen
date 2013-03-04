@@ -272,6 +272,39 @@ enum ShaderType
 	ST_Compute
 };
 
+
+struct InterpolationModifier
+{
+	enum
+	{
+		/**
+		 * Interpolate between shader inputs; linear is the default value if no interpolation modifier is specified.
+		 */
+		Linear = 1UL << 0,
+
+		/**
+		 * Interpolate between samples that are somewhere within the covered area of the pixel (this may require
+		 * extrapolating end points from a pixel center). Centroid sampling may improve antialiasing if a pixel 
+		 * is partially covered (even if the pixel center is not covered). The centroid modifier must be combined 
+		 * with either the linear or noperspective modifier.
+		 */
+		Centroid = 1UL << 1,
+
+		/**
+		 * Do not interpolate.
+		 */
+		NoInterpolation = 1UL << 2,
+
+		/**
+		 * Do not perform perspective-correction during interpolation. The noperspective modifier can be combined
+		 * with the centroid modifier.
+		 */
+		NoPerspective = 1UL << 3,
+		
+		Sample = 1UL << 1
+	};
+};
+
 struct Viewport
 {
 	int32_t Left, Top, Width, Height;

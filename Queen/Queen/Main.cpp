@@ -166,13 +166,6 @@ public:
 			23,20,22
 		};
 
-		mModel.loadModelFromFile("../Media/cube.obj");
-
-		if(!mModel.hasNormals())
-			mModel.computeNormals();
-
-		mModel.compileModel( nv::Model::eptTriangles);
-
 		// Create buffers
 		VertexElement ve[3];
 
@@ -194,22 +187,7 @@ public:
 		ve[2].UsageIndex = 0;
 		ve[2].Offset = 24;
 
-		/*ve[2].Stream = 0;
-		ve[2].Type = VEF_Float3;
-		ve[2].Usage = VEU_TextureCoordinate;
-		ve[2].UsageIndex = 0;
-		ve[2].Offset = mModel.getCompiledTexCoordOffset() * sizeof(float);*/
-
 		mVertexDecl = mRenderFactory->CreateVertexDeclaration(ve, 3);
-
-		/*ElementInitData initData;
-		initData.pData = mModel.getCompiledVertices();
-		initData.RowPitch = static_cast<uint32_t>(mModel.getCompiledVertexCount() * mModel.getCompiledVertexSize() * sizeof(float));
-		mVertexBuffer = mRenderFactory->CreateVertexBuffer(&initData);
-		
-		initData.pData = mModel.getCompiledIndices();
-		initData.RowPitch = mModel.getCompiledIndexCount() * sizeof(uint32_t);
-		mIndexBuffer = mRenderFactory->CreateIndexBuffer(&initData);*/
 
 		ElementInitData initData;
 		initData.pData = vertices;

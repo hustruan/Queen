@@ -55,40 +55,32 @@ private:
 #define DefineTexture(unit, name) enum {name = unit };
 #define DefineSampler(unit, name) enum {name = unit };
 
-template<int N>
-struct ShaderOutputCounter
-{
-	enum { Count = ShaderOutputCounter<N-1>::Count + 1; };
-};
-
-template<>
-struct ShaderOutputCounter<0> {
-public:
-	enum { Count = 1 };
-};
+//template<int N>
+//struct ShaderOutputCounter
+//{
+//	enum { Count = ShaderOutputCounter<N-1>::Count + 1; };
+//};
+//
+//template<>
+//struct ShaderOutputCounter<0> {
+//public:
+//	enum { Count = 1 };
+//};
 
 class VertexShader : public Shader
 {
 public:
-	VertexShader()
-		: mNumOutput(0)
-	{
-
-	}
-
-	//virtual ~VertexShader();
+	VertexShader();
+	virtual ~VertexShader();
 
 	virtual void Execute(const VS_Input* input, VS_Output* output) = 0;
-
-protected:
-	uint32_t mNumOutput;
 };
 
 class PixelShader : public Shader
 {
 public:
-	//PixelShader();
-	//virtual ~PixelShader();
+	PixelShader();
+	virtual ~PixelShader();
 
 	/**
 	 * return false if discard current pixel
@@ -123,6 +115,10 @@ private:
 	//ProjectAttriFunc mProjectAttriFunc;
 	//SubFunc mAttribSubFunc;
 	//MulFunc mMulFunc;
+
+
+	std::array<uint32_t, MaxVSOutput> InterpolationModifiers;
+
 };
 
 
