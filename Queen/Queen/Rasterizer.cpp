@@ -259,7 +259,9 @@ void Rasterizer::SetupGeometry( std::vector<VS_Output>& outVertices, std::vector
 	uint32_t num_packages = (primitiveCount + NumPrimitivePerPackage - 1) / NumPrimitivePerPackage;
 	uint32_t localWorkingPackage  = workingPackage ++;
 
-	LRUCache<uint32_t, VS_Output> vertexCache(std::bind(&RenderDevice::FetchVertex, &mDevice, std::placeholders::_1), VertexCacheSize);
+	//LRUCache<uint32_t, VS_Output, VertexCacheSize> vertexCache(std::bind(&RenderDevice::FetchVertex, &mDevice, std::placeholders::_1));
+	
+	DirectMapCache<uint32_t, VS_Output, VertexCacheSize> vertexCache(std::bind(&RenderDevice::FetchVertex, &mDevice, std::placeholders::_1));
 
 	while (localWorkingPackage < num_packages)
 	{
@@ -270,11 +272,6 @@ void Rasterizer::SetupGeometry( std::vector<VS_Output>& outVertices, std::vector
 		{
 			const uint32_t baseVertex = iPrim * 4;
 			const uint32_t baseFace = iPrim;
-
-			if (iPrim == 15712)
-			{
-				int a = 0;
-			}
 
 			// fetch vertices
 			const VS_Output* pVSOutputs[3];

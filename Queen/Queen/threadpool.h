@@ -16,7 +16,7 @@ inline void ScheduleAndJoin(pool& tp, Func func)
 {
 	for (size_t i = 0; i < tp.size() - 1; ++i)
 	{
-		tp.schedule(func);
+	tp.schedule(func);
 	}
 	
 	// run on current thread 

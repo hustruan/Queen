@@ -6,7 +6,7 @@
 #include <functional>
 #include <cassert>
 
-template <typename K, typename V>
+template <typename K, typename V, int MaxCount>
 class LRUCache
 {
 public:
@@ -16,8 +16,8 @@ public:
 	typedef std::list<key_type> key_tracker_type;
 	typedef std::unordered_map<key_type, std::pair<value_type, typename key_tracker_type::iterator> > key_to_value_type;  
 	
-	LRUCache(const std::function<value_type(key_type)>& func, size_t capacity)
-		: mValueGenFunc(func), mCapacity(capacity)
+	LRUCache(const std::function<value_type(key_type)>& func)
+		: mValueGenFunc(func)
 	{
 
 	}
@@ -74,7 +74,7 @@ private:
 		assert(mKeyToValues.find(k) == mKeyToValues.end()); 
 
 		// Make space if necessary 
-		if (mKeyToValues.size() == mCapacity) 
+		if (mKeyToValues.size() == Capacity) 
 			evict(); 
 
 		// Record k as most-recently-used key 
@@ -113,11 +113,64 @@ private:
 	key_tracker_type mkeyTracker;
 	key_to_value_type mKeyToValues;
 
-	const size_t mCapacity; 
+	std::function<value_type(key_type)> mValueGenFunc;
+
+	enum { Capacity = MaxCount }; 
+};
+
+
+
+/**
+ * DirectMap Cache, K must be an integer type
+ */
+
+template <typename K, typename V, int MaxCount>
+class DirectMapCache
+{
+public:
+	typedef K key_type;
+	typedef V value_type;
+
+	DirectMapCache(const std::function<value_type(key_type)>& func)
+		: mValueGenFunc(func)
+	{
+
+	}
+
+	const value_type& operator() (const key_type& key) 
+	{
+		key_type index = key % Capacity;
+
+		if (mValues[index].key != key)
+		{
+			mValues[index].key = key;
+			mValues[index].value = mValueGenFunc(key); 
+		}
+
+		return mValues[index].value;
+	}
+
+private:
+
+	enum { Capacity = MaxCount }; 
+
+
+	struct cache_entry_type
+	{
+		key_type key;
+		value_type value;
+
+		cache_entry_type()
+			: key((std::numeric_limits<key_type>::max)())
+		{
+
+		}
+	};
+
+	std::array<cache_entry_type, Capacity> mValues;
 
 	std::function<value_type(key_type)> mValueGenFunc;
 };
-
 
 
 
