@@ -17,15 +17,22 @@ class SimpleVertexShader : public VertexShader
 {
 public:
 
+	void Bind()
+	{
+		DeclareVarying(InterpolationModifier::Linear, float4, oPosW, 0);
+		DeclareVarying(InterpolationModifier::Linear, float4, oNormal, 1);
+		DeclareVarying(InterpolationModifier::Linear, float4, oColor, 2);
+	}
+
 	void Execute(const VS_Input* input, VS_Output* output)
 	{
-		const float4& iPos = input->ShaderInputs[0];
-		const float4& iNormal = input->ShaderInputs[1];
-		const float4& iColor = input->ShaderInputs[2]; 
+		DefineAttribute(float4, iPos, 0);
+		DefineAttribute(float4, iNormal, 1);
+		DefineAttribute(float4, iColor, 2);
 
-		Varying(float4, oPosW, 0);
-		Varying(float4, oNormal, 1);
-		Varying(float4, oColor, 2);
+		DefineVarying(float4, oPosW, 0);
+		DefineVarying(float4, oNormal, 1);
+		DefineVarying(float4, oColor, 2);
 
 		oPosW = iPos * World;
 		oNormal = iNormal * World;

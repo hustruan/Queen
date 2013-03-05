@@ -783,7 +783,7 @@ void Rasterizer::RasterizeTriangle_Bottom( const VS_Output& vsOut1, const VS_Out
 
 void Rasterizer::PreDraw()
 {
-	mCurrVSOutputCount = mDevice.mVertexShaderStage->GetVertexShader()->GetOutputCount();
+	mCurrVSOutputCount = mDevice.mVertexShaderStage->VSOutputCount;
 }
 
 void Rasterizer::PostDraw()

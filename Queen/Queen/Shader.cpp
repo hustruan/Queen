@@ -233,6 +233,16 @@ Shader::~Shader(void)
 {
 }
 
+void Shader::Bind()
+{
+
+}
+
+void Shader::Unbind()
+{
+
+}
+
 ColorRGBA Shader::Sample( uint32_t texUint, uint32_t samplerUnit, float U, float V )
 {
 	ASSERT(mDevice->TextureUnit[texUint]->GetTextureType() == TT_Texture2D);
@@ -257,6 +267,16 @@ ColorRGBA Shader::Sample( uint32_t texUint, uint32_t samplerUnit, float U, float
 ColorRGBA Shader::Sample( uint32_t texUint, uint32_t samplerUnit, float U, float V, float W )
 {
 	return ColorRGBA();
+}
+
+VertexShaderStage* Shader::VertexShaderStage()
+{
+	return mDevice->mVertexShaderStage;
+}
+
+PixelShaderStage* Shader::PixelShaderStage()
+{
+	return mDevice->mPixelShaderStage;
 }
 
 
@@ -288,10 +308,10 @@ VertexShaderStage::VertexShaderStage( RenderDevice& device )
 
 void VertexShaderStage::SetVertexShader( const shared_ptr<VertexShader>& vs )
 {
-	uint32_t numOutput = vs->GetOutputCount();
-//	mInterpolateFunc = gInterpolateFuncs[numOutput];
-	//mProjectAttriFunc = gProjectAttriFuncs[numOutput];
 	mShader = vs;
+	
+	mShader->Bind();
+	VSOutputCount = mShader->GetOutputCount();
 }
 
 VertexShaderStage::~VertexShaderStage()

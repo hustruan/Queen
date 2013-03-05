@@ -16,6 +16,7 @@ class Rasterizer;
 class RenderDevice
 {
 	friend class Rasterizer;
+	friend class Shader;
 
 public:
 	RenderDevice(void);
@@ -78,14 +79,12 @@ private:
 
 	shared_ptr<VertexDeclaration> mVertexDecl;
 
-	
+	shared_ptr<FrameBuffer> mCurrentFrameBuffer;
+	shared_ptr<FrameBuffer> mScreenFrameBuffer;
 
 	VertexShaderStage* mVertexShaderStage;
 	PixelShaderStage* mPixelShaderStage;
 	Rasterizer* mRasterizerStage;
-
-	shared_ptr<FrameBuffer> mCurrentFrameBuffer;
-	shared_ptr<FrameBuffer> mScreenFrameBuffer;
 };
 
 #endif // Renderer_h__

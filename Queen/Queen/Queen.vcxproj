@@ -107,7 +107,7 @@
     <ClCompile Include="Context.cpp" />
     <ClCompile Include="FrameBuffer.cpp" />
     <ClCompile Include="GraphicsBuffer.cpp" />
-    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Main2.cpp" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="pfm.cpp" />
     <ClCompile Include="PixelFormat.cpp" />
