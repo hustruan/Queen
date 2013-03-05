@@ -129,6 +129,10 @@ FrameBuffer::FrameBuffer( int32_t width, int32_t height )
 	mViewport.Height = height;
 
 	mViewportMatrix = RxLib::CreateViewportMatrixD3D(0.0f, 0.0f, (float)width, (float)height);
+
+
+	// init render target tiles
+	//uint32_t numTileX = (width / TileSize)
 }
 
 

@@ -92,6 +92,7 @@ void VS_Output_Interpolate(VS_Output* out, const VS_Output* a, const VS_Output* 
 
 }
 
+//--------------------------------------------------------------------------------------------
 Rasterizer::Rasterizer( RenderDevice& device )
 	: RenderStage(device)
 {
@@ -375,12 +376,12 @@ void Rasterizer::RasterizeTriangle( const VS_Output& vsOut0, const VS_Output& vs
 		std::swap(pVertices[1], pVertices[2]); 
 
 
-	// Screenspace-position references ----------------------------------------
+	// Screenspace-position references 
 	const float4& vA = pVertices[0]->Position;
 	const float4& vB = pVertices[1]->Position;
 	const float4& vC = pVertices[2]->Position;
 
-	// Calculate slopes for stepping ------------------------------------------
+	// Calculate slopes for stepping
 	const float fStepX[3] = {
 		( vB.Y() - vA.Y() > 0.0f ) ? ( vB.X() - vA.X() ) / ( vB.Y() - vA.Y() ) : 0.0f,
 		( vC.Y() - vA.Y() > 0.0f ) ? ( vC.X() - vA.X() ) / ( vC.Y() - vA.Y() ) : 0.0f,
@@ -397,7 +398,7 @@ void Rasterizer::RasterizeTriangle( const VS_Output& vsOut0, const VS_Output& vs
 	const float fMinClipX = (float)MinClipX;
 	const float fMaxClipX = (float)MaxClipX;
 
-	// Begin rasterization ----------------------------------------------------
+	// Begin rasterization
 	float fX[2] = { vA.X(), vA.X() };
 
 	for(int32_t iPart = 0; iPart < 2; ++iPart)

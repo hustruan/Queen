@@ -116,9 +116,13 @@ private:
 /**
  *
  */
-#define DeclareVarying(modifier, type, name, slot)		 VertexShaderStage()->InterpolationModifiers[slot] = modifier;
-#define DefineVarying(type, name, slot)					 type& name = output->ShaderOutputs[slot];
+
 #define DefineAttribute(type, name, slot)				 const type& name = input->ShaderInputs[slot];
+#define DeclareVarying(modifier, type, name, slot)		 VertexShaderStage()->InterpolationModifiers[slot] = modifier;
+//#define DefineVarying(type, name, slot)				 type& name = output->ShaderOutputs[slot];
+#define DefineVaryingOutput(type, name, slot)			 type& name = *((type*)(&output->ShaderOutputs[slot]));
+#define DefineVaryingInput(type, name, slot)			 type& name = *((type*)(&input->ShaderOutputs[slot]));
+
 
 #define DefineTexture(unit, name)						 enum {name = unit };
 #define DefineSampler(unit, name)						 enum {name = unit };

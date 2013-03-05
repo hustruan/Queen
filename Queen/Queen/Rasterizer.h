@@ -6,7 +6,7 @@
 #include "Shader.h"
 
 #define NumPrimitivePerPackage 64
-#define VertexCacheSize 32
+#define VertexCacheSize 16
 
 class Rasterizer : public RenderStage
 {

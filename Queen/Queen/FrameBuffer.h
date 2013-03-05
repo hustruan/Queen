@@ -14,9 +14,20 @@ struct PS_Output;
 struct BlendState;
 
 #define MaxRenderTarget 8
+#define TileSize 64
 
 class FrameBuffer
 {
+public:
+
+	struct Tile
+	{
+		uint32_t X, Y;
+		uint32_t Width, Height;
+
+		vector<uint32_t> TriQueue;
+	};
+
 public:
 	FrameBuffer(int32_t width, int32_t height);
 	virtual ~FrameBuffer(void);
@@ -53,7 +64,6 @@ private:
 	void ReadPixel(int32_t x, int32_t y, PS_Output* oPixel, float* oDepth);
 	void ClearColor(uint32_t index, PixelFormat fmt, const ColorRGBA& clr, std::atomic<uint32_t>& workingPackage, uint32_t width, uint32_t height);
 
-
 protected:
 
 	PixelFormat mColorFormat;
@@ -66,6 +76,7 @@ protected:
 
 	float44 mViewportMatrix;
 
+	std::vector<Tile> mTiles;
 	std::vector< shared_ptr<Texture2D> > mRenderTargets;
 	shared_ptr<Texture2D> mDepthStencilTarget;
 

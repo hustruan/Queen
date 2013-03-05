@@ -28,11 +28,11 @@ public:
 		DefineAttribute(float4, iPos, 0);
 		DefineAttribute(float4, iNormal, 1);
 
-		DefineVarying(float4, oPosW, 0);
-		DefineVarying(float4, oNormal, 1);
+		DefineVaryingOutput(float4, oPosW, 0);
+		DefineVaryingOutput(float4, oNormal, 1);
 
 		oPosW = iPos * World;
-		oNormal = iNormal * World;
+		oNormal = float4(iNormal.X(), iNormal.Y(), iNormal.Z(), 0.0) * World;
 
 		output->Position = oPosW * View * Projection;
 	}
@@ -59,15 +59,18 @@ public:
 
 	bool Execute(const VS_Output* input, PS_Output* output, float* pDepthIO)
 	{
-		float3 posW = float3((float*)&input->ShaderOutputs[0]);
-		float3 normal = float3((float*)&input->ShaderOutputs[1]);
+		//float3 posW = float3((float*)&input->ShaderOutputs[0]);
+		//float3 normal = float3((float*)&input->ShaderOutputs[1]);
+
+		DefineVaryingInput(float3, posW, 0);
+		DefineVaryingInput(float3, normal, 1);
+
 
 		float3 L = Normalize(LightPos - posW);
 		float3 N = Normalize(normal);
 
 		float NdotL = Dot(N, L);
 
-		//ColorRGBA color = ColorRGBA(1, 1, 1, 1);
 		output->Color[0] = Saturate(ColorRGBA::White * NdotL);
 
 		return true;
@@ -94,6 +97,8 @@ public:
 		float3 Normal;
 		ColorRGBA Color;
 	};
+
+	float44 Center;
 
 	void LoadContent()
 	{
@@ -151,11 +156,21 @@ public:
 		mPixelShader = std::make_shared<SimplePixelShader>();
 		mPixelShader->LightPos = float3(10, 10, 10);
 		
-		mVertexShader->World = CreateTranslation(float3(-center.x, -center.y, -center.z));
+		Center = CreateTranslation(float3(-center.x, -center.y, -center.z));
 	}
 
 	void Render()
 	{
+
+		static float t = 0.0f;
+		static DWORD dwTimeStart = 0;
+		DWORD dwTimeCur = GetTickCount();
+		if( dwTimeStart == 0 )
+			dwTimeStart = dwTimeCur;
+		t = ( dwTimeCur - dwTimeStart ) / 1000.0f;
+
+		mVertexShader->World = Center * CreateRotationY(t);
+
 		mRenderDevice->GetCurrentFrameBuffer()->Clear(CF_Color | CF_Depth,
 			ColorRGBA(0.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
 
