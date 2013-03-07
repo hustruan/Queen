@@ -7,16 +7,21 @@ using namespace boost::threadpool;
 
 inline pool& GlobalThreadPool()
 {
-	static pool tp(boost::thread::hardware_concurrency());
+	static pool tp(boost::thread::hardware_concurrency()-1);
 	return tp;
+}
+
+inline uint32_t GetNumWorkThreads()
+{
+	return boost::thread::hardware_concurrency();
 }
 
 template <typename Func>
 inline void ScheduleAndJoin(pool& tp, Func func)
 {
-	for (size_t i = 0; i < tp.size() - 1; ++i)
+	for (size_t i = 0; i < tp.size(); ++i)
 	{
-	tp.schedule(func);
+		tp.schedule(func);
 	}
 	
 	// run on current thread 
@@ -24,6 +29,5 @@ inline void ScheduleAndJoin(pool& tp, Func func)
 
 	tp.wait();
 }
-
 
 #endif // threadpool_h__

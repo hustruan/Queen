@@ -16,6 +16,15 @@ inline bool FCMP(float a, float b)
 	return true;
 }
 
+inline void VS_Output_Copy(VS_Output* dest, const VS_Output* src, uint32_t numAttri)
+{
+	dest->Position =  src->Position;
+	for (uint32_t i = 0; i < numAttri; ++i)
+	{
+		dest->ShaderOutputs[i] = src->ShaderOutputs[i];
+	}
+}
+
 inline void VS_Output_Sub(VS_Output* out, const VS_Output* a, const VS_Output* b, uint32_t numAttri)
 {
 	out->Position = a->Position - b->Position;
@@ -99,6 +108,14 @@ Rasterizer::Rasterizer( RenderDevice& device )
 	// Near and Far plane
 	mClipPlanes[0] = float4(0, 0, 1, 0);
 	mClipPlanes[1] = float4(0, 0, -1, 1);
+
+	const uint32_t nunWorkThreads = GetNumWorkThreads();
+
+	mThreadPackage.resize(nunWorkThreads);
+	mVertexCaches.resize(nunWorkThreads);
+	mFacesThreads.resize(nunWorkThreads);
+	mVerticesThreads.resize(nunWorkThreads);
+	mNumVerticesThreads.resize(nunWorkThreads);
 }
 
 Rasterizer::~Rasterizer(void)
@@ -133,16 +150,24 @@ bool Rasterizer::BackFaceCulling( const VS_Output& v0, const VS_Output& v1, cons
 	const float signedArea = (v1.Position.X()- v0.Position.X()) * (v2.Position.Y() - v0.Position.Y()) -
 		(v1.Position.Y() - v0.Position.Y()) * (v2.Position.X()- v0.Position.X());
 
-	if( mDevice.RasterizerState.FrontCounterClockwise )  
+
+	if (signedArea >= 0.0f)
 	{
-		if( signedArea >= 0.0f )
-			return true;
+		// polygon is CCW
+		if (mDevice.RasterizerState.PolygonCullMode == CM_Front)
+			!mDevice.RasterizerState.FrontCounterClockwise;
+		else
+			mDevice.RasterizerState.FrontCounterClockwise;
 	}
-	else	
+	else
 	{
-		if( signedArea <= 0.0f )
-			return true;
+		// polygon is CW
+		if (mDevice.RasterizerState.PolygonCullMode == CM_Front)
+			mDevice.RasterizerState.FrontCounterClockwise;
+		else
+			!mDevice.RasterizerState.FrontCounterClockwise;
 	}
+	
 
 	return false;
 }
@@ -215,6 +240,11 @@ uint32_t Rasterizer::Clip( VS_Output* clipped, const VS_Output& v0, const VS_Out
 
 	const uint32_t resultNumVertices = numClippedVertices[srcStage];
 	ASSERT(resultNumVertices <= 5);
+
+	if (resultNumVertices == 5)
+	{
+		ASSERT(false);
+	}
 	
 	for (uint32_t i = 0; i < resultNumVertices; ++i)
 	{
@@ -224,9 +254,150 @@ uint32_t Rasterizer::Clip( VS_Output* clipped, const VS_Output& v0, const VS_Out
 	return resultNumVertices;
 }
 
+void Rasterizer::ClipTriangle(  VS_Output* vertices, uint32_t threadIdx )
+{
+	size_t srcStage = 0;
+	size_t destStage = 1;
+
+	uint8_t clipVertices[2][5];
+	clipVertices[srcStage][0] = 0;
+	clipVertices[srcStage][1] = 1; 
+	clipVertices[srcStage][2] = 2;
+
+	uint8_t numClippedVertices[2];
+	numClippedVertices[srcStage] = 3;
+
+	uint8_t nunVert = numClippedVertices[srcStage];
+
+	for (size_t iPlane = 0; iPlane < mClipPlanes.size(); ++iPlane)
+	{
+		numClippedVertices[destStage] = 0;
+		
+		uint8_t idxPrev = clipVertices[srcStage][0];
+		float dpPrev = Dot(mClipPlanes[iPlane], vertices[idxPrev].Position);
+
+		// wrap over
+		clipVertices[srcStage][numClippedVertices[srcStage]] = clipVertices[srcStage][0];
+		for (uint8_t i = 1; i <= numClippedVertices[srcStage]; ++i)
+		{
+			uint8_t idxCurr = clipVertices[srcStage][i];
+			float dpCurr = Dot(mClipPlanes[iPlane], vertices[idxCurr].Position);
+
+			if (dpPrev >= 0.0f)	
+			{
+				clipVertices[destStage][numClippedVertices[destStage]++] = idxPrev;
+
+				if (dpCurr < 0.0f)
+				{
+					VS_Output_Interpolate(&vertices[nunVert], &vertices[idxPrev], &vertices[idxCurr], 
+						dpPrev / (dpPrev - dpCurr), mCurrVSOutputCount);
+
+					clipVertices[destStage][numClippedVertices[destStage]++] = nunVert++;	
+				}
+			}
+			else
+			{
+				if (dpCurr >= 0.0f)
+				{
+					VS_Output_Interpolate(&vertices[nunVert], &vertices[idxCurr], &vertices[idxPrev], 
+						dpCurr / (dpCurr - dpPrev), mCurrVSOutputCount);
+
+					clipVertices[destStage][numClippedVertices[destStage]++] = nunVert++;	
+				}
+			}
+
+			idxPrev = idxCurr;
+			dpPrev = dpCurr;
+		}
+
+		// cull out
+		if (numClippedVertices[destStage] < 3)
+		{
+			return;
+		}
+
+		//swap src and dest stage
+		srcStage = (srcStage +1) & 1;
+		destStage = (destStage +1) & 1;
+	}
+
+	const uint32_t resultNumVertices = numClippedVertices[srcStage];
+	ASSERT(resultNumVertices <= 5);
+
+	
+	// Project the first three vertices for culling
+	for (uint32_t iVertex = 0; iVertex < 3; ++ iVertex)
+		ProjectVertex( &vertices[clipVertices[srcStage][iVertex]] );
+
+
+	// We do not have to check for culling for each sub-polygon of the triangle, as they
+	// are all in the same plane. If the first polygon is culled then all other polygons
+	// would be culled, too.
+	if( BackFaceCulling( vertices[clipVertices[srcStage][0]], vertices[clipVertices[srcStage][1]], vertices[clipVertices[srcStage][2]] ) )
+	{
+		// back face culled
+		return;
+	}
+
+	// Project the remaining vertices
+	for(uint32_t i = 3; i < resultNumVertices; ++i )
+		ProjectVertex( &vertices[clipVertices[srcStage][i]] );
+
+
+	// binning
+	for( uint32_t i = 2; i < resultNumVertices; i++ )
+	{
+		Bin(vertices[clipVertices[srcStage][0]], vertices[clipVertices[srcStage][i-1]], vertices[clipVertices[srcStage][i]], threadIdx);
+	}
+}
+
 void Rasterizer::Draw( PrimitiveType primitiveType, uint32_t primitiveCount )
 {
 	ASSERT(primitiveType == PT_Triangle_List); // Only support triangle list 
+
+	pool& theadPool = GlobalThreadPool();
+	uint32_t numWorkThreads = GetNumWorkThreads();
+
+ 
+	//// calculate package size for each thread
+	//uint32_t primitivesPerThread = primitiveCount / numWorkThreads;
+	//uint32_t extraPrimitives = primitiveCount % numWorkThreads;
+
+	//uint32_t idx = 0;
+	//while (idx < numWorkThreads && extraPrimitives)
+	//{
+	//	// add one primitives more to thread until extra primitives all dispatched
+	//	mThreadPackage[idx].Start = idx * (primitivesPerThread + 1);
+	//	mThreadPackage[idx].End = mThreadPackage[idx].Start + primitivesPerThread + 1;
+	//	extraPrimitives--;
+	//	idx++;
+	//}
+
+	//while (idx < numWorkThreads)
+	//{
+	//	// set up remain thread package
+	//	mThreadPackage[idx].Start = mThreadPackage[idx-1].End;
+	//	mThreadPackage[idx].End = mThreadPackage[idx].Start + primitivesPerThread;
+	//	idx++;
+	//}
+
+	//// allocate each thread's vertex and face buffer
+	//for (idx = 0; idx < numWorkThreads; ++idx)
+	//{
+	//	const uint32_t primCount = (mThreadPackage[idx].End - mThreadPackage[idx].Start);
+
+	//	// after frustum clip, one triangle can generate maximum 4 vertices, maximum 2 triangle faces
+	//	mVerticesThreads[idx].resize( primCount * 4 );
+	//	mFacesThreads[idx].reserve(primCount * 2);
+	//}
+
+	////auto f = std::bind(&Rasterizer::SetupGeometry2, this, std::ref(mVerticesThreads[idx]), std::ref(mFacesThreads[idx]), mThreadPackage[idx]);
+	//for (size_t i = 0; i < numWorkThreads - 1; ++i)
+	//{
+	//	theadPool.schedule(std::bind(&Rasterizer::SetupGeometry2, this, std::ref(mVerticesThreads[idx]), std::ref(mFacesThreads[idx]), idx, mThreadPackage[idx]));
+	//}
+	//SetupGeometry2(mVerticesThreads[idx], mFacesThreads[idx], numWorkThreads - 1, mThreadPackage[idx]);
+
 
 	// after frustum clip, one triangle can generate maximum 4 vertices
 	mClippedVertices.resize(primitiveCount * 4);
@@ -234,12 +405,28 @@ void Rasterizer::Draw( PrimitiveType primitiveType, uint32_t primitiveCount )
 
 	std::atomic<uint32_t> workingPackage(0);
 
-	//Vertex Processing
-	ScheduleAndJoin( GlobalThreadPool(), 
-		std::bind(&Rasterizer::SetupGeometry, this, std::ref(mClippedVertices), std::ref(mClippedFaces), 
-		std::ref(workingPackage), primitiveCount));
+	//input assembly, vertex shading, culling/clipping
+	for (size_t i = 0; i < numWorkThreads - 1; ++i)
+	{
+		theadPool.schedule(std::bind(&Rasterizer::SetupGeometry, this, std::ref(mClippedVertices), std::ref(mClippedFaces), 
+			std::ref(workingPackage), primitiveCount));
+	}
+	// schedule current thread
+	SetupGeometry(std::ref(mClippedVertices), std::ref(mClippedFaces), std::ref(workingPackage), primitiveCount);
+	theadPool.wait();
 
 
+	// binning, dispatch primitive to tiles
+	//std::vector<FrameBuffer::Tile>& tiles = mDevice.GetCurrentFrameBuffer()->mTiles;
+
+	//workingPackage = 0;
+	//for (size_t i = 0; i < theadPool.size(); ++i)
+	//{
+	//	theadPool.schedule(std::bind(&Rasterizer::Binning, this/*, std::ref(mClippedVertices), std::ref(mClippedFaces)*/, 
+	//		std::ref(workingPackage), primitiveCount));
+	//}
+	
+	// rasterize tiles
 	for(size_t i = 0; i < mClippedFaces.size(); ++i)
 	{
 		if(mClippedFaces[i].TriCount == 1)
@@ -254,20 +441,19 @@ void Rasterizer::Draw( PrimitiveType primitiveType, uint32_t primitiveCount )
 	}
 }
 
-
 void Rasterizer::SetupGeometry( std::vector<VS_Output>& outVertices, std::vector<RasterFaceInfo>& outFaces, std::atomic<uint32_t>& workingPackage, uint32_t primitiveCount )
 {
-	uint32_t num_packages = (primitiveCount + NumPrimitivePerPackage - 1) / NumPrimitivePerPackage;
+	uint32_t numPackages = (primitiveCount + SetupGeometryPackageSize - 1) / SetupGeometryPackageSize;
 	uint32_t localWorkingPackage  = workingPackage ++;
 
 	//LRUCache<uint32_t, VS_Output, VertexCacheSize> vertexCache(std::bind(&RenderDevice::FetchVertex, &mDevice, std::placeholders::_1));
 	
 	DirectMapCache<uint32_t, VS_Output, VertexCacheSize> vertexCache(std::bind(&RenderDevice::FetchVertex, &mDevice, std::placeholders::_1));
 
-	while (localWorkingPackage < num_packages)
+	while (localWorkingPackage < numPackages)
 	{
-		const uint32_t start = localWorkingPackage * NumPrimitivePerPackage;
-		const uint32_t end = (std::min)(primitiveCount, start + NumPrimitivePerPackage);
+		const uint32_t start = localWorkingPackage * SetupGeometryPackageSize;
+		const uint32_t end = (std::min)(primitiveCount, start + SetupGeometryPackageSize);
 
 		for (uint32_t iPrim = start; iPrim < end; ++iPrim)
 		{
@@ -338,6 +524,45 @@ void Rasterizer::SetupGeometry( std::vector<VS_Output>& outVertices, std::vector
 
 		localWorkingPackage = workingPackage++;
 	}
+}
+
+void Rasterizer::SetupGeometry2( std::vector<VS_Output>& outVertices, std::vector<RasterFace>& outFaces, uint32_t theadIdx, ThreadPackage package )
+{
+	VS_Output clippedVertices[7]; // 7 enough ???
+
+	for (uint32_t iPrim = package.Start; iPrim < package.End; ++iPrim)
+	{
+		const uint32_t baseVertex = iPrim * 4;
+		const uint32_t baseFace = iPrim;
+
+		// fetch vertices
+		uint32_t iVertex;
+		for (iVertex = 0; iVertex < 3; ++ iVertex)
+		{		
+			const uint32_t index = mDevice.FetchIndex(iPrim * 3 + iVertex); 
+			const VS_Output& v = FetchVertex(index, theadIdx);
+			memcpy(&clippedVertices[iVertex], &v, sizeof(VS_Output));
+		}
+
+		ClipTriangle(clippedVertices, theadIdx);		
+	}
+}
+
+void Rasterizer::Binning(std::atomic<uint32_t>& workPackage , uint32_t primitiveCount )
+{
+	uint32_t numPackages = (primitiveCount + BinningPackageSize - 1) / BinningPackageSize;
+	uint32_t localWorkingPackage  = numPackages ++;
+
+	while (localWorkingPackage < numPackages)
+	{
+		const uint32_t start = localWorkingPackage * BinningPackageSize;
+		const uint32_t end = (std::min)(primitiveCount, start + BinningPackageSize);
+	
+		for (uint32_t iPrim = start; iPrim < end; ++iPrim)
+		{
+		}
+	}
+
 }
 
 void Rasterizer::RasterizeTriangle( const VS_Output& vsOut0, const VS_Output& vsOut1, const VS_Output& vsOut2 )
@@ -784,10 +1009,62 @@ void Rasterizer::RasterizeTriangle_Bottom( const VS_Output& vsOut1, const VS_Out
 
 void Rasterizer::PreDraw()
 {
+	// Set vertex varing count
 	mCurrVSOutputCount = mDevice.mVertexShaderStage->VSOutputCount;
+
+	// reset each thread's vertex cache
+	for (auto iIter = mVertexCaches.begin(); iIter != mVertexCaches.end(); ++iIter)
+	{
+		for (auto jIter = iIter->begin(); jIter != iIter->end(); ++jIter)
+		{
+			jIter->Index = UINT_MAX;
+		}
+	}
+
+	
 }
 
 void Rasterizer::PostDraw()
+{
+
+}
+
+void Rasterizer::Bin( const VS_Output& V0, const VS_Output& V1, const VS_Output& V2, uint32_t threadIdx )
+{
+	uint32_t baseIdx = mNumVerticesThreads[threadIdx];
+	uint32_t faceIdx = baseIdx / 3;
+
+	RasterFace& face = mFacesThreads[threadIdx][faceIdx];
+
+
+
+
+	
+	VS_Output_Copy(&mVerticesThreads[threadIdx][baseIdx],   &V0, mCurrVSOutputCount);
+	VS_Output_Copy(&mVerticesThreads[threadIdx][baseIdx+1], &V1, mCurrVSOutputCount);
+	VS_Output_Copy(&mVerticesThreads[threadIdx][baseIdx+2], &V2, mCurrVSOutputCount);
+
+	face.V[0] = &mVerticesThreads[threadIdx][baseIdx];
+	face.V[1] = &mVerticesThreads[threadIdx][baseIdx+1];
+	face.V[2] = &mVerticesThreads[threadIdx][baseIdx+2];
+
+	mNumVerticesThreads[threadIdx] += 3;
+}
+
+const VS_Output& Rasterizer::FetchVertex( uint32_t index, uint32_t threadIdx )
+{
+	VertexCacheElement& cacheItem = mVertexCaches[threadIdx][index & (VertexCacheSize-1)];
+
+	if( cacheItem.Index != index )
+	{		
+		cacheItem.Index = index;
+		cacheItem.Vertex = mDevice.FetchVertex(index);
+	} 
+
+	return cacheItem.Vertex;
+}
+
+void Rasterizer::Draw2( PrimitiveType primitiveType, uint32_t primitiveCount )
 {
 
 }

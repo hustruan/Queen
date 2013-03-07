@@ -25,7 +25,7 @@ public:
 		uint32_t X, Y;
 		uint32_t Width, Height;
 
-		vector<uint32_t> TriQueue;
+		vector<vector<uint32_t> > TriQueue;
 	};
 
 public:
@@ -84,6 +84,8 @@ protected:
 	bool mDirty;
 	bool mActice;
 
+
+private:
 	//keep every render target buffer address, avoid to call the virtual function multiple times
 	void* mRTBuffer[MaxRenderTarget];
 	uint32_t mRTBufferPitch[MaxRenderTarget];
