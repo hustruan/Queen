@@ -129,60 +129,6 @@ FrameBuffer::FrameBuffer( int32_t width, int32_t height )
 	mViewport.Height = height;
 
 	mViewportMatrix = RxLib::CreateViewportMatrixD3D(0.0f, 0.0f, (float)width, (float)height);
-
-
-	// init render target tiles
-	uint32_t extraPixelsX = width % TileSize;
-	uint32_t numTileX = extraPixelsX ? (width / TileSize + 1) : (width / TileSize);
-	uint32_t extraPixelsY = height % TileSize;
-	uint32_t numTileY = extraPixelsY ? (height / TileSize + 1) : (height / TileSize);
-
-	mTiles.resize(numTileX*numTileY);
-	for (uint32_t y = 0; y < numTileY; ++y)
-	{
-		bool extraY = ((y == numTileY-1) && extraPixelsY);
-		for (uint32_t x = 0; x < numTileX; ++x)
-		{
-			bool extraX = ((y == numTileX-1) && extraPixelsY);
-			
-			uint32_t index = y*numTileX + x;
-			mTiles[index].X = x * TileSize;
-			mTiles[index].Y = y * TileSize;
-			mTiles[index].Width = extraX ? extraPixelsX : TileSize;
-			mTiles[index].Height = extraY ? extraPixelsY : TileSize;
-
-			mTiles[index].TriQueue.resize( GetNumWorkThreads() );
-			for (auto iter = mTiles[index].TriQueue.begin(); iter != mTiles[index].TriQueue.end(); ++iter)
-			{
-				(*iter).resize(numTileX * numTileY);
-			}
-		}
-	}
-	uint32_t extraPixelsX = width % TileSize;
-	uint32_t numTileX = extraPixelsX ? (width / TileSize + 1) : (width / TileSize);
-
-	uint32_t extraPixelsY = height % TileSize;
-	uint32_t numTileY = extraPixelsX ? (height / TileSize + 1) : (height / TileSize);
-
-	// set up each tile info 
-	mTiles.resize(numTileX * numTileY);
-	for (uint32_t y = 0; y < numTileY; ++y)
-	{
-		bool extraY = ((y == numTileY-1) && extraPixelsY);
-
-		for (uint32_t x = 0; x < numTileX; ++x)
-		{
-			bool extraX = ((x == numTileX-1) && extraPixelsX);
-
-			uint32_t index = y * numTileX + x;
-			
-			mTiles[index].X = x * TileSize; 
-			mTiles[index].Y = y * TileSize;
-			
-			mTiles[index].Width = extraX ? extraPixelsX : TileSize;
-			mTiles[index].Height = extraY ? extraPixelsY : TileSize;
-		}
-	}
 }
 
 

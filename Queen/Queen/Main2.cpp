@@ -169,7 +169,7 @@ public:
 			dwTimeStart = dwTimeCur;
 		t = ( dwTimeCur - dwTimeStart ) / 1000.0f;
 
-		mVertexShader->World = Center * CreateRotationY(t);
+		mVertexShader->World = Center /** CreateRotationY(t)*/;
 
 		mRenderDevice->GetCurrentFrameBuffer()->Clear(CF_Color | CF_Depth,
 			ColorRGBA(0.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);

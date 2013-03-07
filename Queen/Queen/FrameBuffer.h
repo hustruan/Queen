@@ -14,20 +14,9 @@ struct PS_Output;
 struct BlendState;
 
 #define MaxRenderTarget 8
-#define TileSize 64
 
 class FrameBuffer
 {
-public:
-
-	struct Tile
-	{
-		uint32_t X, Y;
-		uint32_t Width, Height;
-
-		vector<vector<uint32_t> > TriQueue;
-	};
-
 public:
 	FrameBuffer(int32_t width, int32_t height);
 	virtual ~FrameBuffer(void);
@@ -76,10 +65,9 @@ protected:
 
 	float44 mViewportMatrix;
 
-	std::vector<Tile> mTiles;
 	std::vector< shared_ptr<Texture2D> > mRenderTargets;
 	shared_ptr<Texture2D> mDepthStencilTarget;
-
+	
 	bool mOffscreen;
 	bool mDirty;
 	bool mActice;
