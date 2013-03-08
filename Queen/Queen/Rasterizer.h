@@ -97,6 +97,7 @@ private:
 
 	// the whole tile is inside an triagnle
 	void DrawWholeTile(uint32_t threadIdx, uint32_t faceIdx, uint32_t tileIdx);
+	void DrawPartialTile(uint32_t threadIdx, uint32_t faceIdx, uint32_t tileIdx);
 
 private:
 

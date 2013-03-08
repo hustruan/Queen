@@ -129,6 +129,55 @@ Rasterizer::~Rasterizer(void)
 {
 }
 
+void Rasterizer::OnBindFrameBuffer( const shared_ptr<FrameBuffer>& fb )
+{
+	if (mCurrFrameBuffer != fb)
+	{
+		uint32_t width = fb->mWidth;
+		uint32_t height = fb->mHeight;
+
+		if (width != mCurrFrameBuffer->mWidth && height != mCurrFrameBuffer->mHeight)
+		{
+			// init render target tiles
+			uint32_t extraPixelsX = width % TileSize;
+			uint32_t numTileX = extraPixelsX ? (width / TileSize + 1) : (width / TileSize);
+			uint32_t extraPixelsY = height % TileSize;
+			uint32_t numTileY = extraPixelsY ? (height / TileSize + 1) : (height / TileSize);
+
+			const uint32_t NumWorkThreads = GetNumWorkThreads();
+
+			mTiles.resize(numTileX*numTileY);
+			for (uint32_t y = 0; y < numTileY; ++y)
+			{
+				bool extraY = ((y == numTileY-1) && extraPixelsY);
+				for (uint32_t x = 0; x < numTileX; ++x)
+				{
+					bool extraX = ((y == numTileX-1) && extraPixelsY);
+
+					uint32_t index = y*numTileX + x;
+					mTiles[index].X = x * TileSize;
+					mTiles[index].Y = y * TileSize;
+					mTiles[index].Width = extraX ? extraPixelsX : TileSize;
+					mTiles[index].Height = extraY ? extraPixelsY : TileSize;
+
+					mTiles[index].TriQueue.resize( NumWorkThreads );
+					mTiles[index].TriQueueSize.resize(NumWorkThreads);
+					for (uint32_t i = 0; i < NumWorkThreads; ++i)
+					{
+						mTiles[index].TriQueueSize[i]  = 0;
+						mTiles[index].TriQueue[i].resize(MaxBinQueueSize / NumWorkThreads);
+					}
+				}
+			}
+
+			mNumTileX = numTileX;
+			mNumTileY = numTileY;
+		}
+
+		mCurrFrameBuffer = fb;		
+	}
+}
+
 const VS_Output& Rasterizer::FetchVertex( uint32_t index, uint32_t threadIdx )
 {
 	VertexCacheElement& cacheItem = mVertexCaches[threadIdx][index & (VertexCacheSize-1)];
@@ -775,6 +824,7 @@ void Rasterizer::Bin( const VS_Output& V1, const VS_Output& V2, const VS_Output&
 
 	RasterFace& face = mFacesThreads[threadIdx][faceIdx];
 
+	// 28.4 fixed-point coordinates
 	const int32_t X1 = iround(16.0f * V1.Position.X());
 	const int32_t X2 = iround(16.0f * V2.Position.X());
 	const int32_t X3 = iround(16.0f * V3.Position.X());
@@ -805,23 +855,28 @@ void Rasterizer::Bin( const VS_Output& V1, const VS_Output& V2, const VS_Output&
 	int32_t C2 = DY23 * X2 - DX23 * Y2;
 	int32_t C3 = DY31 * X3 - DX31 * Y3;
 
-	// Compute the fixed point bounding box
-	const int32_t minX = Min(X1, Min(X2, X3));
-	const int32_t maxX = Max(X1, Max(X2, X3));
-	const int32_t minY = Min(Y1, Min(Y2, Y3));
-	const int32_t maxY = Max(Y1, Max(Y2, Y3));
+	// Correct for fill convention
+	if(DY12 < 0 || (DY12 == 0 && DX12 > 0)) C1++;
+	if(DY23 < 0 || (DY23 == 0 && DX23 > 0)) C2++;
+	if(DY31 < 0 || (DY31 == 0 && DX31 > 0)) C3++;
+
+	// Compute bounding box
+	const int32_t minX = (Min(X1, Min(X2, X3)) + 0xF) >> 4;
+	const int32_t maxX = (Max(X1, Max(X2, X3)) + 0xF) >> 4;
+	const int32_t minY = (Min(Y1, Min(Y2, Y3)) + 0xF) >> 4;
+	const int32_t maxY = (Max(Y1, Max(Y2, Y3)) + 0xF) >> 4;
 
 	// Compute tile bounding box
-	const int32_t minTileX = Max((minX >> 4) >> TileSizeShift, 0);
-	const int32_t minTileY = Max((minY >> 4) >> TileSizeShift, 0);
-	const int32_t maxTileX = Min((maxX >> 4) >> TileSizeShift, mNumTileX);
-	const int32_t maxTileY = Min((maxY >> 4) >> TileSizeShift, mNumTileY);
+	const int32_t minTileX = Max(minX >> TileSizeShift, 0);
+	const int32_t minTileY = Max(minY >> TileSizeShift, 0);
+	const int32_t maxTileX = Min(maxX >> TileSizeShift, mNumTileX);
+	const int32_t maxTileY = Min(maxY >> TileSizeShift, mNumTileY);
 
 	if ((minTileX + 1 == maxTileX) && (minTileY + 1 == maxTileY))
 	{
 		// Small primitive
 		Tile& tile = mTiles[minTileY * mNumTileX + minTileX];
-		tile.TriQueue[threadIdx][tile.TriQueueSize[threadIdx]++] = faceIdx;
+		tile.TriQueue[threadIdx][tile.TriQueueSize[threadIdx]++] = faceIdx << 1;
 	}
 	else
 	{
@@ -857,11 +912,11 @@ void Rasterizer::Bin( const VS_Output& V1, const VS_Output& V2, const VS_Output&
 				// Skip block when outside an edge
 				if(a == 0x0 || b == 0x0 || c == 0x0) continue;
 
-				Tile& tile = mTiles[minTileY * mNumTileX + minTileX];
-				tile.TriQueue[threadIdx][tile.TriQueueSize[threadIdx]++] = faceIdx;
-
 				// Test if we can trivially accept the entire tile
-				//tile.frag_tiles[ thread_id ][ face_idx ] = ( a != 0xF || b != 0xF || c != 0xF ) ? 0 : 1;
+				uint32_t accept = ( a != 0xF || b != 0xF || c != 0xF ) ? 0 : 1;
+
+				Tile& tile = mTiles[minTileY * mNumTileX + minTileX];
+				tile.TriQueue[threadIdx][tile.TriQueueSize[threadIdx]++] = (faceIdx << 1) | accept;  // least is a flag for partial or accept bit
 			}
 		}
 	}
@@ -972,14 +1027,16 @@ void Rasterizer::RasterizeTiles(std::vector<uint32_t>& tilesQueue, std::atomic<u
 				for (uint32_t iTri = 0; iTri < tile.TriQueueSize[iThread]; ++iThread)
 				{
 					uint32_t faceIdx = tile.TriQueue[iThread][iTri];
+					uint32_t accept = faceIdx & 0x1;
+					faceIdx = faceIdx >> 1; 
 
-					if (1)
+					if (accept)
 					{
 						DrawWholeTile(iThread, faceIdx, iTile);
 					}
 					else
 					{
-
+						DrawPartialTile(iThread, faceIdx, iTile);
 					}
 				}
 
@@ -992,58 +1049,67 @@ void Rasterizer::RasterizeTiles(std::vector<uint32_t>& tilesQueue, std::atomic<u
 	}
 }
 
-void Rasterizer::OnBindFrameBuffer( const shared_ptr<FrameBuffer>& fb )
-{
-	if (mCurrFrameBuffer != fb)
-	{
-		uint32_t width = fb->mWidth;
-		uint32_t height = fb->mHeight;
-
-		if (width != mCurrFrameBuffer->mWidth && height != mCurrFrameBuffer->mHeight)
-		{
-			// init render target tiles
-			uint32_t extraPixelsX = width % TileSize;
-			uint32_t numTileX = extraPixelsX ? (width / TileSize + 1) : (width / TileSize);
-			uint32_t extraPixelsY = height % TileSize;
-			uint32_t numTileY = extraPixelsY ? (height / TileSize + 1) : (height / TileSize);
-
-			const uint32_t NumWorkThreads = GetNumWorkThreads();
-
-			mTiles.resize(numTileX*numTileY);
-			for (uint32_t y = 0; y < numTileY; ++y)
-			{
-				bool extraY = ((y == numTileY-1) && extraPixelsY);
-				for (uint32_t x = 0; x < numTileX; ++x)
-				{
-					bool extraX = ((y == numTileX-1) && extraPixelsY);
-
-					uint32_t index = y*numTileX + x;
-					mTiles[index].X = x * TileSize;
-					mTiles[index].Y = y * TileSize;
-					mTiles[index].Width = extraX ? extraPixelsX : TileSize;
-					mTiles[index].Height = extraY ? extraPixelsY : TileSize;
-
-					mTiles[index].TriQueue.resize( NumWorkThreads );
-					mTiles[index].TriQueueSize.resize(NumWorkThreads);
-					for (uint32_t i = 0; i < NumWorkThreads; ++i)
-					{
-						mTiles[index].TriQueueSize[i]  = 0;
-						mTiles[index].TriQueue[i].resize(MaxBinQueueSize / NumWorkThreads);
-					}
-				}
-			}
-
-			mNumTileX = numTileX;
-			mNumTileY = numTileY;
-		}
-
-		mCurrFrameBuffer = fb;		
-	}
-}
-
 void Rasterizer::DrawWholeTile( uint32_t threadIdx, uint32_t faceIdx, uint32_t tileIdx )
 {
 
+}
+
+void Rasterizer::DrawPartialTile( uint32_t threadIdx, uint32_t faceIdx, uint32_t tileIdx )
+{
+	RasterFace& face = mFacesThreads[threadIdx][faceIdx];
+
+	VS_Output* V1 = face.V[0];
+	VS_Output* V2 = face.V[0];
+	VS_Output* V3 = face.V[0];
+
+	// 28.4 fixed-point coordinates
+	const int32_t X1 = iround(16.0f * V1->Position.X());
+	const int32_t X2 = iround(16.0f * V2->Position.X());
+	const int32_t X3 = iround(16.0f * V3->Position.X());
+
+	const int32_t Y1 = iround(16.0f * V1->Position.Y());
+	const int32_t Y2 = iround(16.0f * V2->Position.Y());
+	const int32_t Y3 = iround(16.0f * V3->Position.Y());
+
+	// Deltas
+	const int32_t DX12 = X1 - X2;
+	const int32_t DX23 = X2 - X3;
+	const int32_t DX31 = X3 - X1;
+
+	const int32_t DY12 = Y1 - Y2;
+	const int32_t DY23 = Y2 - Y3;
+	const int32_t DY31 = Y3 - Y1;
+
+	// Fixed-point deltas
+	const int32_t FDX12 = DX12 << 4;
+	const int32_t FDX23 = DX23 << 4;
+	const int32_t FDX31 = DX31 << 4;
+	const int32_t FDY12 = DY12 << 4;
+	const int32_t FDY23 = DY23 << 4;
+	const int32_t FDY31 = DY31 << 4;
+
+#ifdef USE_SIMD
+
+
+#else
+
+#endif
+
+	// Half-edge constants
+	int32_t C1 = DY12 * X1 - DX12 * Y1;
+	int32_t C2 = DY23 * X2 - DX23 * Y2;
+	int32_t C3 = DY31 * X3 - DX31 * Y3;
+
+	// Correct for fill convention
+	if(DY12 < 0 || (DY12 == 0 && DX12 > 0)) C1++;
+	if(DY23 < 0 || (DY23 == 0 && DX23 > 0)) C2++;
+	if(DY31 < 0 || (DY31 == 0 && DX31 > 0)) C3++;
+
+	// Compute bounding box
+	const int32_t minX = (Min(X1, Min(X2, X3)) + 0xF) >> 4;
+	const int32_t maxX = (Max(X1, Max(X2, X3)) + 0xF) >> 4;
+	const int32_t minY = (Min(Y1, Min(Y2, Y3)) + 0xF) >> 4;
+	const int32_t maxY = (Max(Y1, Max(Y2, Y3)) + 0xF) >> 4;
 }
 
 
