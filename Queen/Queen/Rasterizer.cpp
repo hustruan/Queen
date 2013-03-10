@@ -1162,13 +1162,7 @@ void Rasterizer::DrawPartialTile( uint32_t threadIdx, uint32_t faceIdx, uint32_t
 			// Accept whole block when totally covered
 			if( a == 0xF && b == 0xF && c == 0xF )
 			{
-				// Generate a fragment
-				/*	MSR_Fragment *frag = MSR_FragmentBufferGetNext(frag_buffer);
-				frag->state = MSR_FRAGMENT_STATE_BLOCK;
-				frag->thread_id = thread_id;
-				frag->face_idx = face_idx;
-				frag->x = x;
-				frag->y = y;*/
+
 			}
 			else
 			{
@@ -1191,10 +1185,11 @@ void Rasterizer::DrawPartialTile( uint32_t threadIdx, uint32_t faceIdx, uint32_t
 					__m128i CXMaskComp = _mm_and_si128( CX1Mask, _mm_and_si128( CX2Mask, CX3Mask ) );
 
 					// Generate a 4-bit mask from the composite 128-bit mask 
-					int32_t mask = _mm_movemask_ps(*(__m128*)&_mm_and_si128(cx_mask_comp, _mm_set1_epi32(0xF0000000)));
+					int32_t mask = _mm_movemask_ps(_mm_castsi128_ps(CXMaskComp));				
 					
 					if (mask)
 					{
+
 					}
 
 
@@ -1209,7 +1204,7 @@ void Rasterizer::DrawPartialTile( uint32_t threadIdx, uint32_t faceIdx, uint32_t
 
 					CXMaskComp = _mm_and_si128( CX1Mask, _mm_and_si128( CX2Mask, CX3Mask ) );
 
-					mask = _mm_movemask_ps(*(__m128*)&_mm_and_si128(cx_mask_comp, _mm_set1_epi32(0xF0000000)));
+					mask = _mm_movemask_ps(_mm_castsi128_ps(CXMaskComp));		
 					if (mask)
 					{
 					}

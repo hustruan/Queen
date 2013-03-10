@@ -99,6 +99,8 @@ private:
 	void DrawWholeTile(uint32_t threadIdx, uint32_t faceIdx, uint32_t tileIdx);
 	void DrawPartialTile(uint32_t threadIdx, uint32_t faceIdx, uint32_t tileIdx);
 
+	
+
 private:
 
 	// dispatch primitive count to each thread

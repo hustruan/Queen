@@ -285,6 +285,15 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 
 	const int32_t minX = ((std::min)(X1, (std::min)(X2, X3))) >> 4;
 
+	__m128i CX1 = _mm_set_epi32(15, 0, 2, -1);
+	__m128i Zero = _mm_setzero_si128();
+	__m128i CX1Mask = _mm_cmpgt_epi32(CX1, Zero);
+
+	__m128i CX2 = _mm_set_epi32(0xffffffff , 0xffffffff , 0xffffffff , 0xffffffff );
+	
+	__m128 fCX1 = _mm_castsi128_ps(CX1);
+	auto sign = _mm_movemask_ps(fCX1);
+
 
 
 	TestApp app;
