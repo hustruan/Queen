@@ -210,15 +210,17 @@ void Rasterizer::ProjectVertex( VS_Output* vertex )
 	VS_Output_ProjectAttrib(vertex, invW, mCurrVSOutputCount);
 }
 
-bool Rasterizer::BackFaceCulling( const VS_Output& v0, const VS_Output& v1, const VS_Output& v2 )
+bool Rasterizer::BackFaceCulling( const VS_Output& v0, const VS_Output& v1, const VS_Output& v2, bool* oriented)
 {
-	// Do backface-culling ----------------------------------------------------
-	if( mDevice.RasterizerState.PolygonCullMode == CM_None )
-		return false;
-
 	const float signedArea = (v1.Position.X()- v0.Position.X()) * (v2.Position.Y() - v0.Position.Y()) -
 		(v1.Position.Y() - v0.Position.Y()) * (v2.Position.X()- v0.Position.X());
 
+	if (oriented)	
+		*oriented = (signedArea >= 0.0f);
+
+	// Do backface-culling ----------------------------------------------------
+	if( mDevice.RasterizerState.PolygonCullMode == CM_None )
+		return false;
 
 	if (signedArea >= 0.0f)
 	{
@@ -323,104 +325,6 @@ uint32_t Rasterizer::ClipTriangle( VS_Output* clipped, const VS_Output& v0, cons
 	return resultNumVertices;
 }
 
-void Rasterizer::ClipTriangleTiled(  VS_Output* vertices, uint32_t threadIdx )
-{
-	size_t srcStage = 0;
-	size_t destStage = 1;
-
-	uint8_t clipVertices[2][5];
-	clipVertices[srcStage][0] = 0;
-	clipVertices[srcStage][1] = 1; 
-	clipVertices[srcStage][2] = 2;
-
-	uint8_t numClippedVertices[2];
-	numClippedVertices[srcStage] = 3;
-
-	uint8_t nunVert = numClippedVertices[srcStage];
-
-	for (size_t iPlane = 0; iPlane < mClipPlanes.size(); ++iPlane)
-	{
-		numClippedVertices[destStage] = 0;
-		
-		uint8_t idxPrev = clipVertices[srcStage][0];
-		float dpPrev = Dot(mClipPlanes[iPlane], vertices[idxPrev].Position);
-
-		// wrap over
-		clipVertices[srcStage][numClippedVertices[srcStage]] = clipVertices[srcStage][0];
-		for (uint8_t i = 1; i <= numClippedVertices[srcStage]; ++i)
-		{
-			uint8_t idxCurr = clipVertices[srcStage][i];
-			float dpCurr = Dot(mClipPlanes[iPlane], vertices[idxCurr].Position);
-
-			if (dpPrev >= 0.0f)	
-			{
-				clipVertices[destStage][numClippedVertices[destStage]++] = idxPrev;
-
-				if (dpCurr < 0.0f)
-				{
-					VS_Output_Interpolate(&vertices[nunVert], &vertices[idxPrev], &vertices[idxCurr], 
-						dpPrev / (dpPrev - dpCurr), mCurrVSOutputCount);
-
-					clipVertices[destStage][numClippedVertices[destStage]++] = nunVert++;	
-				}
-			}
-			else
-			{
-				if (dpCurr >= 0.0f)
-				{
-					VS_Output_Interpolate(&vertices[nunVert], &vertices[idxCurr], &vertices[idxPrev], 
-						dpCurr / (dpCurr - dpPrev), mCurrVSOutputCount);
-
-					clipVertices[destStage][numClippedVertices[destStage]++] = nunVert++;	
-				}
-			}
-
-			idxPrev = idxCurr;
-			dpPrev = dpCurr;
-		}
-
-		// cull out
-		if (numClippedVertices[destStage] < 3)
-		{
-			return;
-		}
-
-		//swap src and dest stage
-		srcStage = (srcStage +1) & 1;
-		destStage = (destStage +1) & 1;
-	}
-
-	const uint32_t resultNumVertices = numClippedVertices[srcStage];
-	ASSERT(resultNumVertices <= 5);
-
-	
-	// Project the first three vertices for culling
-	ProjectVertex( &vertices[clipVertices[srcStage][0]] );
-	ProjectVertex( &vertices[clipVertices[srcStage][1]] );
-	ProjectVertex( &vertices[clipVertices[srcStage][2]] );
-
-
-	// We do not have to check for culling for each sub-polygon of the triangle, as they
-	// are all in the same plane. If the first polygon is culled then all other polygons
-	// would be culled, too.
-	if( BackFaceCulling( vertices[clipVertices[srcStage][0]], vertices[clipVertices[srcStage][1]], vertices[clipVertices[srcStage][2]] ) )
-	{
-		// back face culled
-		return;
-	}
-
-	// Project the remaining vertices
-	for(uint32_t i = 3; i < resultNumVertices; ++i )
-		ProjectVertex( &vertices[clipVertices[srcStage][i]] );
-
-
-	// binning
-	for( uint32_t i = 2; i < resultNumVertices; i++ )
-	{
-		Bin(vertices[clipVertices[srcStage][0]], vertices[clipVertices[srcStage][i-1]], vertices[clipVertices[srcStage][i]], threadIdx);
-	}
-}
-
 void Rasterizer::Draw( PrimitiveType primitiveType, uint32_t primitiveCount )
 {
 	ASSERT(primitiveType == PT_Triangle_List); // Only support triangle list 
@@ -444,29 +348,26 @@ void Rasterizer::Draw( PrimitiveType primitiveType, uint32_t primitiveCount )
 	SetupGeometry(std::ref(mClippedVertices), std::ref(mClippedFaces), std::ref(workingPackage), primitiveCount);
 	theadPool.wait();
 
-
-	// binning, dispatch primitive to tiles
-	//std::vector<FrameBuffer::Tile>& tiles = mDevice.GetCurrentFrameBuffer()->mTiles;
-
+	//// rasterize faces
 	//workingPackage = 0;
-	//for (size_t i = 0; i < theadPool.size(); ++i)
+	//for (size_t i = 0; i < numWorkThreads - 1; ++i)
 	//{
-	//	theadPool.schedule(std::bind(&Rasterizer::Binning, this/*, std::ref(mClippedVertices), std::ref(mClippedFaces)*/, 
-	//		std::ref(workingPackage), primitiveCount));
+	//	theadPool.schedule(std::bind(&Rasterizer::RasterizeFaces, this, std::ref(mClippedFaces), std::ref(workingPackage), mClippedFaces.size()));
 	//}
-	
-	// rasterize tiles
-	for(size_t i = 0; i < mClippedFaces.size(); ++i)
+	//// schedule current thread
+	//RasterizeFaces(std::ref(mClippedFaces), std::ref(workingPackage), mClippedFaces.size());
+	//theadPool.wait();
+
+	// 不能简单的用多线程光栅化，因为要写backbuffer的Fragment，就会有同步问题，这里先简单的使用单线程
+	for (uint32_t i = 0; i < mClippedFaces.size(); ++i)
 	{
-		if(mClippedFaces[i].TriCount == 1)
+		for (uint32_t iFace = 0; iFace < mClippedFaces[i].TriCount; ++iFace)
 		{
-			const VS_Output& v0 = mClippedVertices[mClippedFaces[i].Indices[0]];
-			const VS_Output& v1 = mClippedVertices[mClippedFaces[i].Indices[1]];
-			const VS_Output& v2 = mClippedVertices[mClippedFaces[i].Indices[2]];
-
+			const VS_Output& v0 = mClippedVertices[mClippedFaces[i].Indices[iFace * 3 + 0]];
+			const VS_Output& v1 = mClippedVertices[mClippedFaces[i].Indices[iFace * 3 + 1]];
+			const VS_Output& v2 = mClippedVertices[mClippedFaces[i].Indices[iFace * 3 + 2]];
 			RasterizeTriangle(v0, v1, v2);
-		}
-
+		}		
 	}
 }
 
@@ -544,44 +445,30 @@ void Rasterizer::SetupGeometry( std::vector<VS_Output>& outVertices, std::vector
 	}
 }
 
-void Rasterizer::SetupGeometryTiled( std::vector<VS_Output>& outVertices, std::vector<RasterFace>& outFaces, uint32_t theadIdx, ThreadPackage package )
+void Rasterizer::RasterizeFaces( std::vector<RasterFaceInfo>& faces, std::atomic<uint32_t>& workingPackage, uint32_t faceCount )
 {
-	VS_Output clippedVertices[7]; // 7 enough ???
-
-	for (uint32_t iPrim = package.Start; iPrim < package.End; ++iPrim)
-	{
-		const uint32_t baseVertex = iPrim * 4;
-		const uint32_t baseFace = iPrim;
-
-		// fetch vertices
-		uint32_t iVertex;
-		for (iVertex = 0; iVertex < 3; ++ iVertex)
-		{		
-			const uint32_t index = mDevice.FetchIndex(iPrim * 3 + iVertex); 
-			const VS_Output& v = FetchVertex(index, theadIdx);
-			memcpy(&clippedVertices[iVertex], &v, sizeof(VS_Output));
-			//VS_Output_Copy(&clippedVertices[iVertex], &v, mCurrVSOutputCount);
-		}
-
-		ClipTriangleTiled(clippedVertices, theadIdx);		
-	}
-}
-
-void Rasterizer::Binning(std::atomic<uint32_t>& workPackage , uint32_t primitiveCount )
-{
-	uint32_t numPackages = (primitiveCount + BinningPackageSize - 1) / BinningPackageSize;
-	uint32_t localWorkingPackage  = numPackages ++;
+	uint32_t numPackages = (faceCount + SetupGeometryPackageSize - 1) / SetupGeometryPackageSize;
+	uint32_t localWorkingPackage  = workingPackage ++;
 
 	while (localWorkingPackage < numPackages)
 	{
-		const uint32_t start = localWorkingPackage * BinningPackageSize;
-		const uint32_t end = (std::min)(primitiveCount, start + BinningPackageSize);
-	
-		for (uint32_t iPrim = start; iPrim < end; ++iPrim)
+		const uint32_t start = localWorkingPackage * SetupGeometryPackageSize;
+		const uint32_t end = (std::min)(faceCount, start + SetupGeometryPackageSize);
+		
+		for (uint32_t i = start; i < end; ++i)
 		{
+			for (uint32_t iFace = 0; iFace < mClippedFaces[i].TriCount; ++iFace)
+			{
+				const VS_Output& v0 = mClippedVertices[mClippedFaces[i].Indices[iFace * 3 + 0]];
+				const VS_Output& v1 = mClippedVertices[mClippedFaces[i].Indices[iFace * 3 + 1]];
+				const VS_Output& v2 = mClippedVertices[mClippedFaces[i].Indices[iFace * 3 + 2]];
+				RasterizeTriangle(v0, v1, v2);
+			}		
 		}
-	}
 
+		localWorkingPackage = workingPackage++;
+
+	};
 }
 
 void Rasterizer::RasterizeTriangle( const VS_Output& vsOut0, const VS_Output& vsOut1, const VS_Output& vsOut2 )
@@ -801,15 +688,13 @@ void Rasterizer::PreDraw()
 	mCurrFrameBuffer = mDevice.GetCurrentFrameBuffer();
 
 	// reset each thread's vertex cache
-	for (auto iIter = mVertexCaches.begin(); iIter != mVertexCaches.end(); ++iIter)
+	for (auto& threadVertexCache : mVertexCaches)
 	{
-		for (auto jIter = iIter->begin(); jIter != iIter->end(); ++jIter)
+		for (auto& cacheElement : threadVertexCache)
 		{
-			jIter->Index = UINT_MAX;
+			cacheElement.Index = UINT_MAX;
 		}
 	}
-
-	
 }
 
 void Rasterizer::PostDraw()
@@ -817,7 +702,132 @@ void Rasterizer::PostDraw()
 
 }
 
-void Rasterizer::Bin( const VS_Output& V1, const VS_Output& V2, const VS_Output& V3, uint32_t threadIdx )
+void Rasterizer::ClipTriangleTiled(  VS_Output* vertices, uint32_t threadIdx )
+{
+	size_t srcStage = 0;
+	size_t destStage = 1;
+
+	uint8_t clipVertices[2][5];
+	clipVertices[srcStage][0] = 0;
+	clipVertices[srcStage][1] = 1; 
+	clipVertices[srcStage][2] = 2;
+
+	uint8_t numClippedVertices[2];
+	numClippedVertices[srcStage] = 3;
+
+	uint8_t nunVert = numClippedVertices[srcStage];
+
+	for (size_t iPlane = 0; iPlane < mClipPlanes.size(); ++iPlane)
+	{
+		numClippedVertices[destStage] = 0;
+
+		uint8_t idxPrev = clipVertices[srcStage][0];
+		float dpPrev = Dot(mClipPlanes[iPlane], vertices[idxPrev].Position);
+
+		// wrap over
+		clipVertices[srcStage][numClippedVertices[srcStage]] = clipVertices[srcStage][0];
+		for (uint8_t i = 1; i <= numClippedVertices[srcStage]; ++i)
+		{
+			uint8_t idxCurr = clipVertices[srcStage][i];
+			float dpCurr = Dot(mClipPlanes[iPlane], vertices[idxCurr].Position);
+
+			if (dpPrev >= 0.0f)	
+			{
+				clipVertices[destStage][numClippedVertices[destStage]++] = idxPrev;
+
+				if (dpCurr < 0.0f)
+				{
+					VS_Output_Interpolate(&vertices[nunVert], &vertices[idxPrev], &vertices[idxCurr], 
+						dpPrev / (dpPrev - dpCurr), mCurrVSOutputCount);
+
+					clipVertices[destStage][numClippedVertices[destStage]++] = nunVert++;	
+				}
+			}
+			else
+			{
+				if (dpCurr >= 0.0f)
+				{
+					VS_Output_Interpolate(&vertices[nunVert], &vertices[idxCurr], &vertices[idxPrev], 
+						dpCurr / (dpCurr - dpPrev), mCurrVSOutputCount);
+
+					clipVertices[destStage][numClippedVertices[destStage]++] = nunVert++;	
+				}
+			}
+
+			idxPrev = idxCurr;
+			dpPrev = dpCurr;
+		}
+
+		// cull out
+		if (numClippedVertices[destStage] < 3)
+		{
+			return;
+		}
+
+		//swap src and dest stage
+		srcStage = (srcStage +1) & 1;
+		destStage = (destStage +1) & 1;
+	}
+
+	const uint32_t resultNumVertices = numClippedVertices[srcStage];
+	ASSERT(resultNumVertices <= 5);
+
+
+	// Project the first three vertices for culling
+	ProjectVertex( &vertices[clipVertices[srcStage][0]] );
+	ProjectVertex( &vertices[clipVertices[srcStage][1]] );
+	ProjectVertex( &vertices[clipVertices[srcStage][2]] );
+
+
+	// We do not have to check for culling for each sub-polygon of the triangle, as they
+	// are all in the same plane. If the first polygon is culled then all other polygons
+	// would be culled, too.
+	bool ccw = false;
+	if( BackFaceCulling( vertices[clipVertices[srcStage][0]], vertices[clipVertices[srcStage][1]], vertices[clipVertices[srcStage][2]] ), &ccw )
+	{
+		// back face culled
+		return;
+	}
+
+	// Project the remaining vertices
+	for(uint32_t i = 3; i < resultNumVertices; ++i )
+		ProjectVertex( &vertices[clipVertices[srcStage][i]] );
+
+
+	// binning
+	for( uint32_t i = 2; i < resultNumVertices; i++ )
+	{
+		if (ccw)
+			Binning(vertices[clipVertices[srcStage][0]], vertices[clipVertices[srcStage][i]], vertices[clipVertices[srcStage][i-1]], threadIdx);
+		else
+			Binning(vertices[clipVertices[srcStage][0]], vertices[clipVertices[srcStage][i-1]], vertices[clipVertices[srcStage][i]], threadIdx);
+	}
+}
+
+void Rasterizer::SetupGeometryTiled( std::vector<VS_Output>& outVertices, std::vector<RasterFace>& outFaces, uint32_t theadIdx, ThreadPackage package )
+{
+	VS_Output clippedVertices[7]; // 7 enough ???
+
+	for (uint32_t iPrim = package.Start; iPrim < package.End; ++iPrim)
+	{
+		const uint32_t baseVertex = iPrim * 4;
+		const uint32_t baseFace = iPrim;
+
+		// fetch vertices
+		uint32_t iVertex;
+		for (iVertex = 0; iVertex < 3; ++ iVertex)
+		{		
+			const uint32_t index = mDevice.FetchIndex(iPrim * 3 + iVertex); 
+			const VS_Output& v = FetchVertex(index, theadIdx);
+			memcpy(&clippedVertices[iVertex], &v, sizeof(VS_Output));
+			//VS_Output_Copy(&clippedVertices[iVertex], &v, mCurrVSOutputCount);
+		}
+
+		ClipTriangleTiled(clippedVertices, theadIdx);		
+	}
+}
+
+void Rasterizer::Binning( const VS_Output& V1, const VS_Output& V2, const VS_Output& V3, uint32_t threadIdx )
 {
 	uint32_t baseIdx = mNumVerticesThreads[threadIdx];
 	uint32_t faceIdx = baseIdx / 3;
@@ -861,18 +871,18 @@ void Rasterizer::Bin( const VS_Output& V1, const VS_Output& V2, const VS_Output&
 	if(DY31 < 0 || (DY31 == 0 && DX31 > 0)) C3++;
 
 	// Compute bounding box
-	const int32_t minX = (Min(X1, Min(X2, X3)) + 0xF) >> 4;
-	const int32_t maxX = (Max(X1, Max(X2, X3)) + 0xF) >> 4;
-	const int32_t minY = (Min(Y1, Min(Y2, Y3)) + 0xF) >> 4;
-	const int32_t maxY = (Max(Y1, Max(Y2, Y3)) + 0xF) >> 4;
+	const int32_t minX = (Min(X1, Min(X2, X3))) >> 4;
+	const int32_t maxX = (Max(X1, Max(X2, X3))) >> 4;
+	const int32_t minY = (Min(Y1, Min(Y2, Y3))) >> 4;
+	const int32_t maxY = (Max(Y1, Max(Y2, Y3))) >> 4;
 
 	// Compute tile bounding box
 	const int32_t minTileX = Max(minX >> TileSizeShift, 0);
 	const int32_t minTileY = Max(minY >> TileSizeShift, 0);
-	const int32_t maxTileX = Min(maxX >> TileSizeShift, mNumTileX);
-	const int32_t maxTileY = Min(maxY >> TileSizeShift, mNumTileY);
+	const int32_t maxTileX = Min(maxX >> TileSizeShift, mNumTileX-1);
+	const int32_t maxTileY = Min(maxY >> TileSizeShift, mNumTileY-1);
 
-	if ((minTileX + 1 == maxTileX) && (minTileY + 1 == maxTileY))
+	if ((maxTileX == minTileX) && (maxTileY == minTileY))
 	{
 		// Small primitive
 		Tile& tile = mTiles[minTileY * mNumTileX + minTileX];
@@ -880,9 +890,9 @@ void Rasterizer::Bin( const VS_Output& V1, const VS_Output& V2, const VS_Output&
 	}
 	else
 	{
-		for (int32_t y = minTileY; y < maxTileY; ++y)
+		for (int32_t y = minTileY; y = maxTileY; ++y)
 		{
-			for (int32_t x = minTileX; x < maxTileX; ++x)
+			for (int32_t x = minTileX; x = maxTileX; ++x)
 			{
 				// Corners of block
 				int32_t x0 = x << (TileSizeShift + 4);
@@ -1089,10 +1099,9 @@ void Rasterizer::DrawPartialTile( uint32_t threadIdx, uint32_t faceIdx, uint32_t
 	const int32_t FDY31 = DY31 << 4;
 
 #ifdef USE_SIMD
-
-
-#else
-
+	const __m128i OffsetDY12 = _mm_set_epi32(FDY12 * 3, FDY12 * 2, FDY12 * 1, 0);
+	const __m128i OffsetDY23 = _mm_set_epi32(FDY12 * 3, FDY12 * 2, FDY12 * 1, 0);
+	const __m128i OffsetDY31 = _mm_set_epi32(FDY31 * 3, FDY31 * 2, FDY31 * 1, 0);
 #endif
 
 	// Half-edge constants
@@ -1106,10 +1115,130 @@ void Rasterizer::DrawPartialTile( uint32_t threadIdx, uint32_t faceIdx, uint32_t
 	if(DY31 < 0 || (DY31 == 0 && DX31 > 0)) C3++;
 
 	// Compute bounding box
-	const int32_t minX = (Min(X1, Min(X2, X3)) + 0xF) >> 4;
-	const int32_t maxX = (Max(X1, Max(X2, X3)) + 0xF) >> 4;
-	const int32_t minY = (Min(Y1, Min(Y2, Y3)) + 0xF) >> 4;
-	const int32_t maxY = (Max(Y1, Max(Y2, Y3)) + 0xF) >> 4;
+	int32_t minX = (Min(X1, Min(X2, X3)) + 0xF) >> 4;
+	int32_t maxX = (Max(X1, Max(X2, X3)) + 0xF) >> 4;
+	int32_t minY = (Min(Y1, Min(Y2, Y3)) + 0xF) >> 4;
+	int32_t maxY = (Max(Y1, Max(Y2, Y3)) + 0xF) >> 4;
+
+	// Block size, standard 8x8 (must be power of two)
+	const int BlockSize = 8;
+
+	// Start in corner of 8x8 block
+	minX &= ~(BlockSize - 1);
+	minY &= ~(BlockSize - 1);
+
+	for (int32_t y = minY; y < maxX; y += BlockSize)
+	{
+		for (int32_t x = minX; x < maxX; x += BlockSize)
+		{
+			// Corners of block
+			int32_t x0 = x << 4;
+			int32_t x1 = (x + BlockSize - 1) << 4;
+			int32_t y0 = y << 4;
+			int32_t y1 = (y + BlockSize - 1) << 4;
+
+			// Evaluate half-space functions
+			bool a00 = C1 + DX12 * y0 - DY12 * x0 > 0;
+			bool a10 = C1 + DX12 * y0 - DY12 * x1 > 0;
+			bool a01 = C1 + DX12 * y1 - DY12 * x0 > 0;
+			bool a11 = C1 + DX12 * y1 - DY12 * x1 > 0;
+			int32_t a = (a00 << 0) | (a10 << 1) | (a01 << 2) | (a11 << 3);
+
+			bool b00 = C2 + DX23 * y0 - DY23 * x0 > 0;
+			bool b10 = C2 + DX23 * y0 - DY23 * x1 > 0;
+			bool b01 = C2 + DX23 * y1 - DY23 * x0 > 0;
+			bool b11 = C2 + DX23 * y1 - DY23 * x1 > 0;
+			int32_t b = (b00 << 0) | (b10 << 1) | (b01 << 2) | (b11 << 3);
+
+			bool c00 = C3 + DX31 * y0 - DY31 * x0 > 0;
+			bool c10 = C3 + DX31 * y0 - DY31 * x1 > 0;
+			bool c01 = C3 + DX31 * y1 - DY31 * x0 > 0;
+			bool c11 = C3 + DX31 * y1 - DY31 * x1 > 0;
+			int32_t c = (c00 << 0) | (c10 << 1) | (c01 << 2) | (c11 << 3);
+
+			// Skip block when outside an edge
+			if(a == 0x0 || b == 0x0 || c == 0x0) continue;
+			
+			// Accept whole block when totally covered
+			if( a == 0xF && b == 0xF && c == 0xF )
+			{
+				// Generate a fragment
+				/*	MSR_Fragment *frag = MSR_FragmentBufferGetNext(frag_buffer);
+				frag->state = MSR_FRAGMENT_STATE_BLOCK;
+				frag->thread_id = thread_id;
+				frag->face_idx = face_idx;
+				frag->x = x;
+				frag->y = y;*/
+			}
+			else
+			{
+				int32_t CY1 = C1 + DX12 * y0 - DY12 * x0;
+				int32_t CY2 = C2 + DX23 * y0 - DY23 * x0;
+				int32_t CY3 = C3 + DX31 * y0 - DY31 * x0;
+
+				for(int32_t iy = y; iy < y + BlockSize; iy++)
+				{
+#ifdef USE_SIMD
+					// 前面4个像素
+					__m128i CX1 = _mm_sub_epi32(_mm_set1_epi32(CY1), OffsetDY12);
+					__m128i CX2 = _mm_sub_epi32(_mm_set1_epi32(CY2), OffsetDY12);
+					__m128i CX3 = _mm_sub_epi32(_mm_set1_epi32(CY3), OffsetDY12);
+
+					__m128i CX1Mask = _mm_cmpgt_epi32(CX1, _mm_setzero_si128());
+					__m128i CX2Mask = _mm_cmpgt_epi32(CX2, _mm_setzero_si128());
+					__m128i CX3Mask = _mm_cmpgt_epi32(CX3, _mm_setzero_si128());
+
+					__m128i CXMaskComp = _mm_and_si128( CX1Mask, _mm_and_si128( CX2Mask, CX3Mask ) );
+
+					// Generate a 4-bit mask from the composite 128-bit mask 
+					int32_t mask = _mm_movemask_ps(*(__m128*)&_mm_and_si128(cx_mask_comp, _mm_set1_epi32(0xF0000000)));
+					
+					if (mask)
+					{
+					}
+
+
+					// 后面4个像素
+					CX1 = _mm_sub_epi32(CX1, OffsetDY12);
+					CX2 = _mm_sub_epi32(CX2, OffsetDY12);
+					CX3 = _mm_sub_epi32(CX3, OffsetDY12);
+
+					CX1Mask = _mm_cmpgt_epi32(CX1, _mm_setzero_si128());
+					CX2Mask = _mm_cmpgt_epi32(CX2, _mm_setzero_si128());
+					CX3Mask = _mm_cmpgt_epi32(CX3, _mm_setzero_si128());
+
+					CXMaskComp = _mm_and_si128( CX1Mask, _mm_and_si128( CX2Mask, CX3Mask ) );
+
+					mask = _mm_movemask_ps(*(__m128*)&_mm_and_si128(cx_mask_comp, _mm_set1_epi32(0xF0000000)));
+					if (mask)
+					{
+					}
+#else
+					int32_t CX1 = CY1;
+					int32_t CX2 = CY2;
+					int32_t CX3 = CY3;
+
+					for(int32_t ix = x; ix < x + BlockSize; ix++)
+					{
+						if(CX1 > 0 && CX2 > 0 && CX3 > 0)
+						{
+
+						}
+
+						CX1 -= FDY12;
+						CX2 -= FDY23;
+						CX3 -= FDY31;
+					}
+#endif 
+
+
+					CY1 += FDX12;
+					CY2 += FDX23;
+					CY3 += FDX31;
+				}
+			}
+		}
+	}
 }
 
 

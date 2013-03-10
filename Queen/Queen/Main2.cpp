@@ -169,7 +169,7 @@ public:
 			dwTimeStart = dwTimeCur;
 		t = ( dwTimeCur - dwTimeStart ) / 1000.0f;
 
-		mVertexShader->World = Center /** CreateRotationY(t)*/;
+		mVertexShader->World = Center * CreateRotationY(t);
 
 		mRenderDevice->GetCurrentFrameBuffer()->Clear(CF_Color | CF_Depth,
 			ColorRGBA(0.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
@@ -194,11 +194,99 @@ private:
 	nv::Model mModel;
 };
 
+inline int32_t iround(float x)
+{
+	return _mm_cvt_ss2si( _mm_load_ps( &x ) ); 
+}
+
+// fixed point mathematics constants
+#define FIXP16_SHIFT     4
+#define FIXP16_MAG       65536
+#define FIXP16_DP_MASK   0x0000ffff
+#define FIXP16_WP_MASK   0xffff0000
+#define FIXP16_ROUND_UP  0x00008000
+
+// convert integer and float to fixed point 16.16
+#define INT_TO_FIXP16(i) ((i) <<  FIXP16_SHIFT)
+#define FLOAT_TO_FIXP16(f) (int((float)(f) * (float)FIXP16_MAG+0.5))
+
+// convert fixed point to float
+#define FIXP16_TO_FLOAT(fp) ( ((float)fp)/FIXP16_MAG)
+
+// extract the whole part and decimal part from a fixed point 16.16
+#define FIXP16_WP(fp) ((fp) >> FIXP16_SHIFT)
+#define FIXP16_DP(fp) ((fp) && FIXP16_DP_MASK)
+
+
 int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 				   HINSTANCE	hPrevInstance,		// Previous Instance
 				   LPSTR		lpCmdLine,			// Command Line Parameters
 				   int			nCmdShow)			// Window Show State
 {
+	float xMin = 10.4f;
+	float xMax = 65.6f;
+	float yMin = 5.6f;
+	float yMax = 33.3f;
+
+	float VX1 = 16.4f;
+	float VY1 = 6.9f;
+	
+	float VX2 = 7.531f;
+	float VY2 = 12.4f;
+	
+	float VX3 = 36.3f;
+	float VY3 = 26.4f;
+
+	float DX12f = VX1 - VX2;
+
+	// 28.4 fixed-point coordinates
+	const int32_t X1 = iround(16.0f * VX1);
+	const int32_t X2 = iround(16.0f * VX2);
+	const int32_t X3 = iround(16.0f * VX3);
+
+	const int32_t Y1 = iround(16.0f * VY1);
+	const int32_t Y2 = iround(16.0f * VY2);
+	const int32_t Y3 = iround(16.0f * VY3);
+
+	// Deltas
+	const int32_t DX12 = X1 - X2;
+	const int32_t DX23 = X2 - X3;
+	const int32_t DX31 = X3 - X1;
+
+	const int32_t DY12 = Y1 - Y2;
+	const int32_t DY23 = Y2 - Y3;
+	const int32_t DY31 = Y3 - Y1;
+
+	// Fixed-point deltas
+	const int32_t FDX12 = DX12 << 4;
+	const int32_t FDX23 = DX23 << 4;
+	const int32_t FDX31 = DX31 << 4;
+	const int32_t FDY12 = DY12 << 4;
+	const int32_t FDY23 = DY23 << 4;
+	const int32_t FDY31 = DY31 << 4;
+
+	int32_t x12 = FIXP16_WP(DX12);
+	int32_t xx12 = FDX12 >> 8;
+	int32_t xf12 = FIXP16_WP(iround(16.0f * DX12f));
+
+
+	//int32_t DX21 = X2 - X1;
+	//int32_t Mask = (DX12 & DY31) & DX31;
+	//int32_t MaskS = Mask & 0xF0000000;
+	
+	static const union
+	{
+		int maski;
+		float maskf;
+	} MASK = { 0x80000000 };
+
+	float ff = MASK.maskf;
+	int ii = 1;
+
+	const int32_t minX = ((std::min)(X1, (std::min)(X2, X3))) >> 4;
+
+
+
 	TestApp app;
 
 	app.Create();

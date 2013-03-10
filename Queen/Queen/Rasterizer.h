@@ -79,19 +79,19 @@ private:
 	void RasterizeTriangle(const VS_Output& vsOut0, const VS_Output& vsOut1, const VS_Output& vsOut2);
 	
 	void RasterizeScanline(int32_t xStart, int32_t xEnd, int32_t Y, VS_Output* baseVertex, const VS_Output* ddx);
-
-	bool BackFaceCulling(const VS_Output& v0, const VS_Output& v1, const VS_Output& v2);
+ 
+	bool BackFaceCulling(const VS_Output& v0, const VS_Output& v1, const VS_Output& v2, bool* oriented = nullptr);
 
 	void SetupGeometry(std::vector<VS_Output>& outVertices, std::vector<RasterFaceInfo>& outFaces, 
 		std::atomic<uint32_t>& workPackage, uint32_t primitiveCount);
-
-	void Binning(std::atomic<uint32_t>& workPackage, uint32_t primitiveCount);
+	
+	void RasterizeFaces(std::vector<RasterFaceInfo>& faces, std::atomic<uint32_t>& workPackage, uint32_t faceCount);
 
 	void ClipTriangleTiled(VS_Output* vertices, uint32_t threadIdx);
 
 	void SetupGeometryTiled(std::vector<VS_Output>& outVertices, std::vector<RasterFace>& outFaces, uint32_t theadIdx, ThreadPackage package);
 
-	void Bin(const VS_Output& V0, const VS_Output& V1, const VS_Output& V2, uint32_t threadIdx);
+	void Binning(const VS_Output& V0, const VS_Output& V1, const VS_Output& V2, uint32_t threadIdx);
 
 	void RasterizeTiles(std::vector<uint32_t>& tilesQueue, std::atomic<uint32_t>& workingPackage, uint32_t numTiles);
 
