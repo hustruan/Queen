@@ -110,7 +110,7 @@ void VS_Output_Interpolate(VS_Output* out, const VS_Output* a, const VS_Output* 
 
 //--------------------------------------------------------------------------------------------
 Rasterizer::Rasterizer( RenderDevice& device )
-	: RenderStage(device)
+	: RenderStage(device), mCurrFrameBuffer(nullptr), mNumTileX(0), mNumTileY(0), mCurrVSOutputCount(0)
 {
 	// Near and Far plane
 	mClipPlanes[0] = float4(0, 0, 1, 0);
@@ -123,6 +123,7 @@ Rasterizer::Rasterizer( RenderDevice& device )
 	mFacesThreads.resize(nunWorkThreads);
 	mVerticesThreads.resize(nunWorkThreads);
 	mNumVerticesThreads.resize(nunWorkThreads);
+	mThreadPackage.resize(nunWorkThreads);
 }
 
 Rasterizer::~Rasterizer(void)
@@ -136,7 +137,7 @@ void Rasterizer::OnBindFrameBuffer( const shared_ptr<FrameBuffer>& fb )
 		uint32_t width = fb->mWidth;
 		uint32_t height = fb->mHeight;
 
-		if (width != mCurrFrameBuffer->mWidth && height != mCurrFrameBuffer->mHeight)
+		if ( !mCurrFrameBuffer || (width != mCurrFrameBuffer->mWidth && height != mCurrFrameBuffer->mHeight) )
 		{
 			// init render target tiles
 			uint32_t extraPixelsX = width % TileSize;
@@ -147,6 +148,8 @@ void Rasterizer::OnBindFrameBuffer( const shared_ptr<FrameBuffer>& fb )
 			const uint32_t NumWorkThreads = GetNumWorkThreads();
 
 			mTiles.resize(numTileX*numTileY);
+			mTilesQueue.resize(numTileX * numTileY);
+
 			for (uint32_t y = 0; y < numTileY; ++y)
 			{
 				bool extraY = ((y == numTileY-1) && extraPixelsY);
@@ -214,31 +217,31 @@ bool Rasterizer::BackFaceCulling( const VS_Output& v0, const VS_Output& v1, cons
 {
 	const float signedArea = (v1.Position.X()- v0.Position.X()) * (v2.Position.Y() - v0.Position.Y()) -
 		(v1.Position.Y() - v0.Position.Y()) * (v2.Position.X()- v0.Position.X());
+	
+	bool ccw = (signedArea <= 0.0f);
 
-	if (oriented)	
-		*oriented = (signedArea >= 0.0f);
+	if (oriented)	*oriented = ccw;
 
 	// Do backface-culling ----------------------------------------------------
 	if( mDevice.RasterizerState.PolygonCullMode == CM_None )
 		return false;
 
-	if (signedArea >= 0.0f)
+	if (ccw)
 	{
 		// polygon is CCW
 		if (mDevice.RasterizerState.FrontCounterClockwise)
-			return (mDevice.RasterizerState.PolygonCullMode == CM_Back);
-		else
 			return (mDevice.RasterizerState.PolygonCullMode == CM_Front);
+		else
+			return (mDevice.RasterizerState.PolygonCullMode == CM_Back);
 	}
 	else
 	{
 		// polygon is CW
 		if (mDevice.RasterizerState.FrontCounterClockwise)
-			return (mDevice.RasterizerState.PolygonCullMode == CM_Front);
-		else
 			return (mDevice.RasterizerState.PolygonCullMode == CM_Back);
+		else
+			return (mDevice.RasterizerState.PolygonCullMode == CM_Front);
 	}
-	
 
 	return false;
 }
@@ -338,6 +341,8 @@ void Rasterizer::Draw( PrimitiveType primitiveType, uint32_t primitiveCount )
 
 	std::atomic<uint32_t> workingPackage(0);
 
+	mProfiler.StartTimer("Vertex Process");
+	
 	//input assembly, vertex shading, culling/clipping
 	for (size_t i = 0; i < numWorkThreads - 1; ++i)
 	{
@@ -347,6 +352,9 @@ void Rasterizer::Draw( PrimitiveType primitiveType, uint32_t primitiveCount )
 	// schedule current thread
 	SetupGeometry(std::ref(mClippedVertices), std::ref(mClippedFaces), std::ref(workingPackage), primitiveCount);
 	theadPool.wait();
+	
+	mProfiler.EndTimer("Vertex Process");
+	auto elapsedTime = mProfiler.GetElapsedTime("Vertex Process");
 
 	//// rasterize faces
 	//workingPackage = 0;
@@ -357,6 +365,8 @@ void Rasterizer::Draw( PrimitiveType primitiveType, uint32_t primitiveCount )
 	//// schedule current thread
 	//RasterizeFaces(std::ref(mClippedFaces), std::ref(workingPackage), mClippedFaces.size());
 	//theadPool.wait();
+
+	mProfiler.StartTimer("Rasterizer Process");
 
 	// 不能简单的用多线程光栅化，因为要写backbuffer的Fragment，就会有同步问题，这里先简单的使用单线程
 	for (uint32_t i = 0; i < mClippedFaces.size(); ++i)
@@ -369,6 +379,9 @@ void Rasterizer::Draw( PrimitiveType primitiveType, uint32_t primitiveCount )
 			RasterizeTriangle(v0, v1, v2);
 		}		
 	}
+
+	mProfiler.EndTimer("Rasterizer Process");
+	auto elapsedTimeR = mProfiler.GetElapsedTime("Rasterizer Process");
 }
 
 void Rasterizer::SetupGeometry( std::vector<VS_Output>& outVertices, std::vector<RasterFaceInfo>& outFaces, std::atomic<uint32_t>& workingPackage, uint32_t primitiveCount )
@@ -678,6 +691,8 @@ void Rasterizer::RasterizeScanline(int32_t xStart, int32_t xEnd, int32_t Y, VS_O
 		mDevice.mCurrentFrameBuffer->WritePixel(X, Y, &PSOutput,
 			mDevice.DepthStencilState.DepthWriteMask ? &srcDepth : NULL);
 	}
+
+#undef DEPTH_TEST
 }
 
 void Rasterizer::PreDraw()
@@ -686,6 +701,11 @@ void Rasterizer::PreDraw()
 	mCurrVSOutputCount = mDevice.mVertexShaderStage->VSOutputCount;
 
 	mCurrFrameBuffer = mDevice.GetCurrentFrameBuffer();
+
+	mTilesQueueSize = 0;
+
+	for (auto& threadVertexSize : mNumVerticesThreads)
+		threadVertexSize = 0;
 
 	// reset each thread's vertex cache
 	for (auto& threadVertexCache : mVertexCaches)
@@ -716,6 +736,10 @@ void Rasterizer::ClipTriangleTiled(  VS_Output* vertices, uint32_t threadIdx )
 	numClippedVertices[srcStage] = 3;
 
 	uint8_t nunVert = numClippedVertices[srcStage];
+
+	const VS_Output& V1 = vertices[0];
+	const VS_Output& V2 = vertices[1];
+	const VS_Output& V3 = vertices[2];
 
 	for (size_t iPlane = 0; iPlane < mClipPlanes.size(); ++iPlane)
 	{
@@ -783,7 +807,7 @@ void Rasterizer::ClipTriangleTiled(  VS_Output* vertices, uint32_t threadIdx )
 	// are all in the same plane. If the first polygon is culled then all other polygons
 	// would be culled, too.
 	bool ccw = false;
-	if( BackFaceCulling( vertices[clipVertices[srcStage][0]], vertices[clipVertices[srcStage][1]], vertices[clipVertices[srcStage][2]] ), &ccw )
+	if( BackFaceCulling( vertices[clipVertices[srcStage][0]], vertices[clipVertices[srcStage][1]], vertices[clipVertices[srcStage][2]], &ccw))
 	{
 		// back face culled
 		return;
@@ -797,9 +821,18 @@ void Rasterizer::ClipTriangleTiled(  VS_Output* vertices, uint32_t threadIdx )
 	// binning
 	for( uint32_t i = 2; i < resultNumVertices; i++ )
 	{
-		if (ccw)
+		//auto i1 = clipVertices[srcStage][0];
+		//auto i2 = clipVertices[srcStage][i-1];
+		//auto i3 = clipVertices[srcStage][i];
+
+		//const VS_Output& V1 = vertices[clipVertices[srcStage][i1]];
+		//const VS_Output& V2 = vertices[clipVertices[srcStage][i2]];
+		//const VS_Output& V3 = vertices[clipVertices[srcStage][i3]];
+
+		if (!ccw)
 			Binning(vertices[clipVertices[srcStage][0]], vertices[clipVertices[srcStage][i]], vertices[clipVertices[srcStage][i-1]], threadIdx);
 		else
+
 			Binning(vertices[clipVertices[srcStage][0]], vertices[clipVertices[srcStage][i-1]], vertices[clipVertices[srcStage][i]], threadIdx);
 	}
 }
@@ -814,8 +847,7 @@ void Rasterizer::SetupGeometryTiled( std::vector<VS_Output>& outVertices, std::v
 		const uint32_t baseFace = iPrim;
 
 		// fetch vertices
-		uint32_t iVertex;
-		for (iVertex = 0; iVertex < 3; ++ iVertex)
+		for (uint32_t iVertex = 0; iVertex < 3; ++ iVertex)
 		{		
 			const uint32_t index = mDevice.FetchIndex(iPrim * 3 + iVertex); 
 			const VS_Output& v = FetchVertex(index, theadIdx);
@@ -870,17 +902,23 @@ void Rasterizer::Binning( const VS_Output& V1, const VS_Output& V2, const VS_Out
 	if(DY23 < 0 || (DY23 == 0 && DX23 > 0)) C2++;
 	if(DY31 < 0 || (DY31 == 0 && DX31 > 0)) C3++;
 
-	// Compute bounding box
-	const int32_t minX = (Min(X1, Min(X2, X3))) >> 4;
-	const int32_t maxX = (Max(X1, Max(X2, X3))) >> 4;
-	const int32_t minY = (Min(Y1, Min(Y2, Y3))) >> 4;
-	const int32_t maxY = (Max(Y1, Max(Y2, Y3))) >> 4;
+	// keep half-space constant, so when in block text, don't need calculate it again
+	face.C1 = C1; face.C2 = C2; face.C3 = C3;
+
+	face.X[0] = X1; face.X[1] = X2; face.X[2] = X3;
+	face.Y[0] = Y1; face.Y[1] = Y2; face.Y[2] = Y3;
+
+	// Compute bounding box, fixed point
+	face.MinX = (Min(X1, Min(X2, X3)));
+	face.MaxX = (Max(X1, Max(X2, X3)));
+	face.MinY = (Min(Y1, Min(Y2, Y3)));
+	face.MaxY = (Max(Y1, Max(Y2, Y3)));
 
 	// Compute tile bounding box
-	const int32_t minTileX = Max(minX >> TileSizeShift, 0);
-	const int32_t minTileY = Max(minY >> TileSizeShift, 0);
-	const int32_t maxTileX = Min(maxX >> TileSizeShift, mNumTileX-1);
-	const int32_t maxTileY = Min(maxY >> TileSizeShift, mNumTileY-1);
+	const int32_t minTileX = Max(face.MinX >> ( 4 + TileSizeShift), 0);
+	const int32_t minTileY = Max(face.MinY >> ( 4 + TileSizeShift), 0);
+	const int32_t maxTileX = Min(face.MaxX >> ( 4 + TileSizeShift), mNumTileX-1);
+	const int32_t maxTileY = Min(face.MaxY >> ( 4 + TileSizeShift), mNumTileY-1);
 
 	if ((maxTileX == minTileX) && (maxTileY == minTileY))
 	{
@@ -890,15 +928,35 @@ void Rasterizer::Binning( const VS_Output& V1, const VS_Output& V2, const VS_Out
 	}
 	else
 	{
-		for (int32_t y = minTileY; y = maxTileY; ++y)
+		for (int32_t y = minTileY; y <= maxTileY; ++y)
 		{
-			for (int32_t x = minTileX; x = maxTileX; ++x)
+			for (int32_t x = minTileX; x <= maxTileX; ++x)
 			{
+				int32_t xx0 = x << (TileSizeShift );
+				int32_t xx1 = ((x + 1) << (TileSizeShift)) - 1;
+				int32_t yx0 = y << (TileSizeShift);
+				int32_t yx1 = ((y + 1) << (TileSizeShift)) - 1;
+
 				// Corners of block
-				int32_t x0 = x << (TileSizeShift + 4);
+				/*int32_t x0 = x << (TileSizeShift + 4);
 				int32_t x1 = ((x + 1) << (TileSizeShift + 4)) - 1;
 				int32_t y0 = y << (TileSizeShift + 4);
-				int32_t y1 = ((y + 1) << (TileSizeShift + 4)) - 1;
+				int32_t y1 = ((y + 1) << (TileSizeShift + 4)) - 1;*/
+
+				/*int x0 = x << (TileSizeShift + 4);
+				int x1 = ( (x + 1) << (TileSizeShift + 4) ) - 1;
+				int y0 = y << (TileSizeShift + 4);
+				int y1 = ( (y + 1) << (TileSizeShift + 4) ) - 1;*/
+
+				//int32_t x0 = (x << (TileSizeShift )) << 4;
+				//int32_t x1 = ((x + 1) << TileSizeShift - 1) << 4;
+				//int32_t y0 = (y << (TileSizeShift)) << 4;
+				//int32_t y1 = ((y + 1) << TileSizeShift - 1) << 4;
+
+				int32_t x0 = xx0 << 4;
+				int32_t x1 = xx1 << 4;
+				int32_t y0 = yx0 << 4;
+				int32_t y1 = yx1 << 4;
 
 				// Evaluate half-space functions
 				bool a00 = C1 + DX12 * y0 - DY12 * x0 > 0;
@@ -920,26 +978,42 @@ void Rasterizer::Binning( const VS_Output& V1, const VS_Output& V2, const VS_Out
 				int32_t c = (c00 << 0) | (c10 << 1) | (c01 << 2) | (c11 << 3);
 
 				// Skip block when outside an edge
-				if(a == 0x0 || b == 0x0 || c == 0x0) continue;
+				if(a == 0x0 || b == 0x0 || c == 0x0) 
+					continue;
 
 				// Test if we can trivially accept the entire tile
 				uint32_t accept = ( a != 0xF || b != 0xF || c != 0xF ) ? 0 : 1;
-
-				Tile& tile = mTiles[minTileY * mNumTileX + minTileX];
+	
+				Tile& tile = mTiles[y * mNumTileX + x];
 				tile.TriQueue[threadIdx][tile.TriQueueSize[threadIdx]++] = (faceIdx << 1) | accept;  // least is a flag for partial or accept bit
 			}
 		}
 	}
 
-	VS_Output_Copy(&mVerticesThreads[threadIdx][baseIdx],   &V1, mCurrVSOutputCount);
-	VS_Output_Copy(&mVerticesThreads[threadIdx][baseIdx+1], &V2, mCurrVSOutputCount);
-	VS_Output_Copy(&mVerticesThreads[threadIdx][baseIdx+2], &V3, mCurrVSOutputCount);
+	VS_Output* vsOut0 = &mVerticesThreads[threadIdx][baseIdx];
+	VS_Output* vsOut1 = &mVerticesThreads[threadIdx][baseIdx+1];
+	VS_Output* vsOut2 = &mVerticesThreads[threadIdx][baseIdx+2];
 
-	face.V[0] = &mVerticesThreads[threadIdx][baseIdx];
-	face.V[1] = &mVerticesThreads[threadIdx][baseIdx+1];
-	face.V[2] = &mVerticesThreads[threadIdx][baseIdx+2];
+	VS_Output_Copy(vsOut0, &V1, mCurrVSOutputCount);
+	VS_Output_Copy(vsOut1, &V2, mCurrVSOutputCount);
+	VS_Output_Copy(vsOut2, &V3, mCurrVSOutputCount);
 
+	face.V[0] = vsOut0; face.V[1] = vsOut1; face.V[2] = vsOut2;
 	mNumVerticesThreads[threadIdx] += 3;
+
+	/** 
+	 * Compute difference of attributes and store in face. When rasterize tiles,
+	 * we can directly use it. Calculate once, used several times in different tiles.
+	 */
+	VS_Output vsOutput01, vsOutput02;
+	VS_Output_Sub(&vsOutput01, vsOut1, vsOut0, mCurrVSOutputCount);
+	VS_Output_Sub(&vsOutput02, vsOut2, vsOut0, mCurrVSOutputCount);
+
+	const float area = vsOutput01.Position.X() * vsOutput02.Position.Y() - vsOutput02.Position.X() * vsOutput01.Position.Y();
+	const float invArea = 1.0f / area;
+
+	VS_Output ddxAttrib, ddyAttrib;
+	VS_Output_Difference(&face.ddxVarying, &face.ddyVarying, &vsOutput01, &vsOutput02, invArea, mCurrVSOutputCount);	
 }
 
 void Rasterizer::DrawTiled( PrimitiveType primitiveType, uint32_t primitiveCount )
@@ -963,6 +1037,13 @@ void Rasterizer::DrawTiled( PrimitiveType primitiveType, uint32_t primitiveCount
 		idx++;
 	}
 
+	if (idx == 0)
+	{
+		mThreadPackage[idx].Start = 0;
+		mThreadPackage[idx].End = primitivesPerThread;
+		idx++;
+	}
+
 	while (idx < numWorkThreads)
 	{
 		// set up remain thread package
@@ -981,15 +1062,24 @@ void Rasterizer::DrawTiled( PrimitiveType primitiveType, uint32_t primitiveCount
 		mFacesThreads[idx].resize(primCount * 3);
 	}
 
-	for (size_t i = 0; i < numWorkThreads - 1; ++i)
+	// profiler
+	mProfiler.StartTimer("Vertex Process + Binning");
+	
+	for (idx = 0; idx < numWorkThreads - 1; ++idx)
 	{
-		theadPool.schedule(std::bind(&Rasterizer::SetupGeometryTiled, this, std::ref(mVerticesThreads[idx]), std::ref(mFacesThreads[idx]), idx, mThreadPackage[idx]));
+		//SetupGeometryTiled(mVerticesThreads[idx], mFacesThreads[idx], idx, mThreadPackage[idx]);
+		theadPool.schedule(std::bind(&Rasterizer::SetupGeometryTiled, this, std::ref(mVerticesThreads[idx]), 
+			std::ref(mFacesThreads[idx]), idx, mThreadPackage[idx]));
 	}
-	SetupGeometryTiled(mVerticesThreads[idx], mFacesThreads[idx], numWorkThreads - 1, mThreadPackage[idx]);
+	SetupGeometryTiled(mVerticesThreads[idx], mFacesThreads[idx], idx, mThreadPackage[idx]);
 	theadPool.wait();  // Synchronization
+	
+	mProfiler.EndTimer("Vertex Process + Binning");
+	auto elapsedTimeVB = mProfiler.GetElapsedTime("Vertex Process + Binning");
 
+
+	mProfiler.StartTimer("Build Tiles Job Queue");
 	// build non-empty tile job queue
-	std::vector<uint32_t> tilesQueue;
 	for (int32_t y = 0; y < mNumTileY; ++y)
 	{
 		for (int32_t x = 0; x < mNumTileX; ++x)
@@ -999,23 +1089,28 @@ void Rasterizer::DrawTiled( PrimitiveType primitiveType, uint32_t primitiveCount
 			{
 				if (mTiles[tileIdx].TriQueueSize[i] > 0)
 				{
-					tilesQueue.push_back(tileIdx);
+					mTilesQueue[mTilesQueueSize++] = tileIdx;
 					break;
 				}
 			}	
 		}
 	}
+	mProfiler.EndTimer("Build Tiles Job Queue");
+	auto elapsedTimeBT = mProfiler.GetElapsedTime("Build Tiles Job Queue");
+
+	mProfiler.StartTimer("RasterizeTiles");
 
 	// Rasterize each tile in tile job queue
 	std::atomic<uint32_t> workingPackage(0);
 	for (size_t i = 0; i < numWorkThreads - 1; ++i)
 	{
-		theadPool.schedule(std::bind(&Rasterizer::RasterizeTiles, this, std::ref(tilesQueue), std::ref(workingPackage), tilesQueue.size()));
+		theadPool.schedule(std::bind(&Rasterizer::RasterizeTiles, this, std::ref(mTilesQueue), std::ref(workingPackage), mTilesQueueSize));
 	}
-	RasterizeTiles(tilesQueue, workingPackage, tilesQueue.size());
+	RasterizeTiles(mTilesQueue, workingPackage, mTilesQueueSize);
 	theadPool.wait();  // Synchronization
 
-
+	mProfiler.EndTimer("RasterizeTiles");
+	auto elapsedTimeRT = mProfiler.GetElapsedTime("RasterizeTiles");
 }
 
 void Rasterizer::RasterizeTiles(std::vector<uint32_t>& tilesQueue, std::atomic<uint32_t>& workingPackage, uint32_t numTiles)
@@ -1032,21 +1127,30 @@ void Rasterizer::RasterizeTiles(std::vector<uint32_t>& tilesQueue, std::atomic<u
 		for (uint32_t iTile = start; iTile < end; ++iTile)
 		{
 			Tile& tile = mTiles[tilesQueue[iTile]];
+
+			int32_t tileX = tile.X << 4; // fixed point
+			int32_t tileY = tile.Y << 4; // fixed point
+			int32_t tileWidth = tile.Width << 4; // fixed point
+			int32_t tileHeight = tile.Height << 4; // fixed point
+
 			for (uint32_t iThread = 0; iThread < numWorkThreads; ++iThread)
 			{
-				for (uint32_t iTri = 0; iTri < tile.TriQueueSize[iThread]; ++iThread)
+				auto tris = tile.TriQueueSize[iThread];
+				for (uint32_t iTri = 0; iTri < tile.TriQueueSize[iThread]; ++iTri)
 				{
 					uint32_t faceIdx = tile.TriQueue[iThread][iTri];
 					uint32_t accept = faceIdx & 0x1;
 					faceIdx = faceIdx >> 1; 
 
+					RasterFace& face = mFacesThreads[iThread][faceIdx];
+					
 					if (accept)
 					{
-						DrawWholeTile(iThread, faceIdx, iTile);
+						DrawPixels(face, tile.X, tile.Y, tile.X + tile.Width, tile.Y + tile.Height);
 					}
 					else
 					{
-						DrawPartialTile(iThread, faceIdx, iTile);
+						DrawPartialTile(face, tileX, tileY, tileWidth, tileHeight);
 					}
 				}
 
@@ -1059,27 +1163,20 @@ void Rasterizer::RasterizeTiles(std::vector<uint32_t>& tilesQueue, std::atomic<u
 	}
 }
 
-void Rasterizer::DrawWholeTile( uint32_t threadIdx, uint32_t faceIdx, uint32_t tileIdx )
+void Rasterizer::DrawPartialTile(const RasterFace& face, int32_t tileX, int32_t tileY, int32_t tileWidth, int32_t tileHeight)
 {
-
-}
-
-void Rasterizer::DrawPartialTile( uint32_t threadIdx, uint32_t faceIdx, uint32_t tileIdx )
-{
-	RasterFace& face = mFacesThreads[threadIdx][faceIdx];
-
-	VS_Output* V1 = face.V[0];
-	VS_Output* V2 = face.V[0];
-	VS_Output* V3 = face.V[0];
+	const VS_Output* V1 = face.V[0];
+	const VS_Output* V2 = face.V[1];
+	const VS_Output* V3 = face.V[2];
 
 	// 28.4 fixed-point coordinates
-	const int32_t X1 = iround(16.0f * V1->Position.X());
-	const int32_t X2 = iround(16.0f * V2->Position.X());
-	const int32_t X3 = iround(16.0f * V3->Position.X());
+	const int32_t X1 = face.X[0];
+	const int32_t X2 = face.X[1];
+	const int32_t X3 = face.X[2];
 
-	const int32_t Y1 = iround(16.0f * V1->Position.Y());
-	const int32_t Y2 = iround(16.0f * V2->Position.Y());
-	const int32_t Y3 = iround(16.0f * V3->Position.Y());
+	const int32_t Y1 = face.Y[0];
+	const int32_t Y2 = face.Y[1];
+	const int32_t Y3 = face.Y[2];
 
 	// Deltas
 	const int32_t DX12 = X1 - X2;
@@ -1105,20 +1202,15 @@ void Rasterizer::DrawPartialTile( uint32_t threadIdx, uint32_t faceIdx, uint32_t
 #endif
 
 	// Half-edge constants
-	int32_t C1 = DY12 * X1 - DX12 * Y1;
-	int32_t C2 = DY23 * X2 - DX23 * Y2;
-	int32_t C3 = DY31 * X3 - DX31 * Y3;
-
-	// Correct for fill convention
-	if(DY12 < 0 || (DY12 == 0 && DX12 > 0)) C1++;
-	if(DY23 < 0 || (DY23 == 0 && DX23 > 0)) C2++;
-	if(DY31 < 0 || (DY31 == 0 && DX31 > 0)) C3++;
+	const int32_t C1 = face.C1;
+	const int32_t C2 = face.C2;
+	const int32_t C3 = face.C3;
 
 	// Compute bounding box
-	int32_t minX = (Min(X1, Min(X2, X3)) + 0xF) >> 4;
-	int32_t maxX = (Max(X1, Max(X2, X3)) + 0xF) >> 4;
-	int32_t minY = (Min(Y1, Min(Y2, Y3)) + 0xF) >> 4;
-	int32_t maxY = (Max(Y1, Max(Y2, Y3)) + 0xF) >> 4;
+	int32_t minX = (Max(face.MinX, tileX) + 0xF) >> 4;
+	int32_t maxX = (Min(face.MaxX, tileX + tileWidth) + 0xF) >> 4;
+	int32_t minY = (Max(face.MinY, tileY) + 0xF) >> 4;
+	int32_t maxY = (Min(face.MaxY, tileY + tileHeight) + 0xF) >> 4;
 
 	// Block size, standard 8x8 (must be power of two)
 	const int BlockSize = 8;
@@ -1127,7 +1219,9 @@ void Rasterizer::DrawPartialTile( uint32_t threadIdx, uint32_t faceIdx, uint32_t
 	minX &= ~(BlockSize - 1);
 	minY &= ~(BlockSize - 1);
 
-	for (int32_t y = minY; y < maxX; y += BlockSize)
+    const VS_Output* pBaseVertex = face.V[0];
+
+	for (int32_t y = minY; y < maxY; y += BlockSize)
 	{
 		for (int32_t x = minX; x < maxX; x += BlockSize)
 		{
@@ -1162,7 +1256,8 @@ void Rasterizer::DrawPartialTile( uint32_t threadIdx, uint32_t faceIdx, uint32_t
 			// Accept whole block when totally covered
 			if( a == 0xF && b == 0xF && c == 0xF )
 			{
-
+				// draw whole block
+				DrawPixels(face, x, y, Min(x+BlockSize, maxX), Min(y+BlockSize, maxY));
 			}
 			else
 			{
@@ -1170,7 +1265,7 @@ void Rasterizer::DrawPartialTile( uint32_t threadIdx, uint32_t faceIdx, uint32_t
 				int32_t CY2 = C2 + DX23 * y0 - DY23 * x0;
 				int32_t CY3 = C3 + DX31 * y0 - DY31 * x0;
 
-				for(int32_t iy = y; iy < y + BlockSize; iy++)
+				for(int32_t iy = y; iy < Min(y + BlockSize, maxY); iy++)
 				{
 #ifdef USE_SIMD
 					// 前面4个像素
@@ -1189,7 +1284,7 @@ void Rasterizer::DrawPartialTile( uint32_t threadIdx, uint32_t faceIdx, uint32_t
 					
 					if (mask)
 					{
-
+						DrawMaskedPixels(face, mask, x, Min(x+4, maxX), iy);
 					}
 
 
@@ -1207,17 +1302,24 @@ void Rasterizer::DrawPartialTile( uint32_t threadIdx, uint32_t faceIdx, uint32_t
 					mask = _mm_movemask_ps(_mm_castsi128_ps(CXMaskComp));		
 					if (mask)
 					{
+						x+=4;
+						DrawMaskedPixels(face, mask, x, Min(x+4, maxX), iy);
 					}
 #else
 					int32_t CX1 = CY1;
 					int32_t CX2 = CY2;
 					int32_t CX3 = CY3;
 
-					for(int32_t ix = x; ix < x + BlockSize; ix++)
+					for(int32_t ix = x; ix < Min(x + BlockSize, maxX); ix++)
 					{
 						if(CX1 > 0 && CX2 > 0 && CX3 > 0)
 						{
-
+							VS_Output vsOutput;
+							float fOffsetX = ix - pBaseVertex->Position.X();
+							float fOffsetY = iy - pBaseVertex->Position.Y();
+							VS_Output_BaryCentric(&vsOutput, pBaseVertex, &face.ddxVarying, &face.ddyVarying, fOffsetX, fOffsetY, mCurrVSOutputCount);
+						
+							DrawPixel(ix, iy, vsOutput);
 						}
 
 						CX1 -= FDY12;
@@ -1226,7 +1328,6 @@ void Rasterizer::DrawPartialTile( uint32_t threadIdx, uint32_t faceIdx, uint32_t
 					}
 #endif 
 
-
 					CY1 += FDX12;
 					CY2 += FDX23;
 					CY3 += FDX31;
@@ -1234,6 +1335,91 @@ void Rasterizer::DrawPartialTile( uint32_t threadIdx, uint32_t faceIdx, uint32_t
 			}
 		}
 	}
+}
+
+void Rasterizer::DrawPixels(const RasterFace& face, int32_t xStart, int32_t yStart, int32_t xEnd, int32_t yEnd)
+{
+	const VS_Output* pBaseVertex = face.V[0];
+	
+	for (int32_t iY = yStart; iY < yEnd; ++iY)
+	{
+		for (int32_t iX = xStart; iX < xEnd; ++iX)
+		{
+			float fOffsetX = (float)iX - pBaseVertex->Position.X();
+			float fOffsetY = (float)iY - pBaseVertex->Position.Y();
+
+			VS_Output VSOutput;
+			VS_Output_BaryCentric(&VSOutput, pBaseVertex, &face.ddxVarying, &face.ddyVarying, fOffsetX, fOffsetY, mCurrVSOutputCount);
+
+			DrawPixel(iX, iY, VSOutput);
+		}
+	}
+}
+
+void Rasterizer::DrawMaskedPixels( const RasterFace& face, int32_t mask, int32_t xStart, int32_t xEnd, int32_t iY )
+{
+	const VS_Output* pBaseVertex = face.V[0];
+
+	VS_Output vsOutput;
+	float fOffsetX, fOffsetY = iY - pBaseVertex->Position.Y();
+
+	static const int32_t bits[4] = {0x1, 0x2, 0x4, 0x8};
+
+	for (int32_t iX= xStart; iX < xEnd; ++iX)
+	{
+		if (mask & bits[iX]) 
+		{
+			fOffsetX = iX - pBaseVertex->Position.X();
+
+			VS_Output_BaryCentric(&vsOutput, pBaseVertex, &face.ddxVarying, &face.ddyVarying, fOffsetX, fOffsetY, mCurrVSOutputCount);
+			DrawPixel(iX, iY, vsOutput);
+		}
+	}
+}
+
+
+void Rasterizer::DrawPixel( uint32_t iX, uint32_t iY, const VS_Output& vsOutput )
+{
+#define DEPTH_TEST(condition) if((condition)) break; else return;
+
+	float srcDepth, destDepth;
+
+	// read back buffer pixel
+	mDevice.mCurrentFrameBuffer->ReadPixel(iX, iY, NULL, &destDepth);
+
+	// Get depth of current pixel
+	srcDepth = vsOutput.Position.Z();
+
+	VS_Output PSInput;
+	float curPixelInvW = 1.0f / vsOutput.Position.W();
+	VS_Output_Mul( &PSInput, &vsOutput, curPixelInvW, mCurrVSOutputCount );
+
+	// Execute the pixel shader
+	//m_TriangleInfo.iCurPixelX = i_iX;
+	PS_Output PSOutput;
+	if( !mDevice.mPixelShaderStage->GetPixelShader()->Execute(&PSInput, &PSOutput, &srcDepth ))
+	{
+		// kill this pixel
+		return;
+	}
+
+	// Perform depth-test
+	switch( mDevice.DepthStencilState.DepthFunc )
+	{
+	case CF_AlwaysFail: return;
+	case CF_Equal: DEPTH_TEST(fabsf( srcDepth - destDepth ) < FLT_EPSILON);
+	case CF_NotEqual: DEPTH_TEST(fabsf( srcDepth - destDepth ) >= FLT_EPSILON);
+	case CF_Less: DEPTH_TEST(srcDepth < destDepth);
+	case CF_LessEqual: DEPTH_TEST(srcDepth <= destDepth);
+	case CF_GreaterEqual: DEPTH_TEST(srcDepth >= destDepth);
+	case CF_Greater: DEPTH_TEST(srcDepth > destDepth);
+	case CF_AlwaysPass: break;
+	}
+
+	mDevice.mCurrentFrameBuffer->WritePixel(iX, iY, &PSOutput,
+		mDevice.DepthStencilState.DepthWriteMask ? &srcDepth : NULL);
+
+#undef DEPTH_TEST
 }
 
 

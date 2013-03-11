@@ -133,7 +133,11 @@ void RenderDevice::DrawIndexed( PrimitiveType primitiveType, uint32_t indexCount
 	mBaseVertexLoc = baseVertexLocation;
 
 	mRasterizerStage->PreDraw();
+	
 	mRasterizerStage->Draw(primitiveType, primitive);
+	
+	//mRasterizerStage->DrawTiled(primitiveType, primitive);
+	
 	mRasterizerStage->PostDraw();
 }
 
@@ -160,24 +164,15 @@ uint32_t RenderDevice::FetchIndex( uint32_t index )
 	return index;
 }
 
-//void RenderDevice::SetVertexShader( const shared_ptr<VertexShader>& vs )
-//{
-//	mVertexShaderStage->SetVertexShader(vs);
-//}
-//
-//void RenderDevice::SetPixelShader( const shared_ptr<VertexShader>& ps )
-//{
-//	mPixelShaderStage->SetPixelShader(ps);
-//}
-
 void RenderDevice::BindFrameBuffer( const shared_ptr<FrameBuffer>& fb )
 {
 	if( mCurrentFrameBuffer && (fb != mCurrentFrameBuffer) )
 	{	
-		mCurrentFrameBuffer->OnUnbind();
+		mCurrentFrameBuffer->OnUnbind();	
 	}
 
 	mCurrentFrameBuffer = fb; 
+	mRasterizerStage->OnBindFrameBuffer(fb);
 
 	if(mCurrentFrameBuffer->IsDirty())
 	{

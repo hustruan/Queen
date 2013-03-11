@@ -5,6 +5,8 @@
 	#define _VARIADIC_MAX    10
 #endif
 
+#define USE_SIMD
+
 #include <iostream>
 #include <fstream>
 #include <vector>

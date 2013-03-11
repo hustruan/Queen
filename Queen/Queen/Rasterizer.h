@@ -4,6 +4,7 @@
 #include "GraphicCommon.h"
 #include "RenderStage.h"
 #include "Shader.h"
+#include "Profiler.h"
 
 // primitive count per package used in set up geometry
 #define SetupGeometryPackageSize 64
@@ -44,6 +45,16 @@ public:
 	struct RasterFace
 	{
 		VS_Output* V[3];
+		VS_Output ddxVarying, ddyVarying;
+
+		// fixed point position
+		int32_t X[3], Y[3];
+
+		// half space constant
+		int32_t C1, C2, C3;
+
+		int32_t MinX, MinY, MaxX, MaxY;
+
 	};
 
 	struct ThreadPackage
@@ -96,9 +107,13 @@ private:
 	void RasterizeTiles(std::vector<uint32_t>& tilesQueue, std::atomic<uint32_t>& workingPackage, uint32_t numTiles);
 
 	// the whole tile is inside an triagnle
-	void DrawWholeTile(uint32_t threadIdx, uint32_t faceIdx, uint32_t tileIdx);
-	void DrawPartialTile(uint32_t threadIdx, uint32_t faceIdx, uint32_t tileIdx);
+	void DrawPartialTile(const RasterFace& face, int32_t tileX, int32_t tileY, int32_t tileWidth, int32_t tileHeight);
 
+	void DrawPixels(const RasterFace& face, int32_t xStart, int32_t yStart, int32_t xEnd, int32_t yEnd);
+
+	void DrawMaskedPixels(const RasterFace& face, int32_t mask, int32_t xStart, int32_t xEnd, int32_t iY);
+
+	void DrawPixel(uint32_t iX, uint32_t iY, const VS_Output& vsOutput);
 	
 
 private:
@@ -107,7 +122,8 @@ private:
 	std::vector<ThreadPackage> mThreadPackage;
 
 	// each thread keep a local clipped vertex buffer
-	std::vector< std::vector<VS_Output> > mVerticesThreads;		
+	std::vector< std::vector<VS_Output> > mVerticesThreads;	
+	std::vector<uint32_t> mNumVerticesThreads;
 
 	// each thread keep a local clipped faces buffer
 	std::vector< std::vector<RasterFace> > mFacesThreads;		
@@ -115,7 +131,9 @@ private:
 	// each thread keep a vertex cache
 	std::vector< std::array<VertexCacheElement, VertexCacheSize> > mVertexCaches;
 
-	std::vector<uint32_t> mNumVerticesThreads;
+	// non-empty tile job queue
+	std::vector<uint32_t> mTilesQueue;
+	uint32_t mTilesQueueSize;
 
 	int32_t mNumTileX, mNumTileY;
 	std::vector<Tile> mTiles;
@@ -130,6 +148,8 @@ private:
 
 	// set every draw
 	shared_ptr<FrameBuffer> mCurrFrameBuffer;
+
+	Profiler mProfiler;
 };
 
 
