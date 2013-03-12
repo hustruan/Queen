@@ -85,11 +85,14 @@ class TextureFetch
 public:
 	typedef void (*ReadPixelFunc)(int32_t x, int32_t y, ColorRGBA& pixel, void* pData, uint32_t pitch);
 	typedef void (*WritePixelFunc)(int32_t x, int32_t y, const ColorRGBA& pixel, void* pData, uint32_t pitch);
-	
+	//typedef void 
+
+
 	static void Init();
 
 	static ReadPixelFunc ReadPixelFuncs[PF_Count]; 
 	static WritePixelFunc WritePixelFuncs[PF_Count]; 
+
 };
 
 

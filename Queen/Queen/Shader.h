@@ -50,8 +50,8 @@ public:
 	virtual uint32_t GetOutputCount() const= 0;
 
 protected:
-	ColorRGBA Sample(uint32_t texUint, uint32_t samplerUnit, float U, float V);
-	ColorRGBA Sample(uint32_t texUint, uint32_t samplerUnit, float U, float V, float W);
+	float4 Sample(uint32_t texUint, uint32_t samplerUnit, float U, float V);
+	float4 Sample(uint32_t texUint, uint32_t samplerUnit, float U, float V, float W);
 
 	VertexShaderStage* VertexShaderStage();
 	PixelShaderStage* PixelShaderStage();
@@ -91,8 +91,12 @@ public:
 	const shared_ptr<VertexShader>& GetVertexShader() const { return mShader; } 
 
 public:
+
 	std::array<uint32_t, MaxVSOutput> InterpolationModifiers;
+
 	uint32_t VSOutputCount;
+
+	
 
 private:
 	shared_ptr<VertexShader> mShader;

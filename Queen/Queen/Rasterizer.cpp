@@ -18,11 +18,6 @@ inline int32_t iround(float x)
 	return _mm_cvt_ss2si( _mm_load_ps( &x ) ); 
 }
 
-inline bool FCMP(float a, float b)
-{
-	return true;
-}
-
 inline void VS_Output_Copy(VS_Output* dest, const VS_Output* src, uint32_t numAttri)
 {
 	dest->Position =  src->Position;
@@ -207,7 +202,11 @@ void Rasterizer::ProjectVertex( VS_Output* vertex )
 	// viewport transform
 	vertex->Position = vertex->Position * mDevice.mCurrentFrameBuffer->GetViewportMatrix();	
 
-	// divide shader output registers by w; this way we can interpolate them linearly while rasterizing ...
+  
+	/** 
+	 * After Projection transform, W is eaqual Z in view space.
+	 * divide shader output registers by w; this way we can interpolate them linearly while rasterizing ...
+	 */
 	vertex->Position.W() = invW;
 	
 	VS_Output_ProjectAttrib(vertex, invW, mCurrVSOutputCount);
@@ -537,11 +536,6 @@ void Rasterizer::RasterizeTriangle( const VS_Output& vsOut0, const VS_Output& vs
 	const int32_t MinClipX = vp.Left;
 	const int32_t MaxClipX = vp.Left + vp.Width;
 
-	const float fMinClipY = (float)MinClipY;
-	const float fMaxClipY = (float)MaxClipY;
-	const float fMinClipX = (float)MinClipX;
-	const float fMaxClipX = (float)MaxClipX;
-
 	// Begin rasterization
 	float fX[2] = { vA.X(), vA.X() };
 
@@ -671,17 +665,7 @@ void Rasterizer::RasterizeScanline(int32_t xStart, int32_t xEnd, int32_t Y, VS_O
 		case CF_AlwaysFail: continue;
 		case CF_Equal: DEPTH_TEST(fabsf( srcDepth - destDepth ) < FLT_EPSILON);
 		case CF_NotEqual: DEPTH_TEST(fabsf( srcDepth - destDepth ) >= FLT_EPSILON);
-		case CF_Less: /*DEPTH_TEST(srcDepth < destDepth);*/
-			{
-				if (srcDepth < destDepth)
-				{
-					break;
-				}
-				else
-				{
-					continue;
-				}
-			}
+		case CF_Less: DEPTH_TEST(srcDepth < destDepth);
 		case CF_LessEqual: DEPTH_TEST(srcDepth <= destDepth);
 		case CF_GreaterEqual: DEPTH_TEST(srcDepth >= destDepth);
 		case CF_Greater: DEPTH_TEST(srcDepth > destDepth);
@@ -821,14 +805,6 @@ void Rasterizer::ClipTriangleTiled(  VS_Output* vertices, uint32_t threadIdx )
 	// binning
 	for( uint32_t i = 2; i < resultNumVertices; i++ )
 	{
-		//auto i1 = clipVertices[srcStage][0];
-		//auto i2 = clipVertices[srcStage][i-1];
-		//auto i3 = clipVertices[srcStage][i];
-
-		//const VS_Output& V1 = vertices[clipVertices[srcStage][i1]];
-		//const VS_Output& V2 = vertices[clipVertices[srcStage][i2]];
-		//const VS_Output& V3 = vertices[clipVertices[srcStage][i3]];
-
 		if (!ccw)
 			Binning(vertices[clipVertices[srcStage][0]], vertices[clipVertices[srcStage][i]], vertices[clipVertices[srcStage][i-1]], threadIdx);
 		else
@@ -932,31 +908,11 @@ void Rasterizer::Binning( const VS_Output& V1, const VS_Output& V2, const VS_Out
 		{
 			for (int32_t x = minTileX; x <= maxTileX; ++x)
 			{
-				int32_t xx0 = x << (TileSizeShift );
-				int32_t xx1 = ((x + 1) << (TileSizeShift)) - 1;
-				int32_t yx0 = y << (TileSizeShift);
-				int32_t yx1 = ((y + 1) << (TileSizeShift)) - 1;
-
-				// Corners of block
-				/*int32_t x0 = x << (TileSizeShift + 4);
-				int32_t x1 = ((x + 1) << (TileSizeShift + 4)) - 1;
-				int32_t y0 = y << (TileSizeShift + 4);
-				int32_t y1 = ((y + 1) << (TileSizeShift + 4)) - 1;*/
-
-				/*int x0 = x << (TileSizeShift + 4);
-				int x1 = ( (x + 1) << (TileSizeShift + 4) ) - 1;
-				int y0 = y << (TileSizeShift + 4);
-				int y1 = ( (y + 1) << (TileSizeShift + 4) ) - 1;*/
-
-				//int32_t x0 = (x << (TileSizeShift )) << 4;
-				//int32_t x1 = ((x + 1) << TileSizeShift - 1) << 4;
-				//int32_t y0 = (y << (TileSizeShift)) << 4;
-				//int32_t y1 = ((y + 1) << TileSizeShift - 1) << 4;
-
-				int32_t x0 = xx0 << 4;
-				int32_t x1 = xx1 << 4;
-				int32_t y0 = yx0 << 4;
-				int32_t y1 = yx1 << 4;
+				// Corners of block, fixed point
+				int32_t x0 = (x << TileSizeShift) << 4;
+				int32_t x1 = (((x + 1) << TileSizeShift) - 1) << 4;
+				int32_t y0 = (y << TileSizeShift) << 4;
+				int32_t y1 = (((y + 1) << TileSizeShift) - 1) << 4;
 
 				// Evaluate half-space functions
 				bool a00 = C1 + DX12 * y0 - DY12 * x0 > 0;
@@ -1376,7 +1332,6 @@ void Rasterizer::DrawMaskedPixels( const RasterFace& face, int32_t mask, int32_t
 		}
 	}
 }
-
 
 void Rasterizer::DrawPixel( uint32_t iX, uint32_t iY, const VS_Output& vsOutput )
 {

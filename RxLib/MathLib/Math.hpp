@@ -4,8 +4,6 @@
 #include <cmath>
 #include <memory>
 
-#define USE_SIMD
-
 #ifdef USE_SIMD
 #include <pmmintrin.h>  // SSE3 including
 #endif

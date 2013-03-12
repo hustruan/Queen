@@ -1,19 +1,19 @@
 #include "Prerequisite.h"
 #include "RenderDevice.h"
-#include "Model.h"
 #include "RenderFactory.h"
 #include "FrameBuffer.h"
 #include "Applicaton.h"
-#include <MathUtil.hpp>
-
 #include "GraphicsBuffer.h"
 #include "Context.h"
+
+#include <MathUtil.hpp>
+#include <nvModel.h>
 
 using namespace RxLib;
 
 #define Queue_PI    float(3.14159265358979323846)
 
-//#define CubeDemo
+#define CubeDemo
 
 #ifdef CubeDemo
 
@@ -76,18 +76,10 @@ public:
 
 		float NdotL = Dot(N, L);
 
-		output->Color[0] = /*color*/Saturate(ColorRGBA((float*)&color) * NdotL);
+		output->Color[0] = Saturate(ColorRGBA((float*)&color) * NdotL);
 
-		//ColorRGBA Diffuse = Sample(DiffuseTex, LinearSampler, uv.X(), uv.Y());
 
-		/*const float4& iColor = input->ShaderOutputs[2];
-
-		float R = iColor.X();
-		float G = iColor.Y();
-		float B = iColor.Z();
-		float A = iColor.W();
-
-		output->Color[0] = ColorRGBA(R, G, B, A);*/
+		//float4 diffuse = Sample(DiffuseTex, LinearSampler, 0, 0);
 
 		return true;
 	}
@@ -221,17 +213,17 @@ public:
 
 	void Render()
 	{
-		static float t = 0.0f;
+		/*static float t = 0.0f;
 		static DWORD dwTimeStart = 0;
 		DWORD dwTimeCur = GetTickCount();
 		if( dwTimeStart == 0 )
 		dwTimeStart = dwTimeCur;
 		t = ( dwTimeCur - dwTimeStart ) / 1000.0f;
 
-		//t = 0.0f;
+		t = 0.0f;
 
 
-		mVertexShader->World = CreateRotationY(t);
+		mVertexShader->World = CreateRotationY(t);*/
 
 		mRenderDevice->GetCurrentFrameBuffer()->Clear(CF_Color | CF_Depth,
 			ColorRGBA(0.5f, 0.5f, 0.5f, 1.0f), 1.0f, 0);

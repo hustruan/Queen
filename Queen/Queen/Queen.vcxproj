@@ -87,7 +87,6 @@
     <ClInclude Include="FrameBuffer.h" />
     <ClInclude Include="GraphicsBuffer.h" />
     <ClInclude Include="GraphicCommon.h" />
-    <ClInclude Include="Model.h" />
     <ClInclude Include="pfm.h" />
     <ClInclude Include="PixelFormat.h" />
     <ClInclude Include="Prerequisite.h" />
@@ -108,7 +107,6 @@
     <ClCompile Include="FrameBuffer.cpp" />
     <ClCompile Include="GraphicsBuffer.cpp" />
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="Model.cpp" />
     <ClCompile Include="pfm.cpp" />
     <ClCompile Include="PixelFormat.cpp" />
     <ClCompile Include="Profiler.cpp" />

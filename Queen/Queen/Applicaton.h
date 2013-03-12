@@ -10,8 +10,6 @@
 #include "Texture.h"
 #include "Shader.h"
 
-#include <GL/GL.h>
-
 class Applicaton
 {
 public:
@@ -63,7 +61,7 @@ private:
 	HWND		mhWnd;		// Holds Our Window Handle
 	HINSTANCE	mhInstance;		// Holds The Instance Of The Application
 
-	GLuint mPresentTexture;
+	uint32_t mPresentTexture;
 };
 
 

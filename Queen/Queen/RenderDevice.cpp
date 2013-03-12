@@ -134,9 +134,9 @@ void RenderDevice::DrawIndexed( PrimitiveType primitiveType, uint32_t indexCount
 
 	mRasterizerStage->PreDraw();
 	
-	mRasterizerStage->Draw(primitiveType, primitive);
+	//mRasterizerStage->Draw(primitiveType, primitive);
 	
-	//mRasterizerStage->DrawTiled(primitiveType, primitive);
+	mRasterizerStage->DrawTiled(primitiveType, primitive);
 	
 	mRasterizerStage->PostDraw();
 }
