@@ -4,10 +4,11 @@
 #include "Prerequisite.h"
 #include "GraphicCommon.h"
 #include "RenderState.h"
+#include "SampleState.h"
 #include "Shader.h"
 
-#define MaxVertexStreams 8
 #define MaxTextureUnits 8
+#define MaxVertexStreams 8
 #define MaxVertexBufferSize 18000
 #define MaxVertexBufferClip MaxVertexBufferSize * 5
 #define MaxBinQueueSize     MaxVertexBufferClip
@@ -55,14 +56,16 @@ private:
 	uint32_t FetchIndex(uint32_t index);
 
 
+	ColorRGBA Sample(uint32_t texUint, uint32_t samplerUnit, float U, float V, float W);
+
 public:
 	RasterizerState RasterizerState;
 	DepthStencilState DepthStencilState;
 	BlendState BlendState;
 	ColorRGBA CurrentBlendFactor;
 
-	shared_ptr<Texture> TextureUnit[MaxTextureUnits];
-	SamplerState Samplers[MaxTextureUnits];
+	SamplerState SampleStates[MaxTextureUnits];
+	shared_ptr<Texture> TextureUnits[MaxTextureUnits];
 
 private:
 

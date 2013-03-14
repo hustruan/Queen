@@ -10,8 +10,19 @@ using namespace RxLib;
 #define InRange(v, a, b) ((a) <= (v) && (v) <= (b))
 #define Min(a, b) ((a) < (b) ? (a) : (b))
 #define Max(a, b) ((a) > (b) ? (a) : (b))
+#define FLOAT_EQUAL_PRECISION 0.001f
 
 namespace {
+
+inline bool FCMP(float a, float b, float epsilon = FLOAT_EQUAL_PRECISION)
+{
+	if ( fabsf( a - b ) < epsilon )
+	{
+		return true;
+	}
+	return false;
+}
+
 
 inline int32_t iround(float x)
 {
@@ -172,7 +183,13 @@ void Rasterizer::OnBindFrameBuffer( const shared_ptr<FrameBuffer>& fb )
 			mNumTileY = numTileY;
 		}
 
-		mCurrFrameBuffer = fb;		
+		mCurrFrameBuffer = fb;	
+
+		const Viewport& viewport = mCurrFrameBuffer->GetViewport();
+		MinClipX = (float)viewport.Left;
+		MaxClipX = (float)viewport.Left + viewport.Width;
+		MinClipY = (float)viewport.Top;
+		MaxClipY = (float)viewport.Top + viewport.Height;
 	}
 }
 
@@ -485,39 +502,30 @@ void Rasterizer::RasterizeFaces( std::vector<RasterFaceInfo>& faces, std::atomic
 
 void Rasterizer::RasterizeTriangle( const VS_Output& vsOut0, const VS_Output& vsOut1, const VS_Output& vsOut2 )
 {
-	const VS_Output* pBaseVertex;
-
-	/** 
-	 * Compute difference of attributes.
-	 *
-	 * 根据BaryCentric插值attribute，这里计算ddx, ddy，后面只要根据offsetX, offsetY,
-	 * 乘上相应的ddx, ddy，就可以计算插值后的attribute。
-	 */
-	VS_Output vsOutput01, vsOutput02;
-	VS_Output_Sub(&vsOutput01, &vsOut1, &vsOut0, mCurrVSOutputCount);
-	VS_Output_Sub(&vsOutput02, &vsOut2, &vsOut0, mCurrVSOutputCount);
-
-	const float area = vsOutput01.Position.X() * vsOutput02.Position.Y() - vsOutput02.Position.X() * vsOutput01.Position.Y();
-	const float invArea = 1.0f / area;
-
-	// store base vertex
-	pBaseVertex = &vsOut0;
-
-	VS_Output ddxAttrib, ddyAttrib;
-	VS_Output_Difference(&ddxAttrib, &ddyAttrib, &vsOutput01, &vsOutput02, invArea, mCurrVSOutputCount);
-
 	// Sort vertices by y-coordinate 
 	const VS_Output* pVertices[3] = { &vsOut0, &vsOut1, &vsOut2 };
-	
+
 	if( pVertices[1]->Position.Y() < pVertices[0]->Position.Y() ) 
 		std::swap(pVertices[0], pVertices[1]);
 
 	if( pVertices[2]->Position.Y() < pVertices[0]->Position.Y() ) 
 		std::swap(pVertices[0], pVertices[2]); 
-	
+
 	if( pVertices[2]->Position.Y() < pVertices[1]->Position.Y() ) 
 		std::swap(pVertices[1], pVertices[2]); 
 
+	// store base vertex
+	const VS_Output* pBaseVertex = pVertices[0];
+
+	VS_Output vsOutput01, vsOutput02;
+	VS_Output_Sub(&vsOutput01, pVertices[1], pVertices[0], mCurrVSOutputCount);
+	VS_Output_Sub(&vsOutput02, pVertices[2], pVertices[0], mCurrVSOutputCount);
+
+	const float area = vsOutput01.Position.X() * vsOutput02.Position.Y() - vsOutput02.Position.X() * vsOutput01.Position.Y();
+	const float invArea = 1.0f / area;
+
+	VS_Output ddxAttrib, ddyAttrib;
+	VS_Output_Difference(&ddxAttrib, &ddyAttrib, &vsOutput01, &vsOutput02, invArea, mCurrVSOutputCount);
 
 	// Screenspace-position references 
 	const float4& vA = pVertices[0]->Position;
@@ -529,12 +537,6 @@ void Rasterizer::RasterizeTriangle( const VS_Output& vsOut0, const VS_Output& vs
 		( vB.Y() - vA.Y() > 0.0f ) ? ( vB.X() - vA.X() ) / ( vB.Y() - vA.Y() ) : 0.0f,
 		( vC.Y() - vA.Y() > 0.0f ) ? ( vC.X() - vA.X() ) / ( vC.Y() - vA.Y() ) : 0.0f,
 		( vC.Y() - vB.Y() > 0.0f ) ? ( vC.X() - vB.X() ) / ( vC.Y() - vB.Y() ) : 0.0f };
-
-	const Viewport& vp = mDevice.mCurrentFrameBuffer->GetViewport();
-	const int32_t MinClipY = vp.Top;
-	const int32_t MaxClipY = vp.Top + vp.Height;
-	const int32_t MinClipX = vp.Left;
-	const int32_t MaxClipX = vp.Left + vp.Width;
 
 	// Begin rasterization
 	float fX[2] = { vA.X(), vA.X() };
@@ -549,8 +551,12 @@ void Rasterizer::RasterizeTriangle( const VS_Output& vsOut0, const VS_Output& vs
 		case 0:
 			{
 				// 平底三角形
-				iY[0] = (std::max)(MinClipY, (int32_t)ceilf(vA.Y()));
-				iY[1] = (std::min)(MaxClipY, (int32_t)ceilf(vB.Y()));
+				//iY[0] = (int32_t)(std::max)(MinClipY, ceilf(vA.Y() - 0.5f));
+				//iY[1] = (int32_t)(std::min)(MaxClipY, ceilf(vB.Y() - 0.5f));
+
+				iY[0] = (int32_t)(std::max)(MinClipY, ceilf(vA.Y()));
+				iY[1] = (int32_t)(std::min)(MaxClipY, ceilf(vB.Y()));
+
 
 				if( fStepX[0] > fStepX[1] ) // left <-> right ?
 				{
@@ -571,7 +577,8 @@ void Rasterizer::RasterizeTriangle( const VS_Output& vsOut0, const VS_Output& vs
 
 		case 1:
 			{
-				iY[1] = (std::min)(MaxClipY, (int32_t)ceilf(vC.Y()));
+				//iY[1] = (std::min)(MaxClipY, (int32_t)ceilf(vC.Y() /*- 0.5f*/));
+				iY[1] = (int32_t)(std::min)(MaxClipY, ceilf(vC.Y()));
 
 				const float fPreStepY = (float)iY[0] - vB.Y();
 
@@ -593,42 +600,268 @@ void Rasterizer::RasterizeTriangle( const VS_Output& vsOut0, const VS_Output& vs
 
 		for ( ; iY[0] < iY[1]; ++iY[0])
 		{
-			int32_t iX[2] = { (int32_t)( ceilf( fX[0] ) ), (int32_t)( ceilf( fX[1] ) ) };
-
+			int32_t iX[2] = { (int32_t)( ceilf( fX[0]) ), (int32_t)( ceilf( fX[1]) ) };
 			const float fOffsetX = ( (float)iX[0] - pBaseVertex->Position.X() );
 			const float fOffsetY = ( (float)iY[0] - pBaseVertex->Position.Y() );
+			
+			/*int32_t iX[2] = { (int32_t)( ceilf( fX[0] - 0.5f ) ), (int32_t)( ceilf( fX[1] - 0.5f ) ) };
+			const float fOffsetX = ( (float)iX[0] - pBaseVertex->Position.X() + 0.5f);
+			const float fOffsetY = ( (float)iY[0] - pBaseVertex->Position.Y() + 0.5f);*/
 
-			/*float beta = fOffsetX * vsOutput02.Position.Y() - fOffsetY * vsOutput02.Position.X();
-			float gama = fOffsetY * vsOutput01.Position.X() - fOffsetX * vsOutput01.Position.Y();
-
-			beta *= invArea;
-			gama *= invArea;
-
-			float4 pos = pBaseVertex->Position + vsOutput01.Position * beta + vsOutput02.Position * gama;*/
-
-			VS_Output VSOutput;
-			VS_Output_BaryCentric(&VSOutput, pBaseVertex, &ddxAttrib, &ddyAttrib, fOffsetX, fOffsetY, mCurrVSOutputCount);
+			VS_Output vsOutput;
+			VS_Output_BaryCentric(&vsOutput, pBaseVertex, &ddxAttrib, &ddyAttrib, fOffsetX, fOffsetY, mCurrVSOutputCount);
 
 			// 水平裁剪
 			if (iX[0] < MinClipX)
 			{
-				iX[0] = MinClipX;
+				iX[0] = (int32_t)MinClipX;
 				if (iX[1] < MinClipX)
 					continue;		
 			}
 
 			if (iX[1] > MaxClipX)
 			{
-				iX[1] = MaxClipX;
+				iX[1] = (int32_t)MaxClipX;
 				if (iX[0] > MaxClipX)
 					continue;
 			}
 
-			RasterizeScanline(iX[0], iX[1], iY[0], &VSOutput, &ddxAttrib);	
+			RasterizeScanline(iX[0], iX[1], iY[0], &vsOutput, &ddxAttrib);	
 
 			// Next scan line
 			fX[0] += fDeltaX[0], fX[1] += fDeltaX[1];
 		}
+	}
+}
+
+//void Rasterizer::RasterizeTriangle( const VS_Output& vsOut0, const VS_Output& vsOut1, const VS_Output& vsOut2 )
+//{
+//	// Sort vertices by y-coordinate 
+//	const VS_Output* pVertices[3] = { &vsOut0, &vsOut1, &vsOut2 };
+//
+//	if( pVertices[1]->Position.Y() < pVertices[0]->Position.Y() ) 
+//		std::swap(pVertices[0], pVertices[1]);
+//
+//	if( pVertices[2]->Position.Y() < pVertices[0]->Position.Y() ) 
+//		std::swap(pVertices[0], pVertices[2]); 
+//
+//	if( pVertices[2]->Position.Y() < pVertices[1]->Position.Y() ) 
+//		std::swap(pVertices[1], pVertices[2]); 
+//
+//	// Screenspace-position references 
+//	const float4& vA = pVertices[0]->Position;
+//	const float4& vB = pVertices[1]->Position;
+//	const float4& vC = pVertices[2]->Position;
+//
+//	const float X1 = vA.X();
+//	const float X2 = vB.X();
+//	const float X3 = vC.X();
+//
+//	const float Y1 = vA.Y();
+//	const float Y2 = vB.Y();
+//	const float Y3 = vC.Y();
+//
+//	if (Y3 < MinClipY || Y1 > MaxClipY ||
+//		(X1 < MinClipX && X2 < MinClipX && X3 < MinClipX ) ||
+//		(X1 > MaxClipX && X2 > MaxClipX && X3 > MaxClipX ) )
+//	{
+//		return;
+//	}
+//
+//	/** 
+//	 * Compute difference of attributes.
+//	 *
+//	 * 根据BaryCentric插值attribute，这里计算ddx, ddy，后面只要根据offsetX, offsetY,
+//	 * 乘上相应的ddx, ddy，就可以计算插值后的attribute。
+//	 */
+//
+//	// store base vertex
+//	const VS_Output* pBaseVertex = pVertices[0];
+//
+//	VS_Output vsOutput01, vsOutput02;
+//	VS_Output_Sub(&vsOutput01, pVertices[1], pVertices[0], mCurrVSOutputCount);
+//	VS_Output_Sub(&vsOutput02, pVertices[2], pVertices[0], mCurrVSOutputCount);
+//
+//	const float area = vsOutput01.Position.X() * vsOutput02.Position.Y() - vsOutput02.Position.X() * vsOutput01.Position.Y();
+//	const float invArea = 1.0f / area;
+//
+//	VS_Output ddxAttrib, ddyAttrib;
+//	VS_Output_Difference(&ddxAttrib, &ddyAttrib, &vsOutput01, &vsOutput02, invArea, mCurrVSOutputCount);
+//
+//
+//	if (FCMP(Y1, Y2))
+//	{
+//		RasterizeTriangle_Top(X1, Y1, X2, Y2, X3, Y3, *pBaseVertex, ddxAttrib, ddyAttrib);
+//	}
+//	else if (FCMP(Y3, Y2))
+//	{
+//		RasterizeTriangle_Bottom(X1, Y1, X2, Y2, X3, Y3, *pBaseVertex, ddxAttrib, ddyAttrib);
+//	}
+//	else
+//	{
+//		float newX = X1 + (Y2 - Y1) * (X3 - X1) / (Y3 - Y1);
+//		RasterizeTriangle_Bottom(X1, Y1, newX, Y2, X2, Y2, *pBaseVertex, ddxAttrib, ddyAttrib);
+//		RasterizeTriangle_Top(newX, Y2, X2, Y2, X3, Y3, *pBaseVertex, ddxAttrib, ddyAttrib);
+//	}
+//}
+
+void Rasterizer::RasterizeTriangle_Bottom( float X1, float Y1, float X2, float Y2, float X3, float Y3,
+											const VS_Output& pBase, const VS_Output& ddxAttrib, const VS_Output& ddyAttrib )
+{
+	float dxLeft, dxRight;
+	float xStart, xEnd;
+	int32_t iYStart, iYEnd;
+	int32_t iXStart, iXEnd;
+
+	if (X3 < X2)	std::swap(X3, X2);
+
+	float height = Y2 - Y1;
+	dxLeft = (X2 - X1) / height;
+	dxRight = (X3 - X1) / height;
+
+	xStart = X1;
+	xEnd = X1;
+
+	// vertical clip
+	if (Y1 < MinClipY)
+	{
+		xStart += (MinClipY - Y1) * dxLeft;
+		xEnd += (MinClipY - Y1) * dxRight;
+
+		iYStart = (int32_t)MinClipY; 
+	}
+	else
+	{
+		//iYStart = (int32_t)ceilf(Y1);  // D3D 9 
+
+		// D3D 10, pixel center is (0.5, 0.5)
+		iYStart = (int32_t)ceilf(Y1 );
+
+		xStart += (iYStart - Y1) * dxLeft;
+		xEnd += (iYStart - Y1) * dxRight;
+	}
+
+	if (xEnd > 262.0f)
+	{
+		int a = 0;
+	}
+
+	if (Y3 > MaxClipY)
+	{
+		// Top-Left fill rule
+		iYEnd = (int32_t)MaxClipY - 1; 
+	}
+	else
+	{
+		iYEnd = (int32_t)ceilf(Y3 );
+	}
+
+	for (int32_t iY = iYStart; iY < iYEnd; ++iY, xStart += dxLeft, xEnd += dxRight)
+	{
+		iXStart = (int32_t)ceilf(xStart);
+		iXEnd = (int32_t)ceilf(xEnd);
+
+		//水平裁剪
+		if (iXStart < MinClipX)
+		{
+			iXStart = (int32_t)MinClipX;
+			if (iXEnd < MinClipX)
+				continue;		
+		}
+
+		if (iXEnd > MaxClipX)
+		{
+			iXEnd = (int32_t)MaxClipX;
+			if (iXStart > MaxClipX)
+				continue;
+		}
+
+		float fOffsetX = iXStart - pBase.Position.X();
+		float fOffsetY = iY - pBase.Position.Y();
+
+		VS_Output vsOutput;
+		VS_Output_BaryCentric(&vsOutput, &pBase, &ddxAttrib, &ddyAttrib, fOffsetX, fOffsetY, mCurrVSOutputCount);
+		RasterizeScanline(iXStart, iXEnd, iY, &vsOutput, &ddxAttrib);
+	}
+}
+
+void Rasterizer::RasterizeTriangle_Top( float X1, float Y1, float X2, float Y2, float X3, float Y3,
+									   const VS_Output& pBase, const VS_Output& ddxAttrib, const VS_Output& ddyAttrib )
+{
+	float dxLeft, dxRight;
+	float xStart, xEnd;
+	int32_t iYStart, iYEnd;
+	int32_t iXStart, iXEnd;
+
+	if (X2 < X1)	std::swap(X1, X2);
+
+	float height = Y3 - Y1;
+	dxLeft = (X3 - X1) / height;
+	dxRight = (X3 - X2) / height;
+
+	xStart = X1;
+	xEnd = X2;
+
+	// vertical clip
+	if (Y1 < MinClipY)
+	{
+		xStart += (MinClipY - Y1) * dxLeft;
+		xEnd += (MinClipY - Y1) * dxRight;
+
+		iYStart = (int32_t)MinClipY; 
+	}
+	else
+	{
+		//iYStart = (int32_t)ceilf(Y1);  // D3D 9 
+
+		// D3D 10, pixel center is (0.5, 0.5)
+		iYStart = (int32_t)ceilf(Y1);
+
+		xStart += (iYStart - Y1) * dxLeft;
+		xEnd += (iYStart - Y1) * dxRight;
+	}
+
+	if (Y3 > MaxClipY)
+	{
+		// Top-Left fill rule
+		iYEnd = (int32_t)MaxClipY; 
+	}
+	else
+	{
+		iYEnd = (int32_t)ceilf(Y3);
+	}
+
+	if (xEnd > 262.0f && iYStart < iYEnd)
+	{
+		int a = 0;
+	}
+
+	for (int32_t iY = iYStart; iY < iYEnd; ++iY, xStart += dxLeft, xEnd += dxRight)
+	{
+		iXStart = (int32_t)ceilf(xStart);
+		iXEnd = (int32_t)ceil(xEnd);
+
+		//水平裁剪
+		if (iXStart < MinClipX)
+		{
+			iXStart = (int32_t)MinClipX;
+			if (iXEnd < MinClipX)
+				continue;		
+		}
+
+		if (iXEnd > MaxClipX)
+		{
+			iXEnd = (int32_t)MaxClipX;
+			if (iXStart > MaxClipX)
+				continue;
+		}
+
+		float fOffsetX = iXStart - pBase.Position.X();
+		float fOffsetY = iY - pBase.Position.Y();
+
+		VS_Output vsOutput;
+		VS_Output_BaryCentric(&vsOutput, &pBase, &ddxAttrib, &ddyAttrib, fOffsetX, fOffsetY, mCurrVSOutputCount);
+		RasterizeScanline(iXStart, iXEnd, iY, &vsOutput, &ddxAttrib);
 	}
 }
 
@@ -1376,6 +1609,7 @@ void Rasterizer::DrawPixel( uint32_t iX, uint32_t iY, const VS_Output& vsOutput 
 
 #undef DEPTH_TEST
 }
+
 
 
 

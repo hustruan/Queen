@@ -16,10 +16,10 @@ RenderDevice::RenderDevice(void)
 
 	mScreenFrameBuffer = std::make_shared<FrameBuffer>(500, 500);
 
-	shared_ptr<Texture2D> color0(new Texture2D(PF_A32B32G32R32F, 500, 500, 0, 1, 0, 0));
+	shared_ptr<Texture2D> color0(new Texture2D(PF_A32B32G32R32F, 500, 500, 0, 1, 0, 0, NULL));
 	mScreenFrameBuffer->Attach(ATT_Color0, color0);
 
-	shared_ptr<Texture2D> depth(new Texture2D(PF_Depth32, 500, 500, 0, 1, 0, 0));
+	shared_ptr<Texture2D> depth(new Texture2D(PF_Depth32, 500, 500, 0, 1, 0, 0, NULL));
 	mScreenFrameBuffer->Attach(ATT_DepthStencil, depth);
 
 	// bind screen frame buffer 
@@ -134,9 +134,9 @@ void RenderDevice::DrawIndexed( PrimitiveType primitiveType, uint32_t indexCount
 
 	mRasterizerStage->PreDraw();
 	
-	//mRasterizerStage->Draw(primitiveType, primitive);
+	mRasterizerStage->Draw(primitiveType, primitive);
 	
-	mRasterizerStage->DrawTiled(primitiveType, primitive);
+	//mRasterizerStage->DrawTiled(primitiveType, primitive);
 	
 	mRasterizerStage->PostDraw();
 }
@@ -210,5 +210,33 @@ void RenderDevice::SaveScreenToPfm( const String& filename )
 	}
 
 	WritePfm(filename.c_str(), width, height, 3, &pfmData[0]);
+}
+
+
+ColorRGBA test(int32_t, int32_t)
+{
+	return ColorRGBA();
+}
+
+ColorRGBA RenderDevice::Sample( uint32_t texUint, uint32_t samplerUnit, float U, float V, float W )
+{
+	ASSERT(TextureUnits[texUint]->GetTextureType() == TT_Texture2D);
+
+	const shared_ptr<Texture>& texture = TextureUnits[texUint];
+	const SamplerState& samplerState = SampleStates[samplerUnit];
+
+	const uint32_t width = texture->GetWidth(0);
+	const uint32_t height = texture->GetHeight(0);
+
+	void* pData;
+	uint32_t pitch;
+	texture->Map2D(0, TMA_Read_Only, 0, 0, 0, 0, pData, pitch);
+
+	return samplerState.Sample(U, V, (int32_t)width, (int32_t)height, [=](int32_t x, int32_t y) -> ColorRGBA
+	{ 
+		ColorRGBA retVal;
+		TextureFetch::ReadPixelFuncs[texture->GetTextureFormat()](x, y, retVal, pData, pitch);
+		return retVal;
+	} );
 }
 

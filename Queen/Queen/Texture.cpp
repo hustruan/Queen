@@ -1,5 +1,6 @@
 #include "Texture.h"
 #include <exception>
+#include <algorithm>
 
 namespace {
 
@@ -9,6 +10,83 @@ struct PixelUpdater
 	static ColorRGBA ReadPixel(int32_t x, int32_t y, void* pData, uint32_t pitch);
 	static void WritePixel(int32_t x, int32_t y, const ColorRGBA& pixel, void* pData, uint32_t pitch);
 };
+
+template<>
+struct PixelUpdater<PF_X8R8G8B8>
+{
+	static void ReadPixel(int32_t x, int32_t y, ColorRGBA& pixel, void* pData, uint32_t pitch)
+	{
+		uint8_t* pColor = (uint8_t*)pData + y * pitch + x * PixelFormatUtils::GetNumElemBytes(PF_X8R8G8B8);
+
+		float inv256 = 1.0f / 255.0f;
+
+		pixel.R = pColor[0] * inv256;
+		pixel.G = pColor[1] * inv256;
+		pixel.B = pColor[2] * inv256;
+		pixel.A = pColor[3] * inv256;
+	}
+
+	static void WritePixel(int32_t x, int32_t y, const ColorRGBA& pixel, void* pData, uint32_t pitch)
+	{
+		uint8_t* pColor = (uint8_t*)pData + y * pitch + x * PixelFormatUtils::GetNumElemBytes(PF_X8R8G8B8);
+
+		pColor[0] = uint8_t(pixel.B * 255);
+		pColor[1] = uint8_t(pixel.G * 255);
+		pColor[2] = uint8_t(pixel.R * 255);
+		pColor[3] = uint8_t(pixel.A * 255);
+	}
+};
+
+template<>
+struct PixelUpdater<PF_B8G8R8>
+{
+	static void ReadPixel(int32_t x, int32_t y, ColorRGBA& pixel, void* pData, uint32_t pitch)
+	{
+		uint8_t* pColor = (uint8_t*)pData + y * pitch + x * PixelFormatUtils::GetNumElemBytes(PF_B8G8R8);
+
+		float inv256 = 1.0f / 255.0f;
+
+		pixel.R = pColor[0] * inv256;
+		pixel.G = pColor[1] * inv256;
+		pixel.B = pColor[2] * inv256;
+		pixel.A = 1.0f;
+	}
+
+	static void WritePixel(int32_t x, int32_t y, const ColorRGBA& pixel, void* pData, uint32_t pitch)
+	{
+		uint8_t* pColor = (uint8_t*)pData + y * pitch + x * PixelFormatUtils::GetNumElemBytes(PF_X8R8G8B8);
+
+		pColor[0] = uint8_t(pixel.R * 255);
+		pColor[1] = uint8_t(pixel.G * 255);
+		pColor[2] = uint8_t(pixel.B * 255);
+	}
+};
+
+template<>
+struct PixelUpdater<PF_R8G8B8>
+{
+	static void ReadPixel(int32_t x, int32_t y, ColorRGBA& pixel, void* pData, uint32_t pitch)
+	{
+		uint8_t* pColor = (uint8_t*)pData + y * pitch + x * PixelFormatUtils::GetNumElemBytes(PF_B8G8R8);
+
+		float inv256 = 1.0f / 255.0f;
+
+		pixel.B = pColor[0] * inv256;
+		pixel.G = pColor[1] * inv256;
+		pixel.R = pColor[2] * inv256;
+		pixel.A = 1.0f;
+	}
+
+	static void WritePixel(int32_t x, int32_t y, const ColorRGBA& pixel, void* pData, uint32_t pitch)
+	{
+		uint8_t* pColor = (uint8_t*)pData + y * pitch + x * PixelFormatUtils::GetNumElemBytes(PF_X8R8G8B8);
+
+		pColor[0] = uint8_t(pixel.B * 255);
+		pColor[1] = uint8_t(pixel.G * 255);
+		pColor[2] = uint8_t(pixel.R * 255);
+	}
+};
+
 
 template<>
 struct PixelUpdater<PF_A32B32G32R32F>
@@ -121,17 +199,10 @@ void Texture::UnmapCube(CubeMapFace face, uint32_t level )
 
 //--------------------------------------------------------------------------------------------
 
-Texture2D::Texture2D(PixelFormat format, uint32_t width, uint32_t height, uint32_t numMipMaps, uint32_t sampleCount, uint32_t sampleQuality, uint32_t accessHint )
+Texture2D::Texture2D(PixelFormat format, uint32_t width, uint32_t height, uint32_t numMipMaps, uint32_t sampleCount, uint32_t sampleQuality, uint32_t accessHint, ElementInitData* initData)
 	: Texture(TT_Texture2D, format, numMipMaps, sampleCount, sampleQuality, accessHint)
 {
-	if( numMipMaps == 0 )
-	{
-		mMipMaps = 1;
-	}
-	else
-	{
-		mMipMaps = numMipMaps;
-	}
+	mMipMaps = (std::max)(1U, numMipMaps);
 
 	mWidths.resize(mMipMaps);
 	mHeights.resize(mMipMaps);
@@ -163,12 +234,27 @@ Texture2D::Texture2D(PixelFormat format, uint32_t width, uint32_t height, uint32
 
 			// resize texture data for copy
 			mTextureData[mMipMaps + level].resize(imageSize);
+
+			// not support compressed format
+			ASSERT(false);
 		}
 		else
 		{
 			uint32_t imageSize = levelWidth * levelHeight * texelSize;
 			// resize texture data for copy
 			mTextureData[level].resize(imageSize);
+
+			if (initData)
+			{
+				memcpy(&mTextureData[level][0], initData[level].pData, imageSize);
+
+				/*for (uint32_t y = 0; y < height; ++y)
+				{
+				void* dest = &mTextureData[level][0] + y * levelWidth * texelSize;
+				memcpy(dest, (uint8_t*)initData[level].pData + initData[level].RowPitch * y, levelWidth * texelSize);
+				}*/
+			}
+		
 		}
 	}
 }
@@ -227,4 +313,13 @@ void TextureFetch::Init()
 
 	ReadPixelFuncs[PF_A32B32G32R32F] = &PixelUpdater<PF_A32B32G32R32F>::ReadPixel;
 	WritePixelFuncs[PF_A32B32G32R32F] = &PixelUpdater<PF_A32B32G32R32F>::WritePixel;
+
+	ReadPixelFuncs[PF_X8R8G8B8] = &PixelUpdater<PF_X8R8G8B8>::ReadPixel;
+	WritePixelFuncs[PF_X8R8G8B8] = &PixelUpdater<PF_X8R8G8B8>::WritePixel;
+
+	ReadPixelFuncs[PF_B8G8R8] = &PixelUpdater<PF_B8G8R8>::ReadPixel;
+	WritePixelFuncs[PF_B8G8R8] = &PixelUpdater<PF_B8G8R8>::WritePixel;
+
+	ReadPixelFuncs[PF_R8G8B8] = &PixelUpdater<PF_R8G8B8>::ReadPixel;
+	WritePixelFuncs[PF_R8G8B8] = &PixelUpdater<PF_R8G8B8>::WritePixel;	
 }

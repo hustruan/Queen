@@ -73,7 +73,7 @@ enum TextureAddressMode
 	/** Tile the texture at every integer junction. For example,
 	*	for u values between 0 and 3, the texture is repeated three times.
 	*/
-	TAM_Wrap,
+	TAM_Wrap = 0,
 
 	/** Flip the texture at every integer junction. For u values between 0 and 1,
 	*	for example, the texture is addressed normally; between 1 and 2, the texture is flipped (mirrored);
@@ -92,7 +92,9 @@ enum TextureAddressMode
 	/** Similar to TAM_Mirror and TAM_Clamp. Takes the absolute value of the texture coordinate 
 	*	thus, mirroring around 0, and then clamps to the maximum value.
 	*/
-	TAM_Mirror_Once
+	TAM_Mirror_Once,
+
+	TAM_Count,
 };
 
 /** Filtering options for textures / mipmaps. */

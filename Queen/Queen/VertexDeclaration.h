@@ -32,6 +32,12 @@ public:
 	VertexDeclaration(const std::vector<VertexElement>& elements);
 	VertexDeclaration(const VertexElement* elements, uint32_t count);
 
+	template <typename InputIterator >
+	VertexDeclaration(InputIterator  first, InputIterator  last)
+	{
+		AssignVertexElements(first, last);
+	}
+
 	uint32_t GetElementCount(void) { return static_cast<uint32_t>(mElementList.size()); }
 
 	const VertexElementList& GetElements(void) const { return mElementList; }

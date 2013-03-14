@@ -45,6 +45,7 @@ bool Applicaton::CreateGLWindow( const std::wstring& title, int width, int heigh
 	DWORD		dwExStyle;				// Window Extended Style
 	DWORD		dwStyle;				// Window Style
 	RECT		WindowRect;				// Grabs Rectangle Upper Left / Lower Right Values
+	
 	WindowRect.left=(long)0;			// Set Left Value To 0
 	WindowRect.right=(long)width;		// Set Right Value To Requested Width
 	WindowRect.top=(long)0;				// Set Top Value To 0

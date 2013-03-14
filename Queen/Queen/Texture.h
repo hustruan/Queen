@@ -61,7 +61,7 @@ class Texture2D : public Texture
 {
 public:
 	Texture2D(PixelFormat format, uint32_t width, uint32_t height, 
-		uint32_t numMipMaps, uint32_t sampleCount, uint32_t sampleQuality, uint32_t accessHint);
+		uint32_t numMipMaps, uint32_t sampleCount, uint32_t sampleQuality, uint32_t accessHint, ElementInitData* initData);
 	~Texture2D();
 
 	virtual uint32_t GetWidth(uint32_t level) const;

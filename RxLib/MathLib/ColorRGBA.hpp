@@ -169,6 +169,16 @@ inline ColorRGBA Saturate(const ColorRGBA& color)
 	return retVal;
 }
 
+
+//---------------------------------------------------------------------------------------
+inline ColorRGBA operator* (float fScalar, const ColorRGBA& rhs)
+{
+	ColorRGBA result;
+	for(int i = 0; i < 4; i++)
+		result[i] =  fScalar * rhs[i];
+
+	return result;
+}
 }
 
 #endif // ColorRGBA_h__

@@ -88,7 +88,15 @@ private:
 	uint32_t ClipTriangle(VS_Output* clipped, const VS_Output& v0, const VS_Output& v1, const VS_Output& v2);
 	
 	void RasterizeTriangle(const VS_Output& vsOut0, const VS_Output& vsOut1, const VS_Output& vsOut2);
+
+	// 平底三角形
+	void RasterizeTriangle_Bottom( float X1, float Y1, float X2, float Y2, float X3, float Y3,
+		const VS_Output& pBase, const VS_Output& ddxAttrib, const VS_Output& ddyAttrib );
 	
+	// 平顶三角形
+	void RasterizeTriangle_Top( float X1, float Y1, float X2, float Y2, float X3, float Y3,
+		const VS_Output& pBase, const VS_Output& ddxAttrib, const VS_Output& ddyAttrib );
+
 	void RasterizeScanline(int32_t xStart, int32_t xEnd, int32_t Y, VS_Output* baseVertex, const VS_Output* ddx);
  
 	bool BackFaceCulling(const VS_Output& v0, const VS_Output& v1, const VS_Output& v2, bool* oriented = nullptr);
@@ -148,6 +156,9 @@ private:
 
 	// set every draw
 	shared_ptr<FrameBuffer> mCurrFrameBuffer;
+
+private:
+	float MinClipX, MaxClipX, MinClipY, MaxClipY; 
 
 	Profiler mProfiler;
 };

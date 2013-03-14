@@ -52,15 +52,15 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../;../../3rdParty/boost;../../3rdParty/threadpool;../../3rdParty/nvSDK;../../3rdParty/nvModel/include;../../RxLib/CoreLib;../../RxLib/MathLib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../;../../3rdParty/boost;../../3rdParty/threadpool;../../3rdParty/nvSDK;../../RxLib/CoreLib;../../RxLib/MathLib;../../3rdParty/nvModel/include;../../3rdParty/nvImage/include</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>../../3rdParty/nvModel/lib;../../Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>nvModel.lib;libboost_thread-vc110-mt-gd-1_52.lib;MathLib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../../3rdParty/nvModel/lib;../../3rdParty/nvImage/lib;../../Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>nvModel.lib;nvImage.lib;libboost_thread-vc110-mt-gd-1_52.lib;MathLib.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -72,12 +72,15 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../;../../3rdParty/boost;../../3rdParty/threadpool;../../3rdParty/nvSDK;../../RxLib/CoreLib;../../RxLib/MathLib;../../3rdParty/nvModel/include;../../3rdParty/nvImage/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>../../3rdParty/nvModel/lib;../../3rdParty/nvImage/lib;../../Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>nvModel.lib;nvImage.lib;libboost_thread-vc110-mt-1_52.lib;MathLib.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -96,6 +99,7 @@
     <ClInclude Include="RenderFactory.h" />
     <ClInclude Include="RenderStage.h" />
     <ClInclude Include="RenderState.h" />
+    <ClInclude Include="SampleState.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="threadpool.h" />
@@ -114,6 +118,7 @@
     <ClCompile Include="RenderDevice.cpp" />
     <ClCompile Include="RenderFactory.cpp" />
     <ClCompile Include="RenderStage.cpp" />
+    <ClCompile Include="SampleState.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="VertexDeclaration.cpp" />

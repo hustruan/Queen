@@ -50,8 +50,8 @@ public:
 	virtual uint32_t GetOutputCount() const= 0;
 
 protected:
-	float4 Sample(uint32_t texUint, uint32_t samplerUnit, float U, float V);
-	float4 Sample(uint32_t texUint, uint32_t samplerUnit, float U, float V, float W);
+	ColorRGBA Sample(uint32_t texUint, uint32_t samplerUnit, float U, float V);
+	ColorRGBA Sample(uint32_t texUint, uint32_t samplerUnit, float U, float V, float W);
 
 	VertexShaderStage* VertexShaderStage();
 	PixelShaderStage* PixelShaderStage();
@@ -96,10 +96,9 @@ public:
 
 	uint32_t VSOutputCount;
 
-	
-
 private:
 	shared_ptr<VertexShader> mShader;
+
 };
 
 
@@ -114,6 +113,16 @@ public:
 
 private:
 	shared_ptr<PixelShader> mShader;
+
+	
+	//struct TextureUnit
+	//{
+	//	void* pData;
+	//	uint32_t Width, Height, Depth;
+	//	uint32_t NumMipmapLevel;
+	//	PixelFormat Format;
+	//	TextureType TextureType;
+	//} mTextureUnits[MaxTextureUnits];
 };
 
 
@@ -121,7 +130,7 @@ private:
  *
  */
 
-#define DefineAttribute(type, name, slot)				 const type& name = input->ShaderInputs[slot];
+#define DefineAttribute(type, name, slot)				 const type& name = *((type*)(&input->ShaderInputs[slot])); //const type& name = input->ShaderInputs[slot];
 #define DeclareVarying(modifier, type, name, slot)		 VertexShaderStage()->InterpolationModifiers[slot] = modifier;
 //#define DefineVarying(type, name, slot)				 type& name = output->ShaderOutputs[slot];
 #define DefineVaryingOutput(type, name, slot)			 type& name = *((type*)(&output->ShaderOutputs[slot]));
