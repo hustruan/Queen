@@ -360,9 +360,12 @@ public:
 
 	void LoadContent()
 	{
-		mDiffuseTexture = mRenderFactory->CreateTextureFromFile("../Media/Map-COL.png");
+		mDiffuseTexture = mRenderFactory->CreateTextureFromFile("../../Media/Map-COL.png");
 
-		bool loaded = mModel.loadModelFromFile("../Media/Infinite-Level_02.OBJ");
+		bool loaded = mModel.loadModelFromFile("../../Media/Infinite-Level_02.OBJ");
+
+		if(!loaded )
+			ASSERT(false);
 
 		if(!mModel.hasNormals())
 			mModel.computeNormals();
@@ -408,7 +411,6 @@ public:
 		initData.RowPitch = mModel.getCompiledIndexCount() * sizeof(uint32_t);
 		mIndexBuffer = mRenderFactory->CreateIndexBuffer(&initData);
 
-
 		mVertexShader = std::make_shared<SimpleVertexShader>();
 		mVertexShader->View = CreateLookAtMatrixLH(float3(0, 0, 1.6f), float3(0, 0, 0), float3(0, 1, 0));
 		mVertexShader->Projection =  CreatePerspectiveFovLH<float>(Queue_PI / 9, 1.0f, 0.1f, 100.0f ); 
@@ -423,14 +425,14 @@ public:
 	void Render()
 	{
 
-		/*static float t = 0.0f;
+		static float t = 0.0f;
 		static DWORD dwTimeStart = 0;
 		DWORD dwTimeCur = GetTickCount();
 		if( dwTimeStart == 0 )
 			dwTimeStart = dwTimeCur;
 		t = ( dwTimeCur - dwTimeStart ) / 1000.0f;
 
-		mVertexShader->World = Center * CreateRotationY(t);*/
+		mVertexShader->World = Center * CreateRotationY(t);
 
 		mRenderDevice->GetCurrentFrameBuffer()->Clear(CF_Color | CF_Depth,
 			ColorRGBA(0.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
@@ -450,7 +452,7 @@ public:
 
 		mRenderDevice->TextureUnits[0] = mDiffuseTexture;
 
-		mRenderDevice->DrawIndexed(PT_Triangle_List, mModel.getCompiledIndexCount(), /*mModel.getCompiledIndexCount()/2*/0, 0);
+		mRenderDevice->DrawIndexed(PT_Triangle_List, mModel.getCompiledIndexCount(), 0, 0);
 	
 		//mRenderDevice->SaveScreenToPfm("E:/screen.pfm");
 	}

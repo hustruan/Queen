@@ -7,8 +7,8 @@
 #include <Vector.hpp>
 #include <ColorRGBA.hpp>
 
-#define MaxVSInput 16
-#define MaxVSOutput 32
+#define MaxVSInput 8
+#define MaxVSOutput 8
 #define MaxPSOutput 8
 
 using RxLib::float4;

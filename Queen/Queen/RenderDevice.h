@@ -10,7 +10,7 @@
 #define MaxTextureUnits 8
 #define MaxVertexStreams 8
 #define MaxVertexBufferSize 18000
-#define MaxVertexBufferClip MaxVertexBufferSize * 5
+#define MaxVertexBufferClip (MaxVertexBufferSize * 5)
 #define MaxBinQueueSize     MaxVertexBufferClip
 
 using namespace RxLib;

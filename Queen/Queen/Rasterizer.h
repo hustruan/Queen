@@ -35,14 +35,14 @@ public:
 		vector<uint32_t> TriQueueSize;
 	};
 
-	struct RasterFaceInfo
+	struct RasterFace
 	{
 		bool FrontFace;
 		uint32_t TriCount;
 		uint32_t Indices[6];
 	};
 	
-	struct RasterFace
+	struct RasterFaceTiled
 	{
 		VS_Output* V[3];
 		VS_Output ddxVarying, ddyVarying;
@@ -54,7 +54,6 @@ public:
 		int32_t C1, C2, C3;
 
 		int32_t MinX, MinY, MaxX, MaxY;
-
 	};
 
 	struct ThreadPackage
@@ -101,25 +100,25 @@ private:
  
 	bool BackFaceCulling(const VS_Output& v0, const VS_Output& v1, const VS_Output& v2, bool* oriented = nullptr);
 
-	void SetupGeometry(std::vector<VS_Output>& outVertices, std::vector<RasterFaceInfo>& outFaces, 
+	void SetupGeometry(std::vector<VS_Output>& outVertices, std::vector<RasterFace>& outFaces, 
 		std::atomic<uint32_t>& workPackage, uint32_t primitiveCount);
 	
-	void RasterizeFaces(std::vector<RasterFaceInfo>& faces, std::atomic<uint32_t>& workPackage, uint32_t faceCount);
+	void RasterizeFaces(std::vector<RasterFace>& faces, std::atomic<uint32_t>& workPackage, uint32_t faceCount);
 
 	void ClipTriangleTiled(VS_Output* vertices, uint32_t threadIdx);
 
-	void SetupGeometryTiled(std::vector<VS_Output>& outVertices, std::vector<RasterFace>& outFaces, uint32_t theadIdx, ThreadPackage package);
+	void SetupGeometryTiled(std::vector<VS_Output>& outVertices, std::vector<RasterFaceTiled>& outFaces, uint32_t theadIdx, ThreadPackage package);
 
 	void Binning(const VS_Output& V0, const VS_Output& V1, const VS_Output& V2, uint32_t threadIdx);
 
 	void RasterizeTiles(std::vector<uint32_t>& tilesQueue, std::atomic<uint32_t>& workingPackage, uint32_t numTiles);
 
 	// the whole tile is inside an triagnle
-	void DrawPartialTile(const RasterFace& face, int32_t tileX, int32_t tileY, int32_t tileWidth, int32_t tileHeight);
+	void DrawPartialTile(const RasterFaceTiled& face, int32_t tileX, int32_t tileY, int32_t tileWidth, int32_t tileHeight);
 
-	void DrawPixels(const RasterFace& face, int32_t xStart, int32_t yStart, int32_t xEnd, int32_t yEnd);
+	void DrawPixels(const RasterFaceTiled& face, int32_t xStart, int32_t yStart, int32_t xEnd, int32_t yEnd);
 
-	void DrawMaskedPixels(const RasterFace& face, int32_t mask, int32_t xStart, int32_t xEnd, int32_t iY);
+	void DrawMaskedPixels(const RasterFaceTiled& face, int32_t mask, int32_t xStart, int32_t xEnd, int32_t iY);
 
 	void DrawPixel(uint32_t iX, uint32_t iY, const VS_Output& vsOutput);
 	
@@ -134,7 +133,7 @@ private:
 	std::vector<uint32_t> mNumVerticesThreads;
 
 	// each thread keep a local clipped faces buffer
-	std::vector< std::vector<RasterFace> > mFacesThreads;		
+	std::vector< std::vector<RasterFaceTiled> > mFacesThreads;		
 
 	// each thread keep a vertex cache
 	std::vector< std::array<VertexCacheElement, VertexCacheSize> > mVertexCaches;
@@ -147,7 +146,7 @@ private:
 	std::vector<Tile> mTiles;
 	
 	std::vector<VS_Output> mClippedVertices;
-	std::vector<RasterFaceInfo> mClippedFaces;
+	std::vector<RasterFace> mClippedFaces;
 
 	std::array<float4, 2> mClipPlanes;
 

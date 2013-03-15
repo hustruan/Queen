@@ -346,18 +346,16 @@ uint32_t Rasterizer::ClipTriangle( VS_Output* clipped, const VS_Output& v0, cons
 
 void Rasterizer::Draw( PrimitiveType primitiveType, uint32_t primitiveCount )
 {
-	ASSERT(primitiveType == PT_Triangle_List); // Only support triangle list 
-
 	pool& theadPool = GlobalThreadPool();
 	uint32_t numWorkThreads = GetNumWorkThreads();
 
-	// after frustum clip, one triangle can generate maximum 4 vertices
-	mClippedVertices.resize(primitiveCount * 4);
+	// after frustum clip, one triangle can generate maximum 5 vertices
+	mClippedVertices.resize(primitiveCount * 5);
 	mClippedFaces.resize(primitiveCount);
 
 	std::atomic<uint32_t> workingPackage(0);
 
-	mProfiler.StartTimer("Vertex Process");
+	//mProfiler.StartTimer("Vertex Process");
 	
 	//input assembly, vertex shading, culling/clipping
 	for (size_t i = 0; i < numWorkThreads - 1; ++i)
@@ -369,23 +367,22 @@ void Rasterizer::Draw( PrimitiveType primitiveType, uint32_t primitiveCount )
 	SetupGeometry(std::ref(mClippedVertices), std::ref(mClippedFaces), std::ref(workingPackage), primitiveCount);
 	theadPool.wait();
 	
-	mProfiler.EndTimer("Vertex Process");
-	auto elapsedTime = mProfiler.GetElapsedTime("Vertex Process");
+	//mProfiler.EndTimer("Vertex Process");
+	//auto elapsedTime = mProfiler.GetElapsedTime("Vertex Process");
 
-	//// rasterize faces
-	//workingPackage = 0;
-	//for (size_t i = 0; i < numWorkThreads - 1; ++i)
-	//{
-	//	theadPool.schedule(std::bind(&Rasterizer::RasterizeFaces, this, std::ref(mClippedFaces), std::ref(workingPackage), mClippedFaces.size()));
-	//}
-	//// schedule current thread
-	//RasterizeFaces(std::ref(mClippedFaces), std::ref(workingPackage), mClippedFaces.size());
-	//theadPool.wait();
+	//mProfiler.StartTimer("Rasterizer Process");
 
-	mProfiler.StartTimer("Rasterizer Process");
+	workingPackage = 0;
+	for (size_t i = 0; i < numWorkThreads - 1; ++i)
+	{
+		theadPool.schedule(std::bind(&Rasterizer::RasterizeFaces, this, std::ref(mClippedFaces), std::ref(workingPackage), mClippedFaces.size()));
+	}
+	// schedule current thread
+	RasterizeFaces(std::ref(mClippedFaces), std::ref(workingPackage), mClippedFaces.size());
+	theadPool.wait();
 
 	// 不能简单的用多线程光栅化，因为要写backbuffer的Fragment，就会有同步问题，这里先简单的使用单线程
-	for (uint32_t i = 0; i < mClippedFaces.size(); ++i)
+	/*for (uint32_t i = 0; i < mClippedFaces.size(); ++i)
 	{
 		for (uint32_t iFace = 0; iFace < mClippedFaces[i].TriCount; ++iFace)
 		{
@@ -394,13 +391,13 @@ void Rasterizer::Draw( PrimitiveType primitiveType, uint32_t primitiveCount )
 			const VS_Output& v2 = mClippedVertices[mClippedFaces[i].Indices[iFace * 3 + 2]];
 			RasterizeTriangle(v0, v1, v2);
 		}		
-	}
+	}*/
 
-	mProfiler.EndTimer("Rasterizer Process");
-	auto elapsedTimeR = mProfiler.GetElapsedTime("Rasterizer Process");
+	//mProfiler.EndTimer("Rasterizer Process");
+	//auto elapsedTimeR = mProfiler.GetElapsedTime("Rasterizer Process");
 }
 
-void Rasterizer::SetupGeometry( std::vector<VS_Output>& outVertices, std::vector<RasterFaceInfo>& outFaces, std::atomic<uint32_t>& workingPackage, uint32_t primitiveCount )
+void Rasterizer::SetupGeometry( std::vector<VS_Output>& outVertices, std::vector<RasterFace>& outFaces, std::atomic<uint32_t>& workingPackage, uint32_t primitiveCount )
 {
 	uint32_t numPackages = (primitiveCount + SetupGeometryPackageSize - 1) / SetupGeometryPackageSize;
 	uint32_t localWorkingPackage  = workingPackage ++;
@@ -474,7 +471,7 @@ void Rasterizer::SetupGeometry( std::vector<VS_Output>& outVertices, std::vector
 	}
 }
 
-void Rasterizer::RasterizeFaces( std::vector<RasterFaceInfo>& faces, std::atomic<uint32_t>& workingPackage, uint32_t faceCount )
+void Rasterizer::RasterizeFaces( std::vector<RasterFace>& faces, std::atomic<uint32_t>& workingPackage, uint32_t faceCount )
 {
 	uint32_t numPackages = (faceCount + SetupGeometryPackageSize - 1) / SetupGeometryPackageSize;
 	uint32_t localWorkingPackage  = workingPackage ++;
@@ -514,6 +511,18 @@ void Rasterizer::RasterizeTriangle( const VS_Output& vsOut0, const VS_Output& vs
 	if( pVertices[2]->Position.Y() < pVertices[1]->Position.Y() ) 
 		std::swap(pVertices[1], pVertices[2]); 
 
+	// Screenspace-position references 
+	const float4& vA = pVertices[0]->Position;
+	const float4& vB = pVertices[1]->Position;
+	const float4& vC = pVertices[2]->Position;
+
+	if (vC.Y() < MinClipY || vA.Y() > MaxClipY ||
+		(vA.X() < MinClipX && vB.X() < MinClipX && vB.X() < MinClipX ) ||
+		(vA.X() > MaxClipX && vB.X() > MaxClipX && vB.X() > MaxClipX ) )
+	{
+		return;
+	}
+
 	// store base vertex
 	const VS_Output* pBaseVertex = pVertices[0];
 
@@ -526,11 +535,6 @@ void Rasterizer::RasterizeTriangle( const VS_Output& vsOut0, const VS_Output& vs
 
 	VS_Output ddxAttrib, ddyAttrib;
 	VS_Output_Difference(&ddxAttrib, &ddyAttrib, &vsOutput01, &vsOutput02, invArea, mCurrVSOutputCount);
-
-	// Screenspace-position references 
-	const float4& vA = pVertices[0]->Position;
-	const float4& vB = pVertices[1]->Position;
-	const float4& vC = pVertices[2]->Position;
 
 	// Calculate slopes for stepping
 	const float fStepX[3] = {
@@ -1046,7 +1050,7 @@ void Rasterizer::ClipTriangleTiled(  VS_Output* vertices, uint32_t threadIdx )
 	}
 }
 
-void Rasterizer::SetupGeometryTiled( std::vector<VS_Output>& outVertices, std::vector<RasterFace>& outFaces, uint32_t theadIdx, ThreadPackage package )
+void Rasterizer::SetupGeometryTiled( std::vector<VS_Output>& outVertices, std::vector<RasterFaceTiled>& outFaces, uint32_t theadIdx, ThreadPackage package )
 {
 	VS_Output clippedVertices[7]; // 7 enough ???
 
@@ -1073,7 +1077,7 @@ void Rasterizer::Binning( const VS_Output& V1, const VS_Output& V2, const VS_Out
 	uint32_t baseIdx = mNumVerticesThreads[threadIdx];
 	uint32_t faceIdx = baseIdx / 3;
 
-	RasterFace& face = mFacesThreads[threadIdx][faceIdx];
+	RasterFaceTiled& face = mFacesThreads[threadIdx][faceIdx];
 
 	// 28.4 fixed-point coordinates
 	const int32_t X1 = iround(16.0f * V1.Position.X());
@@ -1207,8 +1211,6 @@ void Rasterizer::Binning( const VS_Output& V1, const VS_Output& V2, const VS_Out
 
 void Rasterizer::DrawTiled( PrimitiveType primitiveType, uint32_t primitiveCount )
 {
-	ASSERT(primitiveType == PT_Triangle_List); // Only support triangle list 
-
 	pool& theadPool = GlobalThreadPool();
 	uint32_t numWorkThreads = GetNumWorkThreads();
 
@@ -1331,7 +1333,7 @@ void Rasterizer::RasterizeTiles(std::vector<uint32_t>& tilesQueue, std::atomic<u
 					uint32_t accept = faceIdx & 0x1;
 					faceIdx = faceIdx >> 1; 
 
-					RasterFace& face = mFacesThreads[iThread][faceIdx];
+					RasterFaceTiled& face = mFacesThreads[iThread][faceIdx];
 					
 					if (accept)
 					{
@@ -1352,7 +1354,7 @@ void Rasterizer::RasterizeTiles(std::vector<uint32_t>& tilesQueue, std::atomic<u
 	}
 }
 
-void Rasterizer::DrawPartialTile(const RasterFace& face, int32_t tileX, int32_t tileY, int32_t tileWidth, int32_t tileHeight)
+void Rasterizer::DrawPartialTile(const RasterFaceTiled& face, int32_t tileX, int32_t tileY, int32_t tileWidth, int32_t tileHeight)
 {
 	const VS_Output* V1 = face.V[0];
 	const VS_Output* V2 = face.V[1];
@@ -1526,7 +1528,7 @@ void Rasterizer::DrawPartialTile(const RasterFace& face, int32_t tileX, int32_t 
 	}
 }
 
-void Rasterizer::DrawPixels(const RasterFace& face, int32_t xStart, int32_t yStart, int32_t xEnd, int32_t yEnd)
+void Rasterizer::DrawPixels(const RasterFaceTiled& face, int32_t xStart, int32_t yStart, int32_t xEnd, int32_t yEnd)
 {
 	const VS_Output* pBaseVertex = face.V[0];
 	
@@ -1545,7 +1547,7 @@ void Rasterizer::DrawPixels(const RasterFace& face, int32_t xStart, int32_t ySta
 	}
 }
 
-void Rasterizer::DrawMaskedPixels( const RasterFace& face, int32_t mask, int32_t xStart, int32_t xEnd, int32_t iY )
+void Rasterizer::DrawMaskedPixels( const RasterFaceTiled& face, int32_t mask, int32_t xStart, int32_t xEnd, int32_t iY )
 {
 	const VS_Output* pBaseVertex = face.V[0];
 
