@@ -84,10 +84,10 @@ public:
 
 		float NdotL = Dot(N, L);
 
-		//output->Color[0] = Saturate(ColorRGBA((float*)&iColor) * NdotL);
+		output->Color[0] = Saturate(ColorRGBA((float*)&iColor) * NdotL);
 
-		ColorRGBA diffuse = Sample(DiffuseTex, LinearSampler, iTex.X(), iTex.Y());
-		output->Color[0] = ColorRGBA(diffuse.R, diffuse.G, diffuse.B, 1.0f);
+		//ColorRGBA diffuse = Sample(DiffuseTex, LinearSampler, iTex.X(), iTex.Y());
+		//output->Color[0] = ColorRGBA(diffuse.R, diffuse.G, diffuse.B, 1.0f);
 
 		return true;
 	}
@@ -216,11 +216,11 @@ public:
 	void Render()
 	{
 		static float t = 0.0f;
-		static DWORD dwTimeStart = 0;
+		/*static DWORD dwTimeStart = 0;
 		DWORD dwTimeCur = GetTickCount();
 		if( dwTimeStart == 0 )
 		dwTimeStart = dwTimeCur;
-		t = ( dwTimeCur - dwTimeStart ) / 1000.0f;
+		t = ( dwTimeCur - dwTimeStart ) / 1000.0f;*/
 
 		//t = 0.54f;
 

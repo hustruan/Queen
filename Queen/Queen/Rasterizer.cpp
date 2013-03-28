@@ -215,11 +215,9 @@ void Rasterizer::ProjectVertex( VS_Output* vertex )
 	const float invW = 1.0f / vertex->Position.W();
 	vertex->Position *= invW;
 
-	auto mat = mDevice.mCurrentFrameBuffer->GetViewportMatrix();
 	// viewport transform
 	vertex->Position = vertex->Position * mDevice.mCurrentFrameBuffer->GetViewportMatrix();	
 
-  
 	/** 
 	 * After Projection transform, W is eaqual Z in view space.
 	 * divide shader output registers by w; this way we can interpolate them linearly while rasterizing ...
@@ -552,15 +550,15 @@ void Rasterizer::RasterizeTriangle( const VS_Output& vsOut0, const VS_Output& vs
 
 		switch (iPart)
 		{
-		case 0:
+		case 0: // 平底三角形
 			{
-				// 平底三角形
-				//iY[0] = (int32_t)(std::max)(MinClipY, ceilf(vA.Y() - 0.5f));
-				//iY[1] = (int32_t)(std::min)(MaxClipY, ceilf(vB.Y() - 0.5f));
+				// D3D 9, Pixel Center (0, 0)
+				//iY[0] = (int32_t)(std::max)(MinClipY, ceilf(vA.Y()));
+				//iY[1] = (int32_t)(std::min)(MaxClipY, ceilf(vB.Y()));
 
-				iY[0] = (int32_t)(std::max)(MinClipY, ceilf(vA.Y()));
-				iY[1] = (int32_t)(std::min)(MaxClipY, ceilf(vB.Y()));
-
+				// D3D10,OpenGL, Pixel Center(0.5, 0.5)
+				iY[0] = (int32_t)(std::max)(MinClipY, ceilf(vA.Y() - 0.5f));
+				iY[1] = (int32_t)(std::min)(MaxClipY, ceilf(vB.Y() - 0.5f));
 
 				if( fStepX[0] > fStepX[1] ) // left <-> right ?
 				{
@@ -573,18 +571,25 @@ void Rasterizer::RasterizeTriangle( const VS_Output& vsOut0, const VS_Output& vs
 					fDeltaX[1] = fStepX[1];
 				}
 
-				const float fPreStepY = (float)iY[0] - vA.Y();
+				// D3D 9, Pixel Center (0, 0)
+				//const float fPreStepY = (float)iY[0] - vA.Y();
+
+				// D3D10,OpenGL, Pixel Center(0.5, 0.5)
+				const float fPreStepY = (float)iY[0] - vA.Y() + 0.5f;
 				fX[0] += fDeltaX[0] * fPreStepY;
 				fX[1] += fDeltaX[1] * fPreStepY;
 			}
 			break;
 
 		case 1:
-			{
-				//iY[1] = (std::min)(MaxClipY, (int32_t)ceilf(vC.Y() /*- 0.5f*/));
-				iY[1] = (int32_t)(std::min)(MaxClipY, ceilf(vC.Y()));
+			{	
+				// D3D 9, Pixel Center (0, 0)
+				//iY[1] = (int32_t)(std::min)(MaxClipY, ceilf(vC.Y()));
+				//iY[1] = (int32_t)(std::min)(MaxClipY, ceilf(vC.Y()));
 
-				const float fPreStepY = (float)iY[0] - vB.Y();
+				// D3D10,OpenGL, Pixel Center(0.5, 0.5)
+				iY[1] = (int32_t)(std::min)(MaxClipY, ceilf(vC.Y() - 0.5f));
+				const float fPreStepY = (float)iY[0] - vB.Y() + 0.5f;
 
 				if( fStepX[1] > fStepX[2] ) // left <-> right ?
 				{
@@ -604,13 +609,15 @@ void Rasterizer::RasterizeTriangle( const VS_Output& vsOut0, const VS_Output& vs
 
 		for ( ; iY[0] < iY[1]; ++iY[0])
 		{
-			int32_t iX[2] = { (int32_t)( ceilf( fX[0]) ), (int32_t)( ceilf( fX[1]) ) };
+			// D3D 9, Pixel Center (0, 0)
+			/*int32_t iX[2] = { (int32_t)( ceilf( fX[0]) ), (int32_t)( ceilf( fX[1]) ) };
 			const float fOffsetX = ( (float)iX[0] - pBaseVertex->Position.X() );
-			const float fOffsetY = ( (float)iY[0] - pBaseVertex->Position.Y() );
+			const float fOffsetY = ( (float)iY[0] - pBaseVertex->Position.Y() );*/
 			
-			/*int32_t iX[2] = { (int32_t)( ceilf( fX[0] - 0.5f ) ), (int32_t)( ceilf( fX[1] - 0.5f ) ) };
+			// D3D10,OpenGL, Pixel Center(0.5, 0.5)
+			int32_t iX[2] = { (int32_t)( ceilf( fX[0] - 0.5f ) ), (int32_t)( ceilf( fX[1] - 0.5f ) ) };
 			const float fOffsetX = ( (float)iX[0] - pBaseVertex->Position.X() + 0.5f);
-			const float fOffsetY = ( (float)iY[0] - pBaseVertex->Position.Y() + 0.5f);*/
+			const float fOffsetY = ( (float)iY[0] - pBaseVertex->Position.Y() + 0.5f);
 
 			VS_Output vsOutput;
 			VS_Output_BaryCentric(&vsOutput, pBaseVertex, &ddxAttrib, &ddyAttrib, fOffsetX, fOffsetY, mCurrVSOutputCount);
@@ -736,9 +743,6 @@ void Rasterizer::RasterizeTriangle_Bottom( float X1, float Y1, float X2, float Y
 	}
 	else
 	{
-		//iYStart = (int32_t)ceilf(Y1);  // D3D 9 
-
-		// D3D 10, pixel center is (0.5, 0.5)
 		iYStart = (int32_t)ceilf(Y1 );
 
 		xStart += (iYStart - Y1) * dxLeft;
@@ -816,9 +820,6 @@ void Rasterizer::RasterizeTriangle_Top( float X1, float Y1, float X2, float Y2, 
 	}
 	else
 	{
-		//iYStart = (int32_t)ceilf(Y1);  // D3D 9 
-
-		// D3D 10, pixel center is (0.5, 0.5)
 		iYStart = (int32_t)ceilf(Y1);
 
 		xStart += (iYStart - Y1) * dxLeft;
