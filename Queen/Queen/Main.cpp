@@ -16,7 +16,7 @@
 
 //nv::SDKPath gAppPath;
 
-//#define CubeDemo
+#define CubeDemo
 
 #ifdef CubeDemo
 
@@ -104,7 +104,7 @@ public:
 	TestApp() 
 		: Applicaton()
 	{
-		std::unordered_map<std::string, int> test;
+
 	}
 
 	struct SimpleVertex
@@ -117,11 +117,7 @@ public:
 
 	void LoadContent()
 	{
-		mDiffuseTexture = mRenderFactory->CreateTextureFromFile("../../Media/Glass.dds");
-
-		void* pData; uint32_t pitch;
-		mDiffuseTexture->Map2D(0, TMA_Read_Only, 0, 0, 0, 0, pData, pitch);
-		//ExportToPfm("E:/test.pfm", 256, 256, mDiffuseTexture->GetTextureFormat(), pData);
+		//mDiffuseTexture = mRenderFactory->CreateTextureFromFile("../../Media/Glass.dds");
 
 		SimpleVertex vertices[] =
 		{
@@ -213,20 +209,15 @@ public:
 		mVertexShader->World.MakeIdentity();
 	}
 
+	void Update(float deltaTime)
+	{
+		CalculateFrameRate();
+
+		mVertexShader->World = mVertexShader->World * CreateRotationY(deltaTime);
+	}
+
 	void Render()
 	{
-		static float t = 0.0f;
-		/*static DWORD dwTimeStart = 0;
-		DWORD dwTimeCur = GetTickCount();
-		if( dwTimeStart == 0 )
-		dwTimeStart = dwTimeCur;
-		t = ( dwTimeCur - dwTimeStart ) / 1000.0f;*/
-
-		//t = 0.54f;
-
-
-		mVertexShader->World = CreateRotationY(t);
-
 		mRenderDevice->GetCurrentFrameBuffer()->Clear(CF_Color | CF_Depth,
 			ColorRGBA(0.5f, 0.5f, 0.5f, 1.0f), 1.0f, 0);
 
@@ -238,17 +229,20 @@ public:
 		mRenderDevice->SetVertexShader(mVertexShader);
 		mRenderDevice->SetPixelShader(mPixelShader);
 
-		mRenderDevice->SampleStates[0].AddressU = TAM_Wrap;
-		mRenderDevice->SampleStates[0].AddressW = TAM_Wrap;
-		mRenderDevice->SampleStates[0].BindStage = ST_Pixel;
-		mRenderDevice->SampleStates[0].Filter = TF_Min_Mag_Linear_Mip_Point;
+		//mRenderDevice->SampleStates[0].AddressU = TAM_Wrap;
+		//mRenderDevice->SampleStates[0].AddressW = TAM_Wrap;
+		//mRenderDevice->SampleStates[0].BindStage = ST_Pixel;
+		//mRenderDevice->SampleStates[0].Filter = TF_Min_Mag_Linear_Mip_Point;
 
-		mRenderDevice->TextureUnits[0] = mDiffuseTexture;
+		//mRenderDevice->TextureUnits[0] = mDiffuseTexture;
 
-		mRenderDevice->DrawIndexed(PT_Triangle_List, /*mModel.getCompiledIndexCount()*/36, 0, 0); 
-		//mRenderDevice->DrawIndexed(PT_Triangle_List, /*mModel.getCompiledIndexCount()*/6, 30, 0); 
+		mRenderDevice->DrawIndexed(PT_Triangle_List, 36, 0, 0); 	
 
-	   //mRenderDevice->SaveScreenToPfm("scanline.pfm");	
+		
+		std::stringstream sss; 
+		sss << "Vertics: 24  Face: 12  FPS: " << mFramePerSecond;
+
+		DrawText(sss.str(), 10, 10, ColorRGBA(1, 0, 0, 1));
 	}
 
 private:
@@ -360,9 +354,11 @@ public:
 
 	void LoadContent()
 	{
-		mDiffuseTexture = mRenderFactory->CreateTextureFromFile("../../Media/Map-COL.png");
+		//mDiffuseTexture = mRenderFactory->CreateTextureFromFile("../../Media/Map-COL.png");
+		//bool loaded = mModel.loadModelFromFile("../../Media/Infinite-Level_02.OBJ");
 
-		bool loaded = mModel.loadModelFromFile("../../Media/Infinite-Level_02.OBJ");
+		mDiffuseTexture = mRenderFactory->CreateTextureFromFile("./Media/Map-COL.png");
+		bool loaded = mModel.loadModelFromFile("./Media/Infinite-Level_02.OBJ");
 
 		if(!loaded )
 			ASSERT(false);
@@ -422,18 +418,14 @@ public:
 		mVertexShader->World = Center;
 	}
 
-	void Render()
+	void Update(float deltaTime)
 	{
+		CalculateFrameRate();
+		mVertexShader->World = mVertexShader->World * CreateRotationY(deltaTime);
+	}
 
-		static float t = 0.0f;
-		static DWORD dwTimeStart = 0;
-		DWORD dwTimeCur = GetTickCount();
-		if( dwTimeStart == 0 )
-			dwTimeStart = dwTimeCur;
-		t = ( dwTimeCur - dwTimeStart ) / 1000.0f;
-
-		mVertexShader->World = Center * CreateRotationY(t);
-
+	void Render()
+	{	
 		mRenderDevice->GetCurrentFrameBuffer()->Clear(CF_Color | CF_Depth,
 			ColorRGBA(0.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
 
@@ -453,8 +445,11 @@ public:
 		mRenderDevice->TextureUnits[0] = mDiffuseTexture;
 
 		mRenderDevice->DrawIndexed(PT_Triangle_List, mModel.getCompiledIndexCount(), 0, 0);
-	
-		//mRenderDevice->SaveScreenToPfm("E:/screen.pfm");
+
+		std::stringstream sss; 
+		sss << "Vertics: " << mModel.getPositionCount() << "  Face: " << mModel.getIndexCount() / 3 << "  FPS: " << mFramePerSecond;
+
+		DrawText(sss.str(), 10, 10, ColorRGBA(1, 0, 0, 1));
 	}
 
 private:
@@ -476,7 +471,8 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 {
 	TestApp app;
 
-	app.Create();
+	app.Create(L"LightedCube, Created by Èî÷îø,21221160");
+	//app.Create(L"HumanHead, Created by Èî÷îø,21221160");
 	app.Run();
 
 	return 0;

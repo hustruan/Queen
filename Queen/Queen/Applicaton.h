@@ -9,6 +9,7 @@
 #include "FrameBuffer.h"
 #include "Texture.h"
 #include "Shader.h"
+#include "Timer.h"
 
 class Applicaton
 {
@@ -16,7 +17,7 @@ public:
 	Applicaton(void);
 	~Applicaton(void);
 
-	bool Create();
+	bool Create(const std::wstring& title);
 	void Run();
 
 
@@ -34,11 +35,19 @@ protected:
 	virtual void OnResized(int width, int height);
 	virtual void OnResume();
 
+	// Directly use OpenGL to draw text.
+	void DrawText(const std::string& str, float x, float y, const ColorRGBA& color);
+
+	void CalculateFrameRate();
+
 private:
 	bool CreateGLWindow(const std::wstring& title, int width, int height, bool fullscreenflag);
 	void KillGLWindow();	
 	void Tick();
 	void Present();
+
+	bool BuildFont();
+	void KillFont();
 
 public:
 	static LRESULT CALLBACK WndProcStatic(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
@@ -54,6 +63,9 @@ protected:
 	RenderFactory* mRenderFactory;
 
 	uint32_t mWidth, mHeight;
+	float mFramePerSecond;
+
+	Timer mTimer;
 
 private:
 	HDC			mhDC;		// Private GDI Device Context
@@ -62,6 +74,17 @@ private:
 	HINSTANCE	mhInstance;		// Holds The Instance Of The Application
 
 	uint32_t mPresentTexture;
+	uint32_t mFontDisplayList;
+
+
+	struct TextInfo
+	{
+		std::string Text;
+		float X, Y;
+		ColorRGBA Color;
+	};
+
+	std::vector<TextInfo> mTexts;
 };
 
 

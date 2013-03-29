@@ -73,6 +73,8 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../;../../3rdParty/boost;../../3rdParty/threadpool;../../3rdParty/nvSDK;../../RxLib/CoreLib;../../RxLib/MathLib;../../3rdParty/nvModel/include;../../3rdParty/nvImage/include</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -103,6 +105,7 @@
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="threadpool.h" />
+    <ClInclude Include="Timer.h" />
     <ClInclude Include="VertexDeclaration.h" />
   </ItemGroup>
   <ItemGroup>
@@ -121,6 +124,7 @@
     <ClCompile Include="SampleState.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="Timer.cpp" />
     <ClCompile Include="VertexDeclaration.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

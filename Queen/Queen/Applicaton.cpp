@@ -16,7 +16,8 @@ LRESULT CALLBACK Applicaton::WndProcStatic( HWND mhWnd, UINT message, WPARAM wPa
 
 //----------------------------------------------------------------------------
 Applicaton::Applicaton(void)
-	: mhInstance(NULL), mhDC(NULL),mhRC(NULL), mhWnd(NULL), mPaused(false), mActice(false)
+	: mhInstance(NULL), mhDC(NULL),mhRC(NULL), mhWnd(NULL), mPaused(false), mActice(false),
+		mFontDisplayList(0), mPresentTexture(0), mFramePerSecond(0.0f)
 {
 	msApp = this;
 
@@ -35,6 +36,9 @@ Applicaton::~Applicaton(void)
 	SAFE_DELETE(mRenderDevice);
 	SAFE_DELETE(mRenderFactory);
 
+	glDeleteTextures(1, &mPresentTexture);
+	KillFont();
+
 	Context::Finalize();
 }
 
@@ -45,11 +49,14 @@ bool Applicaton::CreateGLWindow( const std::wstring& title, int width, int heigh
 	DWORD		dwExStyle;				// Window Extended Style
 	DWORD		dwStyle;				// Window Style
 	RECT		WindowRect;				// Grabs Rectangle Upper Left / Lower Right Values
+
+	int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+	int screenHeight = GetSystemMetrics(SM_CYSCREEN);
 	
-	WindowRect.left=(long)0;			// Set Left Value To 0
-	WindowRect.right=(long)width;		// Set Right Value To Requested Width
-	WindowRect.top=(long)0;				// Set Top Value To 0
-	WindowRect.bottom=(long)height;		// Set Bottom Value To Requested Height
+	WindowRect.left=(long)(screenWidth-width)/2;			// Set Left Value To 0
+	WindowRect.right=WindowRect.left + (long)width;		// Set Right Value To Requested Width
+	WindowRect.top=(long)(screenHeight-height)/2;				// Set Top Value To 0
+	WindowRect.bottom=WindowRect.top + (long)height;		// Set Bottom Value To Requested Height
 
 	mFullscreen=fullscreenflag;			// Set The Global Fullscreen Flag
 
@@ -120,7 +127,7 @@ bool Applicaton::CreateGLWindow( const std::wstring& title, int width, int heigh
 		dwStyle |							// Defined Window Style
 		WS_CLIPSIBLINGS |					// Required Window Style
 		WS_CLIPCHILDREN,					// Required Window Style
-		0, 0,								// Window Position
+		WindowRect.left, WindowRect.top,								// Window Position
 		WindowRect.right-WindowRect.left,	// Calculate Window Width
 		WindowRect.bottom-WindowRect.top,	// Calculate Window Height
 		NULL,								// No Parent Window
@@ -193,8 +200,6 @@ bool Applicaton::CreateGLWindow( const std::wstring& title, int width, int heigh
 	glDisable(GL_LIGHTING);
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_DEPTH_TEST);
-
-	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
 	glPixelStorei(GL_PACK_ALIGNMENT, 1);
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -273,7 +278,6 @@ void Applicaton::OnResized( int width, int height )
 	mWidth = width;
 	mHeight = height;
 }
-
 
 LRESULT Applicaton::WndProc( HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam )
 {
@@ -365,18 +369,6 @@ LRESULT Applicaton::WndProc( HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 	return DefWindowProc(hwnd,message,wParam,lParam);
 }
 
-void Applicaton::Tick()
-{
-	if (mActice && !mPaused)
-	{
-		Update(0);
-
-		Render();
-
-		Present();
-	}
-}
-
 void Applicaton::Initialize()
 {
 
@@ -402,10 +394,12 @@ void Applicaton::Update( float deltaTime )
 
 }
 
-bool Applicaton::Create()
+bool Applicaton::Create(const std::wstring& title)
 {
-	if( !CreateGLWindow(L"Queue", 500, 500, false) )
+	if( !CreateGLWindow(title.c_str(), 500, 500, false) )
 		return false;
+
+	BuildFont();
 
 	return true;
 }
@@ -416,6 +410,12 @@ void Applicaton::Run()
 
 	LoadContent();
 
+	// Reset Game Timer
+	mTimer.Reset();
+
+
+	mTimer.Start();
+
 	MSG msg;
 	ZeroMemory( &msg, sizeof( msg ) );
 	while( msg.message != WM_QUIT)
@@ -424,7 +424,6 @@ void Applicaton::Run()
 		{
 			TranslateMessage( &msg );
 			DispatchMessage( &msg );
-
 		}
 		else
 		{
@@ -437,12 +436,32 @@ void Applicaton::Run()
 	//KillGLWindow();
 }
 
+void Applicaton::Tick()
+{
+	// Clear Texts
+	mTexts.clear();
+
+	// Tick timer
+	mTimer.Tick();
+
+	if (mActice && !mPaused)
+	{
+		Update(mTimer.GetDeltaTime());
+
+		Render();
+
+		Present();
+	}
+	else
+		::Sleep(50);
+}
+
 void Applicaton::Present()
 {
 	static bool first = true;
 
 	// Present
-	glClearColor(1, 0, 0, 1);
+	glClearColor(0, 0, 0, 1);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	const shared_ptr<Texture2D>& target = mRenderDevice->GetCurrentFrameBuffer()->GetRenderTarget(ATT_Color0);
@@ -476,6 +495,7 @@ void Applicaton::Present()
 
 	glViewport(0, 0, targetWidth, targetHeight);
 
+	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 	glBegin(GL_TRIANGLE_STRIP);
 		glTexCoord2f(0, 0);
 		glVertex3f(-1, +1, 0);
@@ -490,5 +510,85 @@ void Applicaton::Present()
 		glVertex3f(+1, -1, 0);
 	glEnd();
 
+	// Draw all texture
+	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_ADD);
+	for (const TextInfo& textInfo : mTexts)
+	{
+		glColor4f(textInfo.Color.R, textInfo.Color.G, textInfo.Color.B, textInfo.Color.A);
+
+		// Position The Text On The Screen
+		glRasterPos2f((textInfo.X / mWidth) * 2.0f - 1, (textInfo.Y / mHeight) * 2.0f - 1);
+
+		glPushAttrib(GL_LIST_BIT);							// Pushes The Display List Bits
+		glListBase(mFontDisplayList - 32);								// Sets The Base Character to 32
+		glCallLists(textInfo.Text.length(), GL_UNSIGNED_BYTE, textInfo.Text.c_str());	// Draws The Display List Text
+		glPopAttrib();		
+	}
+	
 	SwapBuffers(mhDC);
+}
+
+bool Applicaton::BuildFont()
+{
+	HFONT	font;										// Windows Font ID
+	HFONT	oldfont;									// Used For Good House Keeping
+
+	mFontDisplayList = glGenLists(96);								// Storage For 96 Characters
+
+	font = CreateFont(	-18,							// Height Of Font
+		0,								// Width Of Font
+		0,								// Angle Of Escapement
+		0,								// Orientation Angle
+		FW_BOLD,						// Font Weight
+		FALSE,							// Italic
+		FALSE,							// Underline
+		FALSE,							// Strikeout
+		ANSI_CHARSET,					// Character Set Identifier
+		OUT_TT_PRECIS,					// Output Precision
+		CLIP_DEFAULT_PRECIS,			// Clipping Precision
+		ANTIALIASED_QUALITY,			// Output Quality
+		FF_DONTCARE|DEFAULT_PITCH,		// Family And Pitch
+		L"Courier New");					// Font Name
+
+	if (font == NULL)
+		return false;
+
+	oldfont = (HFONT)SelectObject(mhDC, font);           // Selects The Font We Want
+	wglUseFontBitmaps(mhDC, 32, 96, mFontDisplayList);	 // Builds 96 Characters Starting At Character 32
+	SelectObject(mhDC, oldfont);						 // Selects The Font We Want
+	DeleteObject(font);									 // Delete The Font
+
+	return true;
+}
+
+void Applicaton::KillFont()
+{
+	if (mFontDisplayList > 0)
+		glDeleteLists(mFontDisplayList, 96);
+}
+
+void Applicaton::DrawText( const std::string& str, float x, float y, const ColorRGBA& color)
+{
+	TextInfo textInfo;
+	textInfo.Text =str;
+	textInfo.X = x;
+	textInfo.Y = y;
+	textInfo.Color = color;
+
+	mTexts.push_back(textInfo);
+}
+
+void Applicaton::CalculateFrameRate()
+{
+	static int frameCount = 0;
+	static float baseTime = 0;
+
+	frameCount++;
+
+	if (mTimer.GetGameTime()-baseTime >= 1.0f)
+	{
+		mFramePerSecond = (float)frameCount;
+		frameCount = 0;
+		baseTime += 1.0f;
+	}
 }
