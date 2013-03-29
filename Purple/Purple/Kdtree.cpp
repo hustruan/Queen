@@ -1,12 +1,29 @@
-#include "Kdtree.h"
+#include "KdTree.h"
+
+namespace Purple {
 
 
-Kdtree::Kdtree(void)
+struct KdTreeNode 
 {
+	union 
+	{
+		float Split;  
 
-}
+	};
 
 
-Kdtree::~Kdtree(void)
-{
+	//uint32_t SplitPos() const { return }
+
+
+private:
+
+	union 
+	{
+
+	};
+
+};
+
+
+
 }
