@@ -6,6 +6,29 @@
 
 namespace RxLib {
 
+inline void* aligned_malloc(uint32_t size, uint32_t alignment) 
+{
+	uint8_t *pStart , *pAligned;
+
+	pStart = (uint8_t*)malloc(size + (alignment-1) + sizeof(uint16_t));
+
+	if(pStart == NULL)
+		return NULL;
+
+	pAligned = (uint8_t*)(((size_t)pStart + (alignment-1) + sizeof(uint16_t)) & ~(alignment-1));
+
+	*((uint16_t*)pAligned -1) = uint16_t(pAligned - pStart); 
+
+	return pAligned;
+}
+
+inline void aligned_free(void* ptr)
+{
+	uint16_t* p16 = (uint16_t*)ptr;
+	uint8_t* pTrue = (uint8_t*)(p16) - *((uint16_t*)p16 -1);
+	free(pTrue);
+}
+
 template<typename T, int alignment>
 class aligned_allocator
 {

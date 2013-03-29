@@ -48,10 +48,10 @@ public:
 };
 
 template <typename Real>
-inline Real ToDegree(Real radian)	{ return radian * RAD_TO_DEG; }
+inline Real ToDegree(Real radian)	{ return radian * Math<Real>::RAD_TO_DEG; }
 
 template <typename Real>
-inline Real ToRadian(Real degree)	{ return degree * DEG_TO_RAD; }
+inline Real ToRadian(Real degree)	{ return degree * Math<Real>::DEG_TO_RAD; }
 
 template <typename Real>
 inline Real Clamp(Real val, Real min, Real max)

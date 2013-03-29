@@ -27,5 +27,8 @@
     <ClInclude Include="stack_pool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="BlockedArray.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
