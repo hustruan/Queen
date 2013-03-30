@@ -85,6 +85,7 @@
     <ClInclude Include="Kdtree.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="Material.h" />
+    <ClInclude Include="MentoCarlo.h" />
     <ClInclude Include="Prerequisites.h" />
     <ClInclude Include="Ray.h" />
     <ClInclude Include="Reflection.h" />
@@ -100,6 +101,7 @@
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Material.cpp" />
+    <ClCompile Include="MentoCarlo.cpp" />
     <ClCompile Include="Ray.cpp" />
     <ClCompile Include="Reflection.cpp" />
     <ClCompile Include="Sampler.cpp" />

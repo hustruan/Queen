@@ -51,10 +51,14 @@ public:
 	virtual ColorRGB Sample_f(const float3& wo, float3* wi, float u1, float u2, float* pdf) const;
 
 	/**
-	 * Compute total reflection in a given direction due to constant illumination over hemisphere.
+	 * 计算给定方向的光在半球空间反射的积分，rho <= 1 能量守恒。如果不能通过解析方法积分。就根据
+	 * Samples 用Mento Carlo积分的方法计算。
 	 */
 	virtual ColorRGB rho(const float3& wo, int32_t numSamples, const float* samples) const;
 
+	/**
+	 * 
+	 */
 	virtual ColorRGB rho(int32_t numSamples, const float* samples1, const float* samples2) const;
 	
 	virtual float Pdf(const float3& wi, const float3& wo) const;
@@ -96,7 +100,7 @@ public:
 	Lambertian(const ColorRGB& reflectance) 
 		: BxDF(BSDF_Reflection | BSDF_Diffuse), mR(reflectance) { }
 
-	ColorRGB f(const float3& wo, const float3& wi) const	{ return mR / Mathf::INV_PI; }
+	ColorRGB f(const float3& wo, const float3& wi) const	{ return mR / RxLib::Mathf::INV_PI; }
 
 	ColorRGB rho(const float3& wo, int32_t numSamples, const float* samples) const { return mR; }
 
