@@ -98,6 +98,35 @@ CreatePerspectiveFovRH(Real fovy, Real aspect,  Real zNear,  Real zFar)
 
 }
 
+//----------------------------------------------------------------------------
+template<typename Real>
+inline Matrix4<Real>
+CreatePerspectiveLH( Real width, Real height, Real zNear, Real zFar )
+{
+/**
+	2*zn/w  0       0              0
+	0       2*zn/h  0              0
+	0       0       zf/(zf-zn)     1
+	0       0       zn*zf/(zn-zf)  0
+*/
+
+	return Matrix4<Real>((Real)2*zNear/width,  (Real)0,   (Real)0, (Real)0, 
+		                (Real)0, (Real)2*zNear/height, (Real)0, (Real)0, 
+		                (Real)0, (Real)0, zFar/(zFar - zNear), (Real)1,
+		                (Real)0, (Real)0, zNear*zFar/(zNear - zFar),(Real)0);
+}
+
+//----------------------------------------------------------------------------
+//template<typename Real>
+//inline Matrix4<Real> 
+//CreatePerspectiveLH(Real left, Real right, Real top, Real bottom, Real zNear,  Real zFar)
+//{
+//	return Matrix4<Real>((Real)2*zNear/width,  (Real)0,   (Real)0, (Real)0, 
+//		(Real)0, (Real)2*zNear/height, (Real)0, (Real)0, 
+//	    (right+left)/(left-right), (top+bottom)/(bottom-top), zFar/(zFar - zNear), (Real)1,
+//		(Real)0, (Real)0, zNear*zFar/(zNear - zFar),(Real)0);
+//}
+
 
 //----------------------------------------------------------------------------
 template<typename Real>
@@ -367,11 +396,11 @@ template<typename Real>
 inline Vector<Real, 3>
 TransformCoord( const Vector<Real, 3>& vec, const Matrix4<Real>& mat )
 {
-	Real InverseW = Real(1) / (vec[0] * mat.M14 + vec[1] * mat.M24 + vec[2] * mat.M34 + mat.M44);
+	Real inverseW = Real(1) / (vec[0] * mat.M14 + vec[1] * mat.M24 + vec[2] * mat.M34 + mat.M44);
 
-	return Vector<Real, 3>((vec[0] * mat.M11 + vec[1] * mat.M21 + vec[2] * mat.M31 + mat.M41) * InverseW,
-						   (vec[0] * mat.M12 + vec[1] * mat.M22 + vec[2] * mat.M32 + mat.M42) * InverseW,
-						   (vec[0] * mat.M13 + vec[1] * mat.M23 + vec[2] * mat.M33 + mat.M43) * InverseW);
+	return Vector<Real, 3>((vec[0] * mat.M11 + vec[1] * mat.M21 + vec[2] * mat.M31 + mat.M41) * inverseW,
+		(vec[0] * mat.M12 + vec[1] * mat.M22 + vec[2] * mat.M32 + mat.M42) * inverseW,
+		(vec[0] * mat.M13 + vec[1] * mat.M23 + vec[2] * mat.M33 + mat.M43) * inverseW);
 }
 
 //----------------------------------------------------------------------------------------

@@ -376,13 +376,13 @@ inline Vector<Real, Size> Normalize(const Vector<Real, Size>& vec)
 }
 
 template< typename Real, int Size >
-inline Vector<Real, Size> Lerp(const Vector<Real, Size>& vec1, const Vector<Real, Size>& vec2, float s)
+inline Vector<Real, Size> Lerp(const Vector<Real, Size>& vec1, const Vector<Real, Size>& vec2, float t)
 {
 	Vector<Real, Size> retVal;
 
 	for (uint32_t i = 0; i < Size; ++i)
 	{
-		retVal[i] = vec1[i] + (vec2[i] - vec1[i]) * s;
+		retVal[i] = vec1[i] + (vec2[i] - vec1[i]) * t;
 	}
 
 	return retVal;

@@ -61,6 +61,12 @@ inline Real Clamp(Real val, Real min, Real max)
 	return val;
 }
 
+template <typename Real>
+inline Real Lerp(Real a, Real b, float t)
+{
+	return a + (b-a)*t;
+}
+
 
 typedef Math<float> Mathf;
 

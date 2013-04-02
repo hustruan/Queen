@@ -1,4 +1,3 @@
-#pragma once
 #ifndef Ray_h__
 #define Ray_h__
 
@@ -6,19 +5,18 @@
 
 namespace Purple {
 
-using namespace RxLib;
+using RxLib::float3;
 
-class Ray
+struct Ray
 {
-public:
 	Ray()
 		: Origin(0, 0, 0), Direction(0, 0, 0)
 	{
 
 	}
 
-	Ray(const float3& origin, const float3& dir)
-		: Origin(origin), Direction(dir)
+	Ray(const float3& origin, const float3& dir, float min, float max)
+		: Origin(origin), Direction(dir), tMin(min), tMax(max)
 	{
 
 	}
@@ -28,10 +26,16 @@ public:
 		return Origin + Direction * t;
 	}
 
-public:
 	float3 Origin;
 	float3 Direction;
 	float tMin, tMax;
+};
+
+struct RayDifferential : public Ray
+{
+	bool hasDifferentials;
+	float3 rxOrigin, ryOrigin;
+	float3 rxDirection, ryDirection;
 };
 
 

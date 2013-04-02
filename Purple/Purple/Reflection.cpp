@@ -1,4 +1,5 @@
 #include "Reflection.h"
+#include "MentoCarlo.h"
 
 namespace {
 
@@ -46,7 +47,9 @@ using namespace RxLib;
 
 ColorRGB BxDF::Sample_f( const float3& wo, float3* wi, float u1, float u2, float* pdf ) const
 {
-
+	*wi = CosineSampleHemisphere(u1, u2);
+	*pdf = Pdf(wo, *wi);
+	return f(wo, *wi);
 }
 
 ColorRGB BxDF::rho( const float3& wo, int32_t numSamples, const float* samples ) const
@@ -60,7 +63,7 @@ ColorRGB BxDF::rho( const float3& wo, int32_t numSamples, const float* samples )
 		
 		if (pdf > 0.0f)
 		{
-			r += pdf * AbsCosTheta(wi) * f;
+			r += AbsCosTheta(wi) * f / pdf;
 		}
 	}
 	return r / float(numSamples);
@@ -68,7 +71,24 @@ ColorRGB BxDF::rho( const float3& wo, int32_t numSamples, const float* samples )
 
 ColorRGB BxDF::rho( int32_t numSamples, const float* samples1, const float* samples2 ) const
 {
-	return ColorRGB();
+	ColorRGB r(0.0f, 0.0f, 0.0f);
+	for (int32_t i = 0; i < numSamples; ++i)
+	{
+		float3 wo = UniformSampleHemisphere(samples1[2 * i], samples2[2 * i + 1]);
+
+		float pdf_i, pdf_o = UniformHemispherePdf();
+		float3 wi; 
+		ColorRGB f = Sample_f(wo, &wi, samples2[2 * i], samples2[2 * i + 1], &pdf_i);
+		if (pdf_i > 0.0f)
+			r += f * AbsCosTheta(wi) * AbsCosTheta(wo) / (pdf_i * pdf_o);
+	}
+
+	return r / (Mathf::PI*numSamples);
+}
+
+float BxDF::Pdf( const float3& wo, const float3& wi ) const
+{
+	return CosineHemispherePdf(AbsCosTheta(wi));
 }
 
 ColorRGB SpecularRelection::Sample_f( const float3& wo, float3* wi, float u1, float u2, float* pdf ) const

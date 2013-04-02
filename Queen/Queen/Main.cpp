@@ -16,7 +16,7 @@
 
 //nv::SDKPath gAppPath;
 
-#define CubeDemo
+//#define CubeDemo
 
 #ifdef CubeDemo
 
@@ -354,11 +354,11 @@ public:
 
 	void LoadContent()
 	{
-		//mDiffuseTexture = mRenderFactory->CreateTextureFromFile("../../Media/Map-COL.png");
-		//bool loaded = mModel.loadModelFromFile("../../Media/Infinite-Level_02.OBJ");
+		mDiffuseTexture = mRenderFactory->CreateTextureFromFile("../../Media/Map-COL.png");
+		bool loaded = mModel.loadModelFromFile("../../Media/Infinite-Level_02.OBJ");
 
-		mDiffuseTexture = mRenderFactory->CreateTextureFromFile("./Media/Map-COL.png");
-		bool loaded = mModel.loadModelFromFile("./Media/Infinite-Level_02.OBJ");
+		//mDiffuseTexture = mRenderFactory->CreateTextureFromFile("./Media/Map-COL.png");
+		//bool loaded = mModel.loadModelFromFile("./Media/Infinite-Level_02.OBJ");
 
 		if(!loaded )
 			ASSERT(false);
@@ -421,7 +421,7 @@ public:
 	void Update(float deltaTime)
 	{
 		CalculateFrameRate();
-		mVertexShader->World = mVertexShader->World * CreateRotationY(deltaTime);
+		mVertexShader->World = mVertexShader->World * CreateRotationY(deltaTime * RxLib::ToRadian(10.f));
 	}
 
 	void Render()

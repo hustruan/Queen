@@ -2,14 +2,9 @@
 #define Reflection_h__
 
 #include "Prerequisites.h"
-#include "ColorRGBA.hpp"
-#include "Vector.hpp"
-#include "Math.hpp"
+#include <Math.hpp>
 
 namespace Purple {
-
-using RxLib::float3;
-using RxLib::ColorRGB;
 
 
 struct Fresnel
@@ -61,7 +56,7 @@ public:
 	 */
 	virtual ColorRGB rho(int32_t numSamples, const float* samples1, const float* samples2) const;
 	
-	virtual float Pdf(const float3& wi, const float3& wo) const;
+	virtual float Pdf(const float3& wo, const float3& wi) const;
 
 
 public:
@@ -82,7 +77,7 @@ public:
 
 	ColorRGB f(const float3& wo, const float3& wi) const  { return ColorRGB::Black; }
 
-	float Pdf(const float3& wi, const float3& wo) const { return 0.0f; }
+	float Pdf(const float3& wo, const float3& wi) const { return 0.0f; }
 
 	/**
 	 * this computes wi: the direction of perfect mirror reflection

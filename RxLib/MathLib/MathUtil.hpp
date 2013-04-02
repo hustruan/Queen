@@ -31,7 +31,11 @@ CreatePerspectiveFovRH(Real fovy, Real aspect, Real zNear,  Real zFar);
 template<typename Real>
 inline Matrix4<Real> 
 CreatePerspectiveLH(Real width, Real height, Real zNear,  Real zFar);
-		
+
+//template<typename Real>
+//inline Matrix4<Real> 
+//CreatePerspectiveLH(Real left, Real right, Real top, Real bottom, Real zNear,  Real zFar);
+	
 template<typename Real>
 inline Matrix4<Real> 
 CreatePerspectiveRH(Real width, Real height, Real zNear,  Real zFar);

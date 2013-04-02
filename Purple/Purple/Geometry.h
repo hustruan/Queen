@@ -2,16 +2,9 @@
 #define Geometry_h__
 
 #include "Prerequisites.h"
-#include <Vector.hpp>
-#include <Matrix.hpp>
-#include <BoundingBox.hpp>
 #include "Ray.h"
 
 namespace Purple {
-
-using RxLib::float3;
-using RxLib::float44;
-using RxLib::BoundingBoxf;
 
 struct DifferentialGeometry
 {

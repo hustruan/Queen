@@ -6,7 +6,6 @@
 
 namespace Purple {
 
-using namespace RxLib;
 
 class Scene
 {
