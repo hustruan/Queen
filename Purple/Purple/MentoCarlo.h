@@ -85,6 +85,10 @@ void Shuffle(T* samples, int32_t numSamples, int32_t dims, Random& rng)
 
 struct Distribution1D
 {
+	/**
+	 * @param f 
+	 *   unnormalized pdf sequence
+	 */
 	Distribution1D(const float* f, int n);
 	~Distribution1D();
 

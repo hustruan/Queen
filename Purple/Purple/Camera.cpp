@@ -1,6 +1,6 @@
 #include "Camera.h"
 #include "Film.h"
-#include <Matrix.hpp>
+#include "Sampler.h"
 #include <MathUtil.hpp>
 
 namespace Purple {

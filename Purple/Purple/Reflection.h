@@ -41,8 +41,13 @@ public:
 	BxDF(uint32_t bxdfType) : BxDFType(bxdfType) { }
 	virtual ~BxDF() { }
 
+	/**
+	 * @breif Evaluate the BRDF for a pair of given directions.
+	 */
 	virtual ColorRGB f(const float3& wo, const float3& wi) const = 0;
 
+	/**
+	 * Sample the BRDF and return the sampled BRDF value. Also return the sampled indicent 
 	virtual ColorRGB Sample_f(const float3& wo, float3* wi, float u1, float u2, float* pdf) const;
 
 	/**
@@ -126,7 +131,47 @@ private:
 };
 
 
-
+//class BlinMicrofacet : public BxDF
+//{
+//public:
+//
+//	BlinMicrofacet(const ColorRGB& reflectance, float sigma)
+//		: BxDF(BSDF_Reflection | BSDF_Diffuse), mR(reflectance)
+//	{
+//		sigma = RxLib::ToRadian(sigma);
+//		float sigma2 = sigma*sigma; 
+//
+//		A = 1.0f - sigma2 / (2.0f * sigma2 + 0.33f);
+//		B = 0.45f * sigma2 / (sigma2 + 0.09f);
+//	}
+//
+//	ColorRGB f(const float3& wo, const float3& wi) const;
+//
+//private:
+//	float A, B;             // OrenNayar BRDF contants
+//	ColorRGB mR;			// reflect color
+//};
+//
+//class AnisotropicMicrofacet : public BxDF
+//{
+//public:
+//
+//	AnisotropicMicrofacet(const ColorRGB& reflectance, float sigma)
+//		: BxDF(BSDF_Reflection | BSDF_Diffuse), mR(reflectance)
+//	{
+//		sigma = RxLib::ToRadian(sigma);
+//		float sigma2 = sigma*sigma; 
+//
+//		A = 1.0f - sigma2 / (2.0f * sigma2 + 0.33f);
+//		B = 0.45f * sigma2 / (sigma2 + 0.09f);
+//	}
+//
+//	ColorRGB f(const float3& wo, const float3& wi) const;
+//
+//private:
+//	float A, B;             // OrenNayar BRDF contants
+//	ColorRGB mR;			// reflect color
+//};
 
 }
 

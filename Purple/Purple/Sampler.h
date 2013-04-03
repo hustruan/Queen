@@ -5,6 +5,9 @@
 
 namespace Purple {
 
+/**
+ * A sample used to generate camera ray.
+ */
 struct CameraSample 
 {
 	float2 ImageSample;
@@ -13,6 +16,18 @@ struct CameraSample
 };
 
 
+struct Sample : public CameraSample
+{
+
+
+
+};
+
+/**
+ * A Sampler is responsible for doing following things
+ * 1. Generate image samples for generating camera ray
+ * 2. Generate samples which will used by Integrator to evaluate light transport equation
+ */
 class Sampler
 {
 public:

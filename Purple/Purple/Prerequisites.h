@@ -36,6 +36,8 @@ class Scene;
 class Film;
 class Random;
 class Renderer;
+class Sample;
+class CameraSample;
 
 }
 

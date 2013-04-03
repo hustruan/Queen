@@ -3,12 +3,8 @@
 
 #include "Prerequisites.h"
 #include "Ray.h"
-#include <Matrix.hpp>
 
 namespace Purple {
-
-using RxLib::float44;
-using RxLib::float3;
 
 class Camera
 {
