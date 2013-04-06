@@ -103,6 +103,8 @@ uint32_t StratifiedSampler::GetMoreSamples( CameraSample* samples, Random& rng )
 		mCurrPixelX = mPixelStartX;
 		++mCurrPixelY;
 	}
+
+	return numSamples;
 }
 
 }

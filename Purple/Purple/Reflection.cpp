@@ -1,46 +1,6 @@
 #include "Reflection.h"
 #include "MentoCarlo.h"
 
-namespace {
-
-using namespace RxLib;
-
-inline float CosTheta(const float3& w) 
-{
-	return w.Z();
-}
-
-inline float AbsCosTheta(const float3& w) 
-{
-	return fabsf(w.Z());
-}
-
-inline float SinTheta2(const float3& w) 
-{
-	return (std::max)(0.0f, 1.0f - w.Z() * w.Z());
-}
-
-inline float SinTheta(const float3& w) 
-{
-	return sqrtf(SinTheta2(w));
-}
-
-inline float SinPhi(const float3& w) 
-{
-	float sintheta = SinTheta(w);
-	if (sintheta == 0.f) return 1.f;
-	return Clamp(w.Y() / sintheta, -1.f, 1.f);
-}
-
-inline float CosPhi(const float3& w) 
-{
-	float sintheta = SinTheta(w);
-	if (sintheta == 0.f) return 0.f;
-	return Clamp(w.X() / sintheta, -1.f, 1.f);
-}
-
-}
-
 namespace Purple {
 
 using namespace RxLib;
@@ -48,6 +8,7 @@ using namespace RxLib;
 ColorRGB BxDF::Sample_f( const float3& wo, float3* wi, float u1, float u2, float* pdf ) const
 {
 	*wi = CosineSampleHemisphere(u1, u2);
+	if (wo.Z() < 0.) wi->Z() *= -1.f;
 	*pdf = Pdf(wo, *wi);
 	return f(wo, *wi);
 }
@@ -128,6 +89,84 @@ ColorRGB OrenNayar::f( const float3& wo, const float3& wi ) const
 	}
 
 	return mR * Mathf::INV_PI * (A + B * maxcos * sinalpha * tanbeta);
+}
+
+
+float TorranceSparrow::G( const float3& wo, const float3& wi, const float3& wh ) const
+{
+	float NdotWh = AbsCosTheta(wh);
+	float NdotWo = AbsCosTheta(wo);
+	float NdotWi = AbsCosTheta(wi);
+	float OdotWh = fabsf(Dot(wo, wh));
+	
+	return std::min(1.0f, std::min(2.0f * NdotWh * NdotWo / OdotWh, 2.0f * NdotWh * NdotWi / OdotWh));
+}
+
+ColorRGB TorranceSparrow::f( const float3& wo, const float3& wi ) const
+{
+	float cosThetaO = AbsCosTheta(wo);
+	float cosThetaI = AbsCosTheta(wi);
+
+	if (cosThetaO == 0.0f || cosThetaI == 0.0f)
+		return ColorRGB(0.0f, 0.0f, 0.0f);
+
+	float3 wh = Normalize(wo + wi);
+
+	// Compute distribution term
+	float cosThetaH = Dot(wi, wh);
+
+	return mR* mFresnel->Evaluate(cosThetaH) * mD->D(wh) * G(wo, wi, wh) / 
+		          (4.0f * cosThetaI * cosThetaO);
+}
+
+ColorRGB TorranceSparrow::Sample_f( const float3& wo, float3* wi, float u1, float u2, float* pdf ) const
+{
+	mD->Sample_f(wo, wi, u1, u2, pdf);
+	
+	if (!SameHemisphere(wo, *wi)) 
+		return ColorRGB(0.0f, 0.0f, 0.0f);
+
+	return f(wo, *wi);
+}
+
+float TorranceSparrow::Pdf( const float3& wo, const float3& wi ) const
+{
+	if (!SameHemisphere(wo, wi))
+		return 0.0f;
+
+	return mD->Pdf(wo, wi);
+}
+
+void Blin::Sample_f( const float3& wo, float3* wi, float u1, float u2, float* pdf ) const
+{
+	float cosTheta = powf(u1, 1.0f / (mExponent + 1.0f));
+	float sinTheta = sqrtf(std::max(0.0f, 1- cosTheta * cosTheta));
+	float phi = Mathf::TWO_PI * u2;
+
+	float3 wh = SphericalDirection(cosTheta, sinTheta, phi);
+	if (!SameHemisphere(wh, wo))
+		wh = -wh;
+
+	*wi = 2.0f * Dot(wo, wh) * wh - wo;
+
+	float blinPdf = (mExponent + 1.0f) * powf(AbsCosTheta(wh), mExponent) / 
+		(Mathf::TWO_PI * 4.0f * Dot(wo, wh));
+
+	if (Dot(wo, wh) <= 0.f) 
+		*pdf = 0.f;
+
+	*pdf = blinPdf;
+}
+
+float Blin::Pdf( const float3& wo, const float3& wi ) const
+{
+	float3 wh = Normalize(wo + wi);
+
+	if (Dot(wo, wh) <= 0.f) 
+		return 0.0f;
+
+	return (mExponent + 1.0f) * powf(AbsCosTheta(wh), mExponent) / 
+		(Mathf::TWO_PI * 4.0f * Dot(wo, wh));
 }
 
 }

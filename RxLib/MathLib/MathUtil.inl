@@ -413,6 +413,17 @@ TransformNormal(const Vector<Real, 3>& normal, const Matrix4<Real>& mat)
 						   normal[0] * mat.M13 + normal[1] * mat.M23 + normal[2] * mat.M33);
 }
 
+//----------------------------------------------------------------------------------------
+template<typename Real>
+inline Vector<Real, 3> 
+TransformDirection(const Vector<Real, 3>& dir, const Matrix4<Real>& mat)
+{
+	return Vector<Real, 3>(dir[0] * mat.M11 + dir[1] * mat.M21 + dir[2] * mat.M31,
+		                   dir[0] * mat.M12 + dir[1] * mat.M22 + dir[2] * mat.M32,
+		                   dir[0] * mat.M13 + dir[1] * mat.M23 + dir[2] * mat.M33);
+}
+
+
 //----------------------------------------------------------------------------------------------------
 template<typename Real>
 inline BoundingBox<Real>

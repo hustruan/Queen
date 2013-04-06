@@ -6,17 +6,55 @@
 
 namespace Purple {
 
+inline float CosTheta(const float3& w) 
+{
+	return w.Z();
+}
+
+inline float AbsCosTheta(const float3& w) 
+{
+	return fabsf(w.Z());
+}
+
+inline float SinTheta2(const float3& w) 
+{
+	return (std::max)(0.0f, 1.0f - w.Z() * w.Z());
+}
+
+inline float SinTheta(const float3& w) 
+{
+	return sqrtf(SinTheta2(w));
+}
+
+inline float SinPhi(const float3& w) 
+{
+	float sintheta = SinTheta(w);
+	if (sintheta == 0.f) return 1.f;
+	return RxLib::Clamp(w.Y() / sintheta, -1.f, 1.f);
+}
+
+inline float CosPhi(const float3& w) 
+{
+	float sintheta = SinTheta(w);
+	if (sintheta == 0.f) return 0.f;
+	return RxLib::Clamp(w.X() / sintheta, -1.f, 1.f);
+}
+
+inline bool SameHemisphere(const float3& w, const float3& wp) 
+{
+	return w.Z() * wp.Z() > 0.f;
+}
+
+inline float3 SphericalDirection(float cosTheta, float sinTheta, float phi)
+{
+	return float3(sinTheta * cosf(phi), sinTheta * sinf(phi), cosTheta);
+}
 
 struct Fresnel
 {
 	virtual ~Fresnel() { };
 	virtual ColorRGB Evaluate(float cosi) const = 0;
 };
-
-//struct Fresnel
-//{
-//
-//};
 
 class BxDF 
 {
@@ -48,6 +86,7 @@ public:
 
 	/**
 	 * Sample the BRDF and return the sampled BRDF value. Also return the sampled indicent 
+	 */
 	virtual ColorRGB Sample_f(const float3& wo, float3* wi, float u1, float u2, float* pdf) const;
 
 	/**
@@ -131,47 +170,56 @@ private:
 };
 
 
-//class BlinMicrofacet : public BxDF
-//{
-//public:
-//
-//	BlinMicrofacet(const ColorRGB& reflectance, float sigma)
-//		: BxDF(BSDF_Reflection | BSDF_Diffuse), mR(reflectance)
-//	{
-//		sigma = RxLib::ToRadian(sigma);
-//		float sigma2 = sigma*sigma; 
-//
-//		A = 1.0f - sigma2 / (2.0f * sigma2 + 0.33f);
-//		B = 0.45f * sigma2 / (sigma2 + 0.09f);
-//	}
-//
-//	ColorRGB f(const float3& wo, const float3& wi) const;
-//
-//private:
-//	float A, B;             // OrenNayar BRDF contants
-//	ColorRGB mR;			// reflect color
-//};
-//
-//class AnisotropicMicrofacet : public BxDF
-//{
-//public:
-//
-//	AnisotropicMicrofacet(const ColorRGB& reflectance, float sigma)
-//		: BxDF(BSDF_Reflection | BSDF_Diffuse), mR(reflectance)
-//	{
-//		sigma = RxLib::ToRadian(sigma);
-//		float sigma2 = sigma*sigma; 
-//
-//		A = 1.0f - sigma2 / (2.0f * sigma2 + 0.33f);
-//		B = 0.45f * sigma2 / (sigma2 + 0.09f);
-//	}
-//
-//	ColorRGB f(const float3& wo, const float3& wi) const;
-//
-//private:
-//	float A, B;             // OrenNayar BRDF contants
-//	ColorRGB mR;			// reflect color
-//};
+struct MicrofacetDistribution
+{
+	virtual ~MicrofacetDistribution() {}
+	virtual float D(const float3& wh) const = 0;
+	virtual void Sample_f(const float3& wo, float3* wi, float u1, float u2, float* pdf) const = 0;
+	virtual float Pdf(const float3& wo, const float3& wi) const = 0;
+};
+
+class TorranceSparrow : public BxDF
+{
+public:
+	TorranceSparrow(const ColorRGB& reflectance, Fresnel* fresnel)
+		: BxDF(BSDF_Reflection | BSDF_Glossy), mR(reflectance), mFresnel(fresnel) {}
+
+	ColorRGB f(const float3& wo, const float3& wi) const;
+
+	float Pdf(const float3& wo, const float3& wi) const;
+
+	ColorRGB Sample_f(const float3& wo, float3* wi, float u1, float u2, float* pdf) const;
+
+private:
+
+	/**
+	 * Geometric attenuation term
+	 */
+	float G(const float3& wo, const float3& wi, const float3& wh) const;
+
+private:
+
+	ColorRGB mR;
+	Fresnel* mFresnel;	 
+	MicrofacetDistribution* mD;
+};
+
+struct Blin : MicrofacetDistribution
+{
+	Blin(float e) : mExponent(e) {}
+	
+	float D(const float3& wh) const
+	{
+		return (mExponent + 2.0f) * RxLib::Mathf::INV_TWO_PI * powf(AbsCosTheta(wh), mExponent);
+	}
+
+	void Sample_f(const float3& wo, float3* wi, float u1, float u2, float* pdf) const;
+	float Pdf(const float3& wo, const float3& wi) const;
+
+private:
+	float mExponent;
+};
+
 
 }
 

@@ -123,6 +123,10 @@ inline Vector<Real, 3>
 TransformNormal(const Vector<Real, 3>& normal, const Matrix4<Real>& mat);
 
 template<typename Real>
+inline Vector<Real, 3> 
+TransformDirection(const Vector<Real, 3>& dir, const Matrix4<Real>& mat);
+
+template<typename Real>
 inline BoundingBox<Real>
 Transform( const BoundingBox<Real>& box, const Matrix4<Real>& matrix );
 

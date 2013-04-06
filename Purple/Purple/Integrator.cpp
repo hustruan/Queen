@@ -2,14 +2,4 @@
 
 namespace Purple {
 
-SurfaceIntegrator::SurfaceIntegrator( void )
-{
-
-}
-
-SurfaceIntegrator::~SurfaceIntegrator( void )
-{
-
-}
-
 }
