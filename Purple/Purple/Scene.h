@@ -13,11 +13,12 @@ public:
 	Scene(void);
 	virtual ~Scene(void);
 
+	const BoundingBoxf& GetBoundingBox() const { return mWorldBound; } 
 
 protected:
 	BoundingBoxf mWorldBound;
 
-	vector<shared_ptr<Geometry>> mGeometries;
+	vector<shared_ptr<Shape>> mGeometries;
 };
 
 }

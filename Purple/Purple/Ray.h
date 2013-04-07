@@ -15,7 +15,7 @@ struct Ray
 
 	}
 
-	Ray(const float3& origin, const float3& dir, float min, float max)
+	Ray(const float3& origin, const float3& dir, float min, float max = RxLib::Mathf::INFINITY)
 		: Origin(origin), Direction(dir), tMin(min), tMax(max)
 	{
 
@@ -37,7 +37,6 @@ struct RayDifferential : public Ray
 	float3 rxOrigin, ryOrigin;
 	float3 rxDirection, ryDirection;
 };
-
 
 }
 

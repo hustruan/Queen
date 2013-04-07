@@ -54,6 +54,27 @@ inline float CosineHemispherePdf(float costheta)
 	return RxLib::Mathf::INV_PI * costheta;
 }
 
+inline float3 UniformSampleCone(float u1, float u2, float costhetamax) 
+{
+	float costheta = (1.f - u1) + u1 * costhetamax;
+	float sintheta = sqrtf(1.f - costheta*costheta);
+	float phi = u2 * 2.f * RxLib::Mathf::PI;
+	return float3(cosf(phi) * sintheta, sinf(phi) * sintheta, costheta);
+}
+
+inline float3 UniformSampleCone(float u1, float u2, float costhetamax, const float3& x, const float3& y, const float3& z)
+{
+	float costheta = (1.f - u1) + u1 * costhetamax;
+	float sintheta = sqrtf(1.f - costheta*costheta);
+	float phi = u2 * 2.f * RxLib::Mathf::PI;
+	return x * cosf(phi) * sintheta + y * sinf(phi) * sintheta + z *costheta;
+}
+
+inline float UniformConePdf(float cosThetaMax) 
+{
+	return 1.0f / (2.f * RxLib::Mathf::PI * (1.0f - cosThetaMax));
+}
+
 inline void UniformSampleTriangle(float u1, float u2, float* u, float* v)
 {
 	float su1 = sqrtf(u1);	
@@ -83,6 +104,10 @@ void Shuffle(T* samples, int32_t numSamples, int32_t dims, Random& rng)
 }
 
 
+/**
+ * This data structure can be used to transform uniformly distributed
+ * samples to a stored discrete probability distribution.
+ */
 struct Distribution1D
 {
 	/**
@@ -92,7 +117,7 @@ struct Distribution1D
 	Distribution1D(const float* f, int n);
 	~Distribution1D();
 
-	float SampleContinuous(float u, float *pdf, int* off = nullptr)
+	float SampleContinuous(float u, float *pdf, int* off = nullptr) const
 	{
 		float* upPtr = std::upper_bound(cdf, cdf+Count+1, u);
 		int offset = std::max(0, std::distance(cdf, upPtr) - 1);	
@@ -106,13 +131,23 @@ struct Distribution1D
 		return (offset + t) / float(Count);
 	}
 
+	int SampleDiscrete(float u, float* pdf ) const 
+	{
+		float* upPtr = std::upper_bound(cdf, cdf+Count+1, u);
+		int offset = std::max(0, std::distance(cdf, upPtr) - 1);	
+
+		assert(offset < Count);
+		assert(u >= cdf[offset] && u < cdf[offset+1]);
+		
+		if (pdf) *pdf = pdf[offset] / (Integral * Count);
+		return offset;
+	}
 
 private:
 	float* pdf;		//概率密度，并没有归一化到1,需要除以Integral
 	float* cdf;	
 	float Integral;  // 没有归一化的pdf在domain上的积分
 	int Count;
-
 
 	friend struct Distribution2D;
 };

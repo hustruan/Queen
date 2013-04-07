@@ -60,9 +60,6 @@ protected:
 };
 
 
-
-
-
 /** 
  * Stratified jitter sampler
  */
@@ -89,12 +86,6 @@ private:
 	// stratified samples buffer
 	float* mSamplesBuffer;
 };
-
-
-
-
-
-
 
 }
 

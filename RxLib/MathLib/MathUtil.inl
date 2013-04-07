@@ -520,3 +520,23 @@ void CoordinateSystem( const Vector<Real, 3>& v1, Vector<Real, 3>* v2, Vector<Re
 
 	*v3 = Cross(v1, *v2);
 }
+
+//////////////////////////////////////////////////////////////////////////
+template<typename Real>
+BoundingBox<Real> FromSphere( const BoundingSphere<Real>& sphere )
+{
+	BoundingBox box;
+	box.Min = Vector<Real, 3>( sphere.Center.X() - sphere.Radius, sphere.Center.Y() - sphere.Radius, sphere.Center.Z() - sphere.Radius );
+	box.Max = Vector<Real, 3>( sphere.Center.X() + sphere.Radius, sphere.Center.Y() + sphere.Radius, sphere.Center.Z() + sphere.Radius );
+	return box;
+}
+
+template<typename Real>
+BoundingSphere<Real> FromBox( const BoundingBox<Real>& box )
+{
+	Vector<Real,3> difference = box.Max - box.Min;
+	Vector<Real,3> center = (box.Min + box.Max) * Real(0.5);
+	Real radius = Length(difference) * Real(0.5);
+
+	return BoundingSphere<Real>(center, radius);
+}

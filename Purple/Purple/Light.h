@@ -25,7 +25,7 @@ public:
 	/** 
 	 * 
 	 */
-	virtual ColorRGB Sample_f(const float3& pt, float3* wi, float* pdf, VisibilityTester* vis);
+	virtual ColorRGB Sample_f(const float3& pt, float3* wi, float* pdf, VisibilityTester* vis) = 0;
 
 	virtual float Pdf(const float3& pt, const float3& wi) const = 0;
 
@@ -57,8 +57,27 @@ private:
 	float3 mLightPosW;	
 };
 
+
 class DirectionalLight : public Light
 {
+public:
+	/**
+	 * You can directly set the dir in world space, and leave the light2world identity
+	 */
+	DirectionalLight(const float44& light2world, const float3& dir, const ColorRGB& radiance);
+	~DirectionalLight();
+
+	ColorRGB Sample_f(const float3& pt, float3* wi, float* pdf, VisibilityTester* vis);
+
+	ColorRGB Power(const Scene& scene) const;
+
+	float Pdf(const float3& pt, const float3& wi) const { return 0.0f; }
+
+	bool DeltaLight() const  { return true; }
+
+private:
+	float3 mLightDirectionW;
+	ColorRGB mRadiance;
 
 };
 
@@ -94,7 +113,7 @@ private:
 class AreaLight : public Light
 {
 public:
-	AreaLight(const float44& light2world, const ColorRGB& intensity, const shared_ptr<Geometry>& shape, int32_t numSamples);
+	AreaLight(const float44& light2world, const ColorRGB& intensity, const shared_ptr<Shape>& shape, int32_t numSamples);
 	~AreaLight();
 
 	ColorRGB Sample_f(const float3& pt, float3* wi, float* pdf, VisibilityTester* vis);
@@ -111,7 +130,7 @@ private:
 	float mArea;
 	ColorRGB mIntensity;
 
-	shared_ptr<Geometry> mShape;
+	shared_ptr<Shape> mShape;
 };
 
 

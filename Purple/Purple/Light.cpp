@@ -1,6 +1,7 @@
 #include "Light.h"
 #include "Scene.h"
 #include <MathUtil.hpp>
+#include <BoundingSphere.hpp>
 
 namespace Purple {
 
@@ -67,12 +68,42 @@ ColorRGB SpotLight::Power( const Scene& scene ) const
 }
 
 
+
+DirectionalLight::DirectionalLight( const float44& light2world, const float3& dir, const ColorRGB& radiance )
+	:Light(light2world), mRadiance(radiance)
+{
+	mLightDirectionW = Normalize(TransformDirection(dir, light2world));
+}
+
+DirectionalLight::~DirectionalLight()
+{
+
+}
+
+ColorRGB DirectionalLight::Sample_f( const float3& pt, float3* wi, float* pdf, VisibilityTester* vis )
+{
+	*wi = -mLightDirectionW;
+	*pdf = 1.0f;
+
+	return mRadiance;
+}
+
+ColorRGB DirectionalLight::Power( const Scene& scene ) const
+{
+	const BoundingBoxf& bbox = scene.GetBoundingBox();
+	BoundingSpheref sphere = FromBox(bbox);
+
+	return mRadiance * Mathf::PI * sphere.Radius * sphere.Radius;
+
+}
+
+
 ColorRGB AreaLight::Sample_f( const float3& pt, float3* wi, float* pdf, VisibilityTester* vis )
 {
 	return ColorRGB(0, 0, 0);
 }
 
-AreaLight::AreaLight( const float44& light2world, const ColorRGB& intensity, const shared_ptr<Geometry>& shape, int32_t numSamples )
+AreaLight::AreaLight( const float44& light2world, const ColorRGB& intensity, const shared_ptr<Shape>& shape, int32_t numSamples )
 	: Light(light2world), mIntensity(intensity)
 {
 	 

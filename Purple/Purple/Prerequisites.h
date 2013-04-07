@@ -9,6 +9,7 @@
 #include <memory>
 #include <cassert>
 #include <algorithm>
+#include <exception>
 
 using std::vector;
 using std::array;
@@ -29,7 +30,7 @@ using RxLib::BoundingBoxf;
 
 namespace Purple {
 
-class Geometry;
+class Shape;
 class Camera;
 class Sampler;
 class Scene;

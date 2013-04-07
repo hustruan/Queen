@@ -6,6 +6,7 @@
 #include "Matrix.hpp"
 #include "Plane.hpp"
 #include "BoundingBox.hpp"
+#include "BoundingSphere.hpp"
 
 namespace RxLib {
 
@@ -130,8 +131,23 @@ template<typename Real>
 inline BoundingBox<Real>
 Transform( const BoundingBox<Real>& box, const Matrix4<Real>& matrix );
 
+/**
+ * Create a new bounding box form a bounding sphere
+ */
+template<typename Real>
+BoundingBox<Real> FromSphere( const BoundingSphere<Real>& sphere );
+
+/**
+ * Create a new bounding sphere form a bounding box
+ */
+template<typename Real>
+BoundingSphere<Real> FromBox( const BoundingBox<Real>& box );
+
+
 template<typename Real>
 void CoordinateSystem(const Vector<Real, 3>& v1, Vector<Real, 3>* v2, Vector<Real, 3>* v3);
+
+
 
 #include "MathUtil.inl"
 

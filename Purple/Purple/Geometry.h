@@ -8,7 +8,7 @@ namespace Purple {
 
 struct DifferentialGeometry
 {
-	const Geometry* Geometry;
+	const Shape* Geometry;
 
 	float3 Point;
 	float3 Normal;
@@ -18,22 +18,34 @@ struct DifferentialGeometry
 	float dudx, dvdx, dudy, dvdy;
 };
 
-class Geometry 
+class Shape 
 {
 public:
-	Geometry(void);
-	virtual ~Geometry(void);
+	Shape(const float44& o2w, bool ro);
+	virtual ~Shape(void);
 
 	virtual BoundingBoxf GetLocalBound() const = 0;
 	virtual BoundingBoxf GetWorldBound() const;
 
-	virtual bool Intersect(const Ray& ray, float* tHit, DifferentialGeometry* diffGeoHit) const = 0;
-	virtual bool FastIntersect(const Ray& ray);
+	virtual bool Intersect(const Ray& ray, float* tHit, DifferentialGeometry* diffGeoHit) const;
+	virtual bool IntersectP(const Ray& ray) const;
 
-	virtual float Area() const = 0;
+	virtual float Area() const;
+
+	virtual float3 Sample(float u1, float u2, float3* n) const;
+	virtual float Pdf(const float3& pt) const	{ return 1.0f / Area(); }
+
+	/**
+	 * @brief Only sample points from those should be integral. eg. for area light, only the portion visible to lit 
+	 *        point should be sampled. The default implementation doesn't consider the additional point, just call
+	 *        this original sample method.
+	 */
+	virtual float3 Sample(const float3& pt, float u1, float u2, float3* n) const { return Sample(u1, u2, n); }
+	virtual float Pdf(const float3& pt, const float3& wi) const;
 
 protected:
 	float44 mLocalToWorld, mWorldToLocal;
+	bool mReverseOrientation;
 };
 
 }

@@ -91,6 +91,7 @@
     <ClInclude Include="Light.h" />
     <ClInclude Include="Material.h" />
     <ClInclude Include="MentoCarlo.h" />
+    <ClInclude Include="Mesh.h" />
     <ClInclude Include="Prerequisites.h" />
     <ClInclude Include="Random.h" />
     <ClInclude Include="Ray.h" />
@@ -99,7 +100,6 @@
     <ClInclude Include="Scene.h" />
     <ClInclude Include="SimpleGeometry.h" />
     <ClInclude Include="Tracer.h" />
-    <ClInclude Include="TriMesh.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
@@ -110,6 +110,7 @@
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="MentoCarlo.cpp" />
+    <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="Random.cpp" />
     <ClCompile Include="Ray.cpp" />
     <ClCompile Include="Reflection.cpp" />
@@ -117,7 +118,6 @@
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="SimpleGeometry.cpp" />
     <ClCompile Include="Tracer.cpp" />
-    <ClCompile Include="TriMesh.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -80,6 +80,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="BoundingBox.hpp" />
+    <ClInclude Include="BoundingSphere.hpp" />
     <ClInclude Include="ColorRGBA.hpp" />
     <ClInclude Include="FloatCast.hpp" />
     <ClInclude Include="Math.hpp" />
