@@ -6,7 +6,7 @@
 
 namespace Purple {
 
-class Intersection;
+class DifferentialGeometry;
 
 class Integrator
 {
@@ -29,7 +29,7 @@ class SurfaceIntegrator : public Integrator
 public:
 	virtual ~SurfaceIntegrator(void) { }
 
-	virtual ColorRGB Li(const Scene& scene, const Sample& sample, const RayDifferential &ray, const Intersection& isect) const = 0;
+	virtual ColorRGB Li(const Scene& scene, const Sample& sample, const RayDifferential &ray, const DifferentialGeometry& isect) const = 0;
 
 	//virtual ColorRGB Li(const Scene *scene, const Renderer *renderer, const RayDifferential &ray, const Intersection &isect,
 	//	const Sample *sample, RNG &rng, MemoryArena &arena) const = 0;

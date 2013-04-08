@@ -1,7 +1,7 @@
-#ifndef SimpleGeometry_h__
-#define SimpleGeometry_h__
+#ifndef SimpleShape_h__
+#define SimpleShape_h__
 
-#include "Geometry.h"
+#include "Shape.h"
 
 namespace Purple {
 
@@ -45,40 +45,9 @@ public:
 
 };
 
-//class Mesh;
-//
-//class Triangle : public Shape
-//{
-//public:
-//	Triangle(Mesh& mesh, uint32_t* index);
-//	~Triangle();
-//
-//	virtual BoundingBoxf GetLocalBound() const;
-//	virtual bool Intersect(const Ray& ray, float* tHit, DifferentialGeometry* diffGeoHit) const;
-//	virtual float Area() const;
-//
-//private:
-//	Mesh& mMesh;
-//	uint32_t* mIndex;
-//};
-//
-//class Mesh : public Shape
-//{
-//public:
-//	Mesh();
-//	~Mesh();
-//
-//protected:
-//	vector<float3> mPositions;
-//	vector<float3> mNormals;
-//	vector<float2> mTexcoords;
-//	vector<uint32_t> mIndices;
-//
-//	friend class Triangle;
-//};
 
 }
 
-#endif // SimpleGeometry_h__
+#endif // SimpleShape_h__
 
 

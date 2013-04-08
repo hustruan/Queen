@@ -1,4 +1,4 @@
-#include "SimpleGeometry.h"
+#include "SimpleShape.h"
 #include "MentoCarlo.h"
 #include <MathUtil.hpp>
 #include <SoveEquation.hpp>
@@ -114,7 +114,7 @@ bool Sphere::Intersect( const Ray& r, float* tHit, DifferentialGeometry* diffGeo
 	diffGeoHit->Normal = TransformNormal(N, mLocalToWorld);
 	diffGeoHit->Point = Transform(phit, mLocalToWorld);;
 	diffGeoHit->UV = float2(u, v);
-	diffGeoHit->Geometry = this;
+	diffGeoHit->Shape = this;
 
 	*tHit = thit;
 
@@ -349,7 +349,7 @@ bool Cylinder::Intersect( const Ray& r, float* tHit, DifferentialGeometry* diffG
 	diffGeoHit->Normal = TransformNormal(N, mLocalToWorld);
 	diffGeoHit->Point = Transform(phit, mLocalToWorld);;
 	diffGeoHit->UV = float2(u, v);
-	diffGeoHit->Geometry = this;
+	diffGeoHit->Shape = this;
 
 	*tHit = thit;
 
@@ -426,121 +426,5 @@ float3 Cylinder::Sample( float u1, float u2, float3* normal ) const
 	
 	return Transform(pt, mLocalToWorld);
 }
-
-
-////----------------------------------------------------------------------------
-//Triangle::Triangle( Mesh& mesh, uint32_t* index )
-//	: mMesh(mesh), mIndex(index)
-//{
-//}
-//
-//Triangle::~Triangle()
-//{
-//
-//}
-//
-//bool Triangle::Intersect( const Ray& ray, float* tHit, DifferentialGeometry* diffGeoHit ) const
-//{
-//	const float3& p0 = mMesh.mPositions[mIndex[0]];
-//	const float3& p1 = mMesh.mPositions[mIndex[1]];
-//	const float3& p2 = mMesh.mPositions[mIndex[2]];
-//
-//	float3 e1 = p1 - p0;
-//	float3 e2 = p2 - p0;
-//	
-//	float3 s1 = Cross(ray.Direction, e2);
-//
-//	float divisor = Dot(s1, e1);
-//
-//	if (divisor == 0)
-//		return false;
-//
-//	float invDivisor = 1.0f / divisor;
-//
-//	float3 s = ray.Origin - p0;
-//	float b1 = Dot(s1, s) * invDivisor;
-//	if (b1 < 0.0f || b1 > 1.0f)
-//		return false;
-//
-//	float3 s2 = Cross(s, e1);
-//	float b2 = Dot(s2, ray.Direction) * invDivisor;
-//
-//	if (b1 < 0.0f || b1 + b2 > 1.0f)
-//		return false;
-//
-//	float t = Dot(s2, e2) * invDivisor;
-//	if (t < ray.tMin || t > ray.tMax)
-//		return false;
-//
-//	// Compute triangle partial derivatives
-//	float2 UVs[3];
-//	if (!mMesh.mTexcoords.empty())
-//	{
-//		UVs[0] = mMesh.mTexcoords[mIndex[0]];
-//		UVs[1] = mMesh.mTexcoords[mIndex[1]];
-//		UVs[2] = mMesh.mTexcoords[mIndex[2]];
-//	}
-//	else
-//	{
-//		UVs[0] = float2(0, 1);
-//		UVs[1] = float2(1, 0);
-//		UVs[2] = float2(1, 1);
-//	}
-//		
-//	// calculate dPdU and dPdV
-//	float du1 = UVs[0][0] - UVs[2][0];
-//	float du2 = UVs[1][0] - UVs[2][0];
-//	float dv1 = UVs[0][1] - UVs[2][1];
-//	float dv2 = UVs[1][1] - UVs[2][1]; 
-//	float invdet, det = du1 * dv2 - dv1 * du2;
-//		
-//	if (det == 0.f)
-//	{
-//		//diffGeoHit->
-//		//sp.dPdV = vector3d_t(0.f);
-//	}
-//	else
-//	{
-//		float3 dp1 = p0 - p2;
-//		float3 dp2 = p1 - p2;
-//
-//		invdet = 1.0f / det;
-//		diffGeoHit->dpdu = ( dv2 * dp1 - dv1 * dp2) * invdet;
-//		diffGeoHit->dpdv = (-du2 * dp1 + du1 * dp2) * invdet;
-//	}
-//
-//	float b0 = 1 - b1 - b2;
-//	diffGeoHit->UV = float2(b0 * UVs[0] + b1 * UVs[1] + b2 * UVs[2]);
-//	diffGeoHit->Point = ray.Eval(t);
-//	diffGeoHit->dndu = float3(0, 0, 0);
-//	diffGeoHit->dndv = float3(0, 0, 0);
-//	diffGeoHit->Normal = Normalize(Cross(diffGeoHit->dpdu, diffGeoHit->dpdv));
-//	diffGeoHit->Geometry = this;
-//
-//	*tHit = t;
-//	return true;
-//}
-//
-//BoundingBoxf Triangle::GetLocalBound() const
-//{
-//	const float3& p1 = mMesh.mPositions[mIndex[0]];
-//	const float3& p2 = mMesh.mPositions[mIndex[1]];
-//	const float3& p3 = mMesh.mPositions[mIndex[2]];
-//
-//	BoundingBoxf box;
-//	box.Merge(p1); box.Merge(p2); box.Merge(p3);
-//
-//	return box;
-//}
-//
-//float Triangle::Area() const
-//{
-//	const float3& p0 = mMesh.mPositions[mIndex[0]];
-//	const float3& p1 = mMesh.mPositions[mIndex[1]];
-//	const float3& p2 = mMesh.mPositions[mIndex[2]];
-//
-//	return 0.5f * Length(Cross(p1-p0, p2-p0));
-//}
-
 
 }

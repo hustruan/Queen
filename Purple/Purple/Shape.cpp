@@ -1,4 +1,4 @@
-#include "Geometry.h"
+#include "Shape.h"
 #include <MathUtil.hpp>
 
 namespace Purple {
@@ -27,22 +27,14 @@ float3 Shape::Sample( float u1, float u2, float3* n ) const
 	return float3();
 }
 
-bool Shape::Intersect( const Ray& ray, float* tHit, DifferentialGeometry* diffGeoHit ) const
+float Shape::Pdf( const float3& pt ) const
 {
-	throw std::exception("Unimplemented!");
-	return false;
+	return 1.0f / Area();
 }
 
-bool Shape::IntersectP( const Ray& ray ) const
+float3 Shape::Sample( const float3& pt, float u1, float u2, float3* n ) const
 {
-	throw std::exception("Unimplemented!");
-	return false;
-}
-
-float Shape::Area() const
-{
-	throw std::exception("Unimplemented!");
-	return 0.0f;
+	return Sample(u1, u2, n);
 }
 
 float Shape::Pdf( const float3& pt, const float3& wi ) const
@@ -61,10 +53,22 @@ float Shape::Pdf( const float3& pt, const float3& wi ) const
 	return pdf;
 }
 
+bool Shape::Intersect( const Ray& ray, float* tHit, DifferentialGeometry* diffGeoHit ) const
+{
+	throw std::exception("Unimplemented!");
+	return false;
+}
 
+bool Shape::IntersectP( const Ray& ray ) const
+{
+	throw std::exception("Unimplemented!");
+	return false;
+}
 
-
-
-
+float Shape::Area() const
+{
+	throw std::exception("Unimplemented!");
+	return 0.0f;
+}
 
 }

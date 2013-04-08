@@ -34,13 +34,7 @@
     <ClCompile Include="Sampler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Geometry.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Material.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SimpleGeometry.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Light.cpp">
@@ -64,6 +58,15 @@
     <ClCompile Include="Mesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Shape.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SimpleShape.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Primitive.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Ray.h">
@@ -75,22 +78,13 @@
     <ClInclude Include="Camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Kdtree.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Sampler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Prerequisites.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Geometry.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Material.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SimpleGeometry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Light.h">
@@ -115,6 +109,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Mesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SimpleShape.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Shape.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Primitive.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="KdTree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

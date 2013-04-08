@@ -2,10 +2,12 @@
 #define Scene_h__
 
 #include "Prerequisites.h"
+#include "Ray.h"
 #include <BoundingBox.hpp>
 
 namespace Purple {
 
+class DifferentialGeometry;
 
 class Scene
 {
@@ -14,6 +16,10 @@ public:
 	virtual ~Scene(void);
 
 	const BoundingBoxf& GetBoundingBox() const { return mWorldBound; } 
+
+	bool Intersect(const Ray &ray, DifferentialGeometry *isect) const;
+
+	bool IntersectP(const Ray &ray) const;
 
 protected:
 	BoundingBoxf mWorldBound;
