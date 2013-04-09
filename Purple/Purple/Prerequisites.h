@@ -37,6 +37,10 @@ class Scene;
 class Film;
 class Random;
 class Renderer;
+class Mesh;
+class Light;
+class MemoryArena;
+class BSDF;
 struct Sample;
 struct CameraSample;
 

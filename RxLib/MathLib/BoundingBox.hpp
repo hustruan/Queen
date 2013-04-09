@@ -147,6 +147,29 @@ public:
 		return ( Max.Z() >= box.Min.Z() && Min.Z() <= box.Max.Z() );
 	}
 
+	/**
+	 * Return which axis has maximum extent, 0-x, 1-y, 2-z
+	 */
+	int MaximumExtent() const 
+	{
+		Vector<Real,3> diag = Max - Min;
+
+		if (diag.X() > diag.Y() && diag.X() > diag.Z())
+			return 0;
+		else if (diag.Y() > diag.Z())
+			return 1;
+		else
+			return 2;
+	}
+
+	/**
+	 * Return Surface of this box
+	 */
+	Real SurfaceArea() const 
+	{
+		Vector<Real,3> diag = Max - Min;
+		return Real(2) * (diag.X() * diag.Y() + diag.X() * diag.Z() + diag.Y() * diag.Z());
+	}
 
 public:
 	Vector<Real,3> Max;
@@ -158,17 +181,17 @@ public:
 template<typename Real>
 BoundingBox<Real> Merge( const BoundingBox<Real>& box1, const BoundingBox<Real>& box2 )
 {
-	Vector<Real,3> min, max;
+	BoundingBox<Real> retVal = box2;
 
-	if (box1.Min.X() < box2.Min.X())	min.X() = box.Min.X();
-	if (box1.Min.Y() < box2.Min.Y())	min.Y() = box.Min.Y();
-	if (box1.Min.Z() < box2.Min.Z())	min.X() = box.Min.Z();
+	if (box1.Min.X() < box2.Min.X())	retVal.Min.X() = box1.Min.X();
+	if (box1.Min.Y() < box2.Min.Y())	retVal.Min.Y() = box1.Min.Y();
+	if (box1.Min.Z() < box2.Min.Z())	retVal.Min.Z() = box1.Min.Z();
 
-	if (box1.Max.X() > box2.Max.X())	max.X() = box.Max.X();
-	if (box1.Max.Y() > box2.Max.Y())	max.Y() = box.Max.Y();
-	if (box1.Max.Z() > box2.Max.Z())	max.X() = box.Max.Z();
+	if (box1.Max.X() > box2.Max.X())	retVal.Max.X() = box1.Max.X();
+	if (box1.Max.Y() > box2.Max.Y())	retVal.Max.Y() = box1.Max.Y();
+	if (box1.Max.Z() > box2.Max.Z())	retVal.Max.Z() = box1.Max.Z();
 
-	return BoundingBox<Real>(min, max);
+	return retVal;
 }
 
 typedef BoundingBox<float> BoundingBoxf;

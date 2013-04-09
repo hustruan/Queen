@@ -87,6 +87,11 @@ public:
 		return true;
 	}
 
+	void GetShadingGeometry(const Mesh* parentMesh, const float44& obj2world, const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const
+	{
+
+	}
+
 	float Area(const Mesh* parentMesh) const
 	{
 		const float3& p0 = parentMesh->mPositions[mIdx[0]];
@@ -123,13 +128,15 @@ public:
 		return retVal;
 	}
 
+	
+
 public:
 	uint32_t mIdx[3];
 };
 
-//--------------------------------------------------------------------
-Mesh::Mesh( const float44& o2w, bool ro, int32_t numTriangle, int32_t numVertices, const uint32_t* indices, const float3* positions, const float* normals, const float3* texcoords )
-	: Shape(o2w, ro), mNumTriangles(numTriangle), mNumVertices(numVertices), mSurfaceArea(-1)
+//--------------------------------------------------------------------	
+Mesh::Mesh( const float44& o2w, bool ro, int32_t numTriangle, int32_t numVertices, const uint32_t* indices, const float3* positions, const float3* normals, const float3* tangents, const float3* texcoords )
+: Shape(o2w, ro), mNumTriangles(numTriangle), mNumVertices(numVertices), mSurfaceArea(-1)
 {
 	mTriangles = new Triangle[mNumTriangles];
 	memcpy(reinterpret_cast<uint32_t *>(mTriangles), indices, mNumTriangles * 3 * sizeof(uint32_t));
@@ -148,6 +155,13 @@ Mesh::Mesh( const float44& o2w, bool ro, int32_t numTriangle, int32_t numVertice
 	else 
 		mTexcoords = NULL;
 
+	if (tangents)
+	{
+		mTangents = new float3[numVertices];
+		memcpy(mNormals, tangents, numVertices*sizeof(float3));
+	}
+	else
+		mTangents = NULL;
 	
 	if (normals) 
 	{
@@ -247,6 +261,13 @@ bool Mesh::IntersectP( const Ray& ray ) const
 BoundingBoxf Mesh::GetWorldBound( uint32_t index ) const
 {
 	return mTriangles[index].GetBoundingBox(this);
+}
+
+void Mesh::GetShadingGeometry( const float44& local2world, const DifferentialGeometry &dg, DifferentialGeometry *dgShading ) const
+{
+	if (mNormals )
+	{
+	}
 }
 
 }

@@ -23,6 +23,8 @@ struct DifferentialGeometry
 		dudx = dvdx = dudy = dvdy = 0;
 	}
 
+	BSDF* GetBSDF(const RayDifferential &ray, MemoryArena &arena) const;
+
 	const Shape* Shape;
 
 	float3 Point;
@@ -31,9 +33,10 @@ struct DifferentialGeometry
 	
 	float3 dpdu, dpdv, dndu, dndv;
 	float dudx, dvdx, dudy, dvdy;
-};
 
-class Mesh;
+
+
+};
 
 class Shape 
 {
@@ -45,6 +48,8 @@ public:
 	virtual BoundingBoxf GetWorldBound() const;
 
 	virtual const Mesh* GetTriangleMesh() const { return NULL; }
+
+	virtual void GetShadingGeometry(const float44& local2world, const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const;
 
 	virtual bool Intersect(const Ray& ray, float* tHit, DifferentialGeometry* diffGeoHit) const;
 	virtual bool IntersectP(const Ray& ray) const;
@@ -65,6 +70,42 @@ public:
 protected:
 	float44 mLocalToWorld, mWorldToLocal;
 	bool mReverseOrientation;
+};
+
+
+class AreaLightShape : Shape
+{
+public:
+	AreaLightShape(const shared_ptr<Shape>& shape, Light* light);
+	~AreaLightShape() { }
+
+	BoundingBoxf GetLocalBound() const     { return mShape->GetLocalBound(); }
+	BoundingBoxf GetWorldBound() const     { return mShape->GetWorldBound(); }
+
+	const Mesh* GetTriangleMesh() const    { return mShape->GetTriangleMesh(); }
+
+	bool Intersect(const Ray& ray, float* tHit, DifferentialGeometry* diffGeoHit) const;
+
+	bool IntersectP(const Ray& ray) const  { return mShape->IntersectP(ray); }
+
+	float Area() const                     { return mShape->Area(); }
+
+	float Pdf(const float3& pt, const float3& wi) const { return mShape->Pdf(pt, wi); }
+	float Pdf(const float3& pt) const                   { return mShape->Pdf(pt); }
+
+	float3 Sample(float u1, float u2, float3* n) const
+	{
+		return mShape->Sample(u1, u2, n); 
+	}
+
+	float3 Sample(const float3& pt, float u1, float u2, float3* n) const
+	{ 
+		return mShape->Sample(pt, u1, u2, n);
+	}
+
+protected:
+	const shared_ptr<Shape> mShape;
+	Light* mAreaLight;
 };
 
 }

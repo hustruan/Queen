@@ -13,7 +13,7 @@ class Mesh : public Shape
 {
 public:
 	Mesh(const float44& o2w, bool ro, int32_t numTriangle, int32_t numVertices, 
-		const uint32_t* indices, const float3* positions, const float* normals, const float3* texcoords);
+		const uint32_t* indices, const float3* positions, const float3* normals, const float3* tangent, const float3* texcoords);
 	~Mesh(void);
 
 	const Mesh* GetTriangleMesh() const { return this; }
@@ -31,6 +31,8 @@ public:
 	bool Intersect(const Ray& ray, float* tHit, DifferentialGeometry* diffGeoHit) const;
 	bool IntersectP(const Ray& ray) const;
 
+	void GetShadingGeometry(const float44& local2world, const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const;
+
 	float Area() const;
 
 	float3 Sample(float u1, float u2, float3* n) const;
@@ -47,6 +49,7 @@ private:
 
 	float3* mPositions;
 	float3* mNormals;
+	float3* mTangents;
 	float2* mTexcoords;
 
 	BoundingBoxf mLocalBound;

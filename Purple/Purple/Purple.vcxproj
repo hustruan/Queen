@@ -89,6 +89,7 @@
     <ClInclude Include="KdTree.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="Material.h" />
+    <ClInclude Include="MemoryArena.h" />
     <ClInclude Include="MentoCarlo.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Prerequisites.h" />

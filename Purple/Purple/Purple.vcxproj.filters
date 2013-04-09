@@ -123,5 +123,8 @@
     <ClInclude Include="KdTree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MemoryArena.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

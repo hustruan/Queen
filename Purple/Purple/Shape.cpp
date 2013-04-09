@@ -5,6 +5,13 @@ namespace Purple {
 
 using namespace RxLib;
 
+BSDF* DifferentialGeometry::GetBSDF( const RayDifferential &ray, MemoryArena &arena ) const
+{
+	
+}
+
+
+//------------------------------------------------------------------------------------
 Shape::Shape( const float44& o2w, bool ro )
 	: mLocalToWorld(o2w), mWorldToLocal(MatrixInverse(o2w)), mReverseOrientation(ro)
 {
@@ -70,5 +77,21 @@ float Shape::Area() const
 	throw std::exception("Unimplemented!");
 	return 0.0f;
 }
+
+void Shape::GetShadingGeometry( const float44& local2world, const DifferentialGeometry &dg, DifferentialGeometry *dgShading ) const
+{
+	*dgShading = dg;
+}
+
+
+bool AreaLightShape::Intersect( const Ray& ray, float* tHit, DifferentialGeometry* diffGeoHit ) const
+{
+	bool retVal = mShape->Intersect(ray, tHit, diffGeoHit);
+
+	return retVal;
+}
+
+
+
 
 }
