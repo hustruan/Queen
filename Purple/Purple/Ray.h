@@ -28,11 +28,29 @@ struct Ray
 
 	float3 Origin;
 	float3 Direction;
-	float tMin, tMax;
+	mutable float tMin, tMax;
 };
 
 struct RayDifferential : public Ray
 {
+	RayDifferential()
+	{
+		hasDifferentials = false;
+	}
+
+	explicit RayDifferential(const Ray &ray) : Ray(ray)
+	{
+		hasDifferentials = false;
+	}
+
+	void ScaleDifferentials(float s)
+	{
+		rxOrigin = Origin + (rxOrigin - Origin) * s;
+		ryOrigin = Origin + (ryOrigin - Origin) * s;
+		rxDirection = Direction + (rxDirection - Direction) * s;
+		ryDirection = Direction + (ryDirection - Direction) * s;
+	}
+
 	bool hasDifferentials;
 	float3 rxOrigin, ryOrigin;
 	float3 rxDirection, ryDirection;

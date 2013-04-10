@@ -6,8 +6,6 @@
 #include <cstdint>
 #include <algorithm>
 
-#define L1_CACHE_LINE_SIZE 64
-
 namespace Purple {
 
 using RxLib::aligned_malloc;

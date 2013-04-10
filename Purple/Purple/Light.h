@@ -3,8 +3,37 @@
 
 #include "Prerequisites.h"
 #include "Ray.h"
+#include "Random.h"
 
 namespace Purple {
+
+struct LightSampleOffsets
+{
+	LightSampleOffsets() { }
+	LightSampleOffsets(int count, Sample* sample);
+	int nSamples, componentOffset, posOffset;
+};
+
+struct LightSample
+{
+	LightSample(Random& rng)
+	{
+		uPos[0] = rng.RandomFloat();
+		uPos[1] = rng.RandomFloat();
+		uComponent = rng.RandomFloat();
+	}
+
+	LightSample(float u1, float u2, float uCom)
+	{
+		uPos[0] = u1;
+		uPos[1] = u2;
+		uComponent = uCom;
+	}
+
+	LightSample(Sample* sample, const LightSampleOffsets& offset, uint32_t num);
+
+	float uPos[2], uComponent;
+};
 
 struct VisibilityTester
 {
@@ -25,13 +54,15 @@ public:
 	/** 
 	 * 
 	 */
-	virtual ColorRGB Sample_f(const float3& pt, float3* wi, float* pdf, VisibilityTester* vis) = 0;
+	virtual ColorRGB Sample_f(const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis) = 0;
 
 	virtual float Pdf(const float3& pt, const float3& wi) const = 0;
 
 	virtual ColorRGB Power(const Scene& scene) const = 0;
 	
 	virtual bool DeltaLight() const = 0;
+
+	virtual ColorRGB Le(const RayDifferential &r) const;
 
 protected:
 	float44 mLightToWorld;
@@ -44,7 +75,7 @@ public:
 	PointLight(const float44& light2world, const ColorRGB& intensity);
 	~PointLight();
 
-	ColorRGB Sample_f(const float3& pt, float3* wi, float* pdf, VisibilityTester* vis);
+	ColorRGB Sample_f(const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis);
 
 	ColorRGB Power(const Scene& scene) const;
 
@@ -67,7 +98,7 @@ public:
 	DirectionalLight(const float44& light2world, const float3& dir, const ColorRGB& radiance);
 	~DirectionalLight();
 
-	ColorRGB Sample_f(const float3& pt, float3* wi, float* pdf, VisibilityTester* vis);
+	ColorRGB Sample_f(const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis);
 
 	ColorRGB Power(const Scene& scene) const;
 
@@ -87,7 +118,7 @@ public:
 	SpotLight(const float44& light2world, const ColorRGB& intensity, float inner, float outer, float falloff);
 	~SpotLight();
 
-	ColorRGB Sample_f(const float3& pt, float3* wi, float* pdf, VisibilityTester* vis);
+	ColorRGB Sample_f(const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis);
 
 	ColorRGB Power(const Scene& scene) const;
 
@@ -116,11 +147,10 @@ public:
 	AreaLight(const float44& light2world, const ColorRGB& intensity, const shared_ptr<Shape>& shape, int32_t numSamples);
 	~AreaLight();
 
-	ColorRGB Sample_f(const float3& pt, float3* wi, float* pdf, VisibilityTester* vis);
+	ColorRGB Sample_f(const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis);
 
 	bool DeltaLight() const  { return false; } 
 
-protected:
 	ColorRGB L(const float3& p, const float3& n, const float3& w) const
 	{
 		return RxLib::Dot(n, w) > 0.0f ? mIntensity :  ColorRGB::Black;

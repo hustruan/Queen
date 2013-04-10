@@ -1,5 +1,7 @@
 #include "Light.h"
 #include "Scene.h"
+#include "Sampler.h"
+#include "Shape.h"
 #include <MathUtil.hpp>
 #include <BoundingSphere.hpp>
 
@@ -17,7 +19,7 @@ PointLight::~PointLight()
 {
 }
 
-ColorRGB PointLight::Sample_f( const float3& pt, float3* wi, float* pdf, VisibilityTester* vis )
+ColorRGB PointLight::Sample_f( const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis )
 {
 	*wi = Normalize(mLightPosW - pt);
 	*pdf = 1.0f;
@@ -46,7 +48,7 @@ SpotLight::~SpotLight()
 
 }
 
-ColorRGB SpotLight::Sample_f( const float3& pt, float3* wi, float* pdf, VisibilityTester* vis )
+ColorRGB SpotLight::Sample_f( const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis )
 {
 	*wi = Normalize(mLightPosW - pt);
 	*pdf = 1.0f;
@@ -80,7 +82,7 @@ DirectionalLight::~DirectionalLight()
 
 }
 
-ColorRGB DirectionalLight::Sample_f( const float3& pt, float3* wi, float* pdf, VisibilityTester* vis )
+ColorRGB DirectionalLight::Sample_f( const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis )
 {
 	*wi = -mLightDirectionW;
 	*pdf = 1.0f;
@@ -97,12 +99,6 @@ ColorRGB DirectionalLight::Power( const Scene& scene ) const
 
 }
 
-
-ColorRGB AreaLight::Sample_f( const float3& pt, float3* wi, float* pdf, VisibilityTester* vis )
-{
-	return ColorRGB(0, 0, 0);
-}
-
 AreaLight::AreaLight( const float44& light2world, const ColorRGB& intensity, const shared_ptr<Shape>& shape, int32_t numSamples )
 	: Light(light2world), mIntensity(intensity)
 {
@@ -112,6 +108,44 @@ AreaLight::AreaLight( const float44& light2world, const ColorRGB& intensity, con
 AreaLight::~AreaLight()
 {
 
+}
+
+
+ColorRGB AreaLight::Sample_f( const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis )
+{
+	float3 ns;
+	float3 ps = mShape->Sample(pt, lightSample.uPos[0], lightSample.uPos[1], lightSample.uComponent, &ns);
+
+	*wi = Normalize(ps - pt);
+	*pdf = mShape->Pdf(pt, *wi);
+
+	//visibility->SetSegment(p, pEpsilon, ps, 1e-3f, time);
+
+	ColorRGB Ls = L(ps, ns, -*wi);
+
+	return Ls;
+}
+
+
+LightSampleOffsets::LightSampleOffsets( int count, Sample* sample )
+	:nSamples(count)
+{
+	componentOffset = sample->Add1D(nSamples);
+	posOffset =  sample->Add2D(nSamples);
+}
+
+
+LightSample::LightSample( Sample* sample, const LightSampleOffsets& offset, uint32_t n )
+{
+	uPos[0] = sample->twoD[offset.posOffset][2*n];
+	uPos[1] = sample->twoD[offset.posOffset][2*n+1];
+	uComponent = sample->oneD[offset.componentOffset][n];
+}
+
+
+ColorRGB Light::Le( const RayDifferential &r ) const
+{
+	return ColorRGB::Black;
 }
 
 }

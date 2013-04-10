@@ -5,12 +5,19 @@
 
 namespace Purple {
 
+struct DifferentialGeometry;
+
 class Material
 {
 public:
 	Material(void);
-	~Material(void);
+	virtual ~Material(void);
+
+	virtual BSDF* GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, MemoryArena &arena) = 0;
 };
+
+
+
 
 
 }

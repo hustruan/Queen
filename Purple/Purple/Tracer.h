@@ -3,7 +3,6 @@
 
 #include "Prerequisites.h"
 #include "Ray.h"
-#include <ColorRGBA.hpp>
 
 namespace Purple {
 
@@ -16,11 +15,11 @@ public:
 
 	virtual void Render(Scene* scene) = 0;
 
-	/*virtual ColorRGB Li(const Scene *scene, const RayDifferential &ray, const Sample *sample, RNG &rng, MemoryArena &arena,
-		Intersection *isect = NULL, Spectrum *T = NULL) const = 0;
+	virtual ColorRGB Li(const Scene *scene, const RayDifferential &ray, const Sample *sample, Random& rng, MemoryArena &arena,
+		DifferentialGeometry* isect = NULL, ColorRGB* T = NULL) const = 0;
 	
 	virtual ColorRGB Transmittance(const Scene *scene, const RayDifferential &ray, const Sample *sample,
-		RNG &rng, MemoryArena &arena) const = 0;*/
+		Random &rng, MemoryArena &arena) const = 0;
 };
 
 
@@ -30,10 +29,17 @@ public:
 	SamplerRenderer();
 	~SamplerRenderer();
 
+	virtual ColorRGB Li(const Scene *scene, const RayDifferential &ray, const Sample *sample, Random& rng, MemoryArena &arena,
+		DifferentialGeometry* isect = NULL, ColorRGB* T = NULL) const;
 
+	virtual ColorRGB Transmittance(const Scene *scene, const RayDifferential &ray, const Sample *sample,
+		Random &rng, MemoryArena &arena) const;
+
+	void Render(const Scene *scene);
 
 protected:
 	Camera* mCamera;	
+	Sampler* mSampler;
 
 };
 

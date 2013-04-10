@@ -5,22 +5,37 @@
 
 namespace Purple {
 
-/**
- * A sample used to generate camera ray.
- */
-struct CameraSample 
+
+struct Sample
 {
 	float2 ImageSample;
 	float2 LensSample;
 	float TimeSample;
-};
 
 
-struct Sample : public CameraSample
-{
+	uint32_t Add1D(uint32_t nSamples)
+	{
+		mSamplesRecord1D.push_back(nSamples);
+		return mSamplesRecord1D.size() -1;
+	}
+
+	uint32_t Add2D(uint32_t nSamples)
+	{
+		mSamplesRecord2D.push_back(nSamples);
+		return mSamplesRecord2D.size() -1;
+	}
+
+	Sample* Duplicate(int count) const;
 
 
+	~Sample();
 
+	std::vector<uint32_t> mSamplesRecord1D, mSamplesRecord2D;
+	float **oneD, **twoD;
+
+private:
+
+    void AllocateSampleMemory();
 };
 
 /**
@@ -31,13 +46,13 @@ struct Sample : public CameraSample
 class Sampler
 {
 public:
-	Sampler(int32_t xStart, int32_t xEnd, int32_t yStart, int32_t yEnd);
+	Sampler(int32_t xStart, int32_t xEnd, int32_t yStart, int32_t yEnd, int32_t samplerPerPixel);
 	virtual ~Sampler(void);
 
 	// Return the number of configured pixel samples 
 	virtual uint32_t GetSampleCount() const = 0;
 
-	virtual uint32_t GetMoreSamples(CameraSample* samples, Random& rng) = 0;
+	virtual uint32_t GetMoreSamples(Sample* samples, Random& rng) = 0;
 
 	/**
 	 * Divide image into tiles and multi-thread can get a sampler to execute.
@@ -53,6 +68,9 @@ protected:
 	 */
 	void ComputeSubWindow(int32_t num, int32_t count, int32_t* newXStart, int32_t* newXEnd, int32_t* newYStart, int32_t* newYEnd);
 
+
+public:
+	const int32_t SamplesPerPixel;
 
 protected:
 	int32_t mPixelStartX, mPixelStartY, mPixelEndX, mPixelEndY;
@@ -73,7 +91,7 @@ public:
 	
 	Sampler* GetSubSampler(int32_t num, int32_t count);
 
-	uint32_t GetMoreSamples(CameraSample* samples, Random& rng);
+	uint32_t GetMoreSamples(Sample* samples, Random& rng);
 
 private:
 

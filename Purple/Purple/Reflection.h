@@ -3,6 +3,7 @@
 
 #include "Prerequisites.h"
 #include "Shape.h"
+#include "Random.h"
 #include <Math.hpp>
 
 namespace Purple {
@@ -70,6 +71,34 @@ enum BSDFType
 	BSDF_All               = BSDF_All_Reflection | BSDF_All_Transmission
 };
 
+struct BSDFSampleOffsets
+{
+	BSDFSampleOffsets() { }
+	BSDFSampleOffsets(int count, Sample* sample);
+	int nSamples, componentOffset, dirOffset;
+};
+
+struct BSDFSample
+{
+	BSDFSample(Random& rng)
+	{
+		uDir[0] = rng.RandomFloat();
+		uDir[1] = rng.RandomFloat();
+		uComponent = rng.RandomFloat();
+	}
+
+	BSDFSample(float u1, float u2, float uCom)
+	{
+		uDir[0] = u1;
+		uDir[1] = u2;
+		uComponent = uCom;
+	}
+
+	BSDFSample(Sample* sample, const BSDFSampleOffsets& offset, uint32_t num);
+
+	float uDir[2], uComponent;
+};
+
 class BxDF;
 
 class BSDF
@@ -85,25 +114,17 @@ public:
 	
 	int NumComponents() const { return mNumBxDFs; }
 	
-	int NumComponents(BSDFType flags) const
-	{
-		int num = 0;
-		for (int i = 0; i < mNumBxDFs; ++i)
-		{
-			if (mBxDFs[i]->MatchFlags(flags))
-				++num;
-		}
+	int NumComponents(uint32_t bsdfFlags) const;
 
-		return num;
-	}
-
-	ColorRGB Sample(const float3& wo, float3* wi, const BSDFSample &bsdfSample,
-		float *pdf, BSDFType flags = BSDF_All, BSDFType* sampledType = NULL) const;
+	ColorRGB Sample(const float3& woW, float3* wiW, const BSDFSample& bsdfSample,
+		float *pdf, uint32_t bsdfFlags = BSDF_All, uint32_t* sampledType = NULL) const;
 
 	float Pdf(const float3& woW, const float3& wiW, BSDFType flags = BSDF_All) const;
 
 	ColorRGB Eval(const float3& woW, const float3& wiW, BSDFType flags = BSDF_All) const;
+
 	ColorRGB Rho(Random& rng, BSDFType flags = BSDF_All, int sqrtSamples = 6) const;
+
 	ColorRGB Rho(const float3& wo, Random& rng, BSDFType flags = BSDF_All, int sqrtSamples = 6) const;
 
 
@@ -146,7 +167,7 @@ public:
 	BxDF(uint32_t bxdfType) : BxDFType(bxdfType) { }
 	virtual ~BxDF() { }
 
-	bool MatchFlags(uint32_t flag) const { return (BxDFType & flag) == BxDFType; }
+	bool MatchFlags(uint32_t bxdfFlags) const { return (BxDFType & bxdfFlags) == BxDFType; }
 
 	/**
 	 * @breif Evaluate the BRDF for a pair of given directions.

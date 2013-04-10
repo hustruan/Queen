@@ -126,7 +126,7 @@ float Sphere::Area() const
 	return mMaxPhi * mRadius * (mMaxZ-mMinZ);
 }
 
-float3 Sphere::Sample( float u1, float u2, float3* normal ) const
+float3 Sphere::Sample( float u1, float u2, float u3,  float3* normal ) const
 {
 	float3 pt = float3(0, 0, 0) + mRadius * UniformSampleSphere(u1, u2);
 	
@@ -138,7 +138,7 @@ float3 Sphere::Sample( float u1, float u2, float3* normal ) const
 	return Transform(pt, mLocalToWorld);
 }
 
-float3 Sphere::Sample( const float3& pt, float u1, float u2, float3* normal ) const
+float3 Sphere::Sample( const float3& pt, float u1, float u2, float u3,  float3* normal ) const
 {
 	float3 centerW = Transform(float3(0, 0, 0), mLocalToWorld);
 	
@@ -150,7 +150,7 @@ float3 Sphere::Sample( const float3& pt, float u1, float u2, float3* normal ) co
 
 	// pt is inside in the sphere
 	if (distanceSquared - mRadius*mRadius < 1e-4f)
-		return Sample(u1, u2, normal);
+		return Sample(u1, u2, u3, normal);
 
 	float sinThetaMax2 = mRadius*mRadius /distanceSquared;
 	float cosThetaMax = sqrtf(std::max(0.0f, 1.f - sinThetaMax2));
@@ -413,7 +413,7 @@ float Cylinder::Area() const
 	return (mMaxZ - mMinZ) * mMaxPhi * mRadius;
 }
 
-float3 Cylinder::Sample( float u1, float u2, float3* normal ) const
+float3 Cylinder::Sample( float u1, float u2, float u3,  float3* normal ) const
 {
 	float z = Lerp(u1, mMinZ, mMaxZ);
 	float t = u2 * mMaxPhi;

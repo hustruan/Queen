@@ -23,7 +23,11 @@ struct DifferentialGeometry
 		dudx = dvdx = dudy = dvdy = 0;
 	}
 
+	void ComputeDifferentials(const RayDifferential& ray) const;
+
 	BSDF* GetBSDF(const RayDifferential &ray, MemoryArena &arena) const;
+
+	ColorRGB Le(const float3& wo) const;
 
 	const Shape* Shape;
 
@@ -31,11 +35,11 @@ struct DifferentialGeometry
 	float3 Normal;
 	float2 UV;
 	
-	float3 dpdu, dpdv, dndu, dndv;
-	float dudx, dvdx, dudy, dvdy;
+	float3 dpdu, dpdv;
+	float3 dndu, dndv;
 
-
-
+	mutable float3 dpdx, dpdy;
+	mutable float dudx, dvdx, dudy, dvdy;
 };
 
 class Shape 
@@ -49,6 +53,10 @@ public:
 
 	virtual const Mesh* GetTriangleMesh() const { return NULL; }
 
+	virtual AreaLight* GetAreaLight() const { return NULL; }
+
+	virtual BSDF* GetBSDF(const DifferentialGeometry& dgGeom, const float44& ObjectToWorld, MemoryArena &arena) const;
+
 	virtual void GetShadingGeometry(const float44& local2world, const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const;
 
 	virtual bool Intersect(const Ray& ray, float* tHit, DifferentialGeometry* diffGeoHit) const;
@@ -56,7 +64,7 @@ public:
 
 	virtual float Area() const;
 
-	virtual float3 Sample(float u1, float u2, float3* n) const;
+	virtual float3 Sample(float u1, float u2, float u3, float3* n) const;
 	virtual float Pdf(const float3& pt) const;
 
 	/**
@@ -64,12 +72,18 @@ public:
 	 *        point should be sampled. The default implementation doesn't consider the additional point, just call
 	 *        this original sample method.
 	 */
-	virtual float3 Sample(const float3& pt, float u1, float u2, float3* n) const;
+	virtual float3 Sample(const float3& pt, float u1, float u2, float u3, float3* n) const;
 	virtual float Pdf(const float3& pt, const float3& wi) const;
 
-protected:
+
+public:
 	float44 mLocalToWorld, mWorldToLocal;
+
+protected:
+	
 	bool mReverseOrientation;
+
+	shared_ptr<Material> mMaterial;
 };
 
 
@@ -93,14 +107,14 @@ public:
 	float Pdf(const float3& pt, const float3& wi) const { return mShape->Pdf(pt, wi); }
 	float Pdf(const float3& pt) const                   { return mShape->Pdf(pt); }
 
-	float3 Sample(float u1, float u2, float3* n) const
+	float3 Sample(float u1, float u2, float u3, float3* n) const
 	{
-		return mShape->Sample(u1, u2, n); 
+		return mShape->Sample(u1, u2, u3, n); 
 	}
 
-	float3 Sample(const float3& pt, float u1, float u2, float3* n) const
+	float3 Sample(const float3& pt, float u1, float u2, float u3, float3* n) const
 	{ 
-		return mShape->Sample(pt, u1, u2, n);
+		return mShape->Sample(pt, u1, u2, u3, n);
 	}
 
 protected:

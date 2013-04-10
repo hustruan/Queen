@@ -6,8 +6,6 @@
 
 namespace Purple {
 
-class DifferentialGeometry;
-
 class Integrator
 {
 public:

@@ -16,8 +16,8 @@ public:
 	bool IntersectP(const Ray& ray) const;
 	float Area() const;
 
-	float3 Sample(float u1, float u2, float3* n) const;
-	float3 Sample(const float3& pt, float u1, float u2, float3* n) const;
+	float3 Sample(float u1, float u2, float u3,  float3* n) const;
+	float3 Sample(const float3& pt, float u1, float u2, float u3,  float3* n) const;
 	float Pdf(const float3& pt, const float3& wi) const;
 
 public:
@@ -37,7 +37,7 @@ public:
 	bool IntersectP(const Ray& ray) const;
 	float Area() const;
 
-	float3 Sample(float u1, float u2, float3* n) const;
+	float3 Sample(float u1, float u2, float u3,  float3* n) const;
 
 public:
 	float mRadius;

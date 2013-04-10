@@ -3,11 +3,12 @@
 
 #include "Prerequisites.h"
 #include "Ray.h"
+#include "Kdtree.h"
 #include <BoundingBox.hpp>
 
 namespace Purple {
 
-class DifferentialGeometry;
+struct DifferentialGeometry;
 
 class Scene
 {
@@ -17,14 +18,17 @@ public:
 
 	const BoundingBoxf& GetBoundingBox() const { return mWorldBound; } 
 
-	bool Intersect(const Ray &ray, DifferentialGeometry *isect) const;
+	bool Intersect(const Ray &ray, DifferentialGeometry* diffGeoHit) const;
 
 	bool IntersectP(const Ray &ray) const;
 
-protected:
+public:
 	BoundingBoxf mWorldBound;
 
-	vector<shared_ptr<Shape>> mGeometries;
+	KDTree mKDTree;
+	
+	vector<Light*> mLights;
+	vector<shared_ptr<Shape> > mGeometries;
 };
 
 }

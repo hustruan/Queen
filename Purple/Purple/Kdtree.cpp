@@ -3,14 +3,41 @@
 #include "Mesh.h"
 #include <aligned_allocator.h>
 
+
+namespace {
+
+using namespace Purple;
+
+bool BoxRayIntersect(const BoundingBoxf& box, const Ray& ray, float* hitt0, float* hitt1)
+{
+	float t0 = ray.tMin, t1 = ray.tMax;
+
+	for (int i = 0; i < 3; ++i)
+	{
+		// Update interval for _i_th bounding box slab
+		float invRayDir = 1.f / ray.Direction[i];
+		float tNear = (box.Min[i] - ray.Origin[i]) * invRayDir;
+		float tFar  = (box.Max[i] - ray.Origin[i]) * invRayDir;
+
+		// Update parametric interval from slab intersection $t$s
+		if (tNear > tFar) std::swap(tNear, tFar);
+		t0 = tNear > t0 ? tNear : t0;
+		t1 = tFar  < t1 ? tFar  : t1;
+		if (t0 > t1) return false;
+	}
+	if (hitt0) *hitt0 = t0;
+	if (hitt1) *hitt1 = t1;
+	return true;
+}
+
+}
+
 namespace Purple {
 
 using namespace RxLib;
 
-// KdTreeAccel Local Declarations
 struct KDNode 
 {
-	// KdAccelNode Methods
 	void InitLeaf(uint32_t* primNums, int32_t np, MemoryArena &arena)
 	{
 		flags = 3;
@@ -302,6 +329,256 @@ uint32_t KDTree::FindShape( uint32_t& idx ) const
 
 	// if it is not a mesh, directly use mesh index to get primitive
 	return (uint32_t) (it - mShapeMap.begin());
+}
+
+
+struct KDToDo 
+{
+	const KDNode *node;
+	float tMin, tMax;
+};
+
+bool KDTree::Intersect( const Ray& ray, DifferentialGeometry* diffGeoHit ) const
+{
+	float tmin, tmax;
+	if (!BoxRayIntersect(mBound, ray, &tmin, &tmax))
+	{
+		return false;
+	}
+
+	// Prepare to traverse kd-tree for ray
+	float3 invDir(1.f/ray.Direction.X(), 1.f/ray.Direction.Y(), 1.f/ray.Direction.Z());
+
+#define MAX_TODO 64
+	KDToDo todo[MAX_TODO];
+	int todoPos = 0;
+
+	bool hit = false;
+	const KDNode* node = &mNodes[0];
+	while (node != NULL)
+	{
+		// Bail out if we found a hit closer than the current node
+		if (ray.tMax < tmin) break;
+
+		if (!node->IsLeaf())
+		{
+			// Compute parametric distance along ray to split plane
+			int axis = node->SplitAxis();
+			float tplane = (node->SplitPos() - ray.Origin[axis]) * invDir[axis];
+
+			// Get node children pointers for ray
+			const KDNode *firstChild, *secondChild;
+			int belowFirst = (ray.Origin[axis] <  node->SplitPos()) ||
+				(ray.Origin[axis] == node->SplitPos() && ray.Direction[axis] <= 0);
+
+			if (belowFirst)
+			{
+				firstChild = node + 1;
+				secondChild = &mNodes[node->AboveChild()];
+			}
+			else 
+			{
+				firstChild = &mNodes[node->AboveChild()];
+				secondChild = node + 1;
+			}
+
+			// Advance to next child node, possibly enqueue other child
+			if (tplane > tmax || tplane <= 0)
+				node = firstChild;
+			else if (tplane < tmin)
+				node = secondChild;
+			else
+			{
+				// Enqueue _secondChild_ in todo list
+				todo[todoPos].node = secondChild;
+				todo[todoPos].tMin = tplane;
+				todo[todoPos].tMax = tmax;
+				++todoPos;
+				node = firstChild;
+				tmax = tplane;
+			}
+		}
+		else
+		{
+			uint32_t nPrimitives = node->Primitives();
+			
+			if (nPrimitives == 1)
+			{
+				if( Intersect(node->onePrimitive, ray, diffGeoHit) )
+				{
+					hit = true;
+				}
+			}
+			else
+			{
+				uint32_t* prims = node->primitives;
+				for (uint32_t i = 0; i < nPrimitives; ++i) 
+				{
+					if( Intersect(prims[i], ray, diffGeoHit) )
+					{	
+						hit = true;
+					}
+				}
+			}
+		}
+
+		// Grab next node to process from todo list
+		if (todoPos > 0) {
+			--todoPos;
+			node = todo[todoPos].node;
+			tmin = todo[todoPos].tMin;
+			tmax = todo[todoPos].tMax;
+		}
+		else
+			break;
+	}
+
+	return false;
+}
+
+bool KDTree::IntersectP( const Ray& ray ) const
+{
+	float tmin, tmax;
+	if (!BoxRayIntersect(mBound, ray, &tmin, &tmax))
+	{
+		return false;
+	}
+
+	// Prepare to traverse kd-tree for ray
+	float3 invDir(1.f/ray.Direction.X(), 1.f/ray.Direction.Y(), 1.f/ray.Direction.Z());
+
+#define MAX_TODO 64
+	KDToDo todo[MAX_TODO];
+	int todoPos = 0;
+
+	bool hit = false;
+	const KDNode* node = &mNodes[0];
+	while (node != NULL)
+	{
+		// Bail out if we found a hit closer than the current node
+		if (ray.tMax < tmin) break;
+
+		if (!node->IsLeaf())
+		{
+			// Compute parametric distance along ray to split plane
+			int axis = node->SplitAxis();
+			float tplane = (node->SplitPos() - ray.Origin[axis]) * invDir[axis];
+
+			// Get node children pointers for ray
+			const KDNode *firstChild, *secondChild;
+			int belowFirst = (ray.Origin[axis] <  node->SplitPos()) ||
+				(ray.Origin[axis] == node->SplitPos() && ray.Direction[axis] <= 0);
+
+			if (belowFirst)
+			{
+				firstChild = node + 1;
+				secondChild = &mNodes[node->AboveChild()];
+			}
+			else 
+			{
+				firstChild = &mNodes[node->AboveChild()];
+				secondChild = node + 1;
+			}
+
+			// Advance to next child node, possibly enqueue other child
+			if (tplane > tmax || tplane <= 0)
+				node = firstChild;
+			else if (tplane < tmin)
+				node = secondChild;
+			else
+			{
+				// Enqueue _secondChild_ in todo list
+				todo[todoPos].node = secondChild;
+				todo[todoPos].tMin = tplane;
+				todo[todoPos].tMax = tmax;
+				++todoPos;
+				node = firstChild;
+				tmax = tplane;
+			}
+		}
+		else
+		{
+			uint32_t nPrimitives = node->Primitives();
+
+			if (nPrimitives == 1)
+			{
+				if( IntersectP(node->onePrimitive, ray) )
+				{
+					hit = true;
+				}
+			}
+			else
+			{
+				uint32_t* prims = node->primitives;
+				for (uint32_t i = 0; i < nPrimitives; ++i) 
+				{
+					if( IntersectP(prims[i], ray) )
+					{	
+						hit = true;
+					}
+				}
+			}
+		}
+
+		// Grab next node to process from todo list
+		if (todoPos > 0) {
+			--todoPos;
+			node = todo[todoPos].node;
+			tmin = todo[todoPos].tMin;
+			tmax = todo[todoPos].tMax;
+		}
+		else
+			break;
+	}
+
+	return false;
+}
+
+bool KDTree::Intersect( uint32_t primIdx, const Ray& ray, DifferentialGeometry* diffGeoHit ) const
+{
+	uint32_t shapeIdx = FindShape(primIdx);
+
+	const Mesh* mesh = mShapes[shapeIdx]->GetTriangleMesh();
+
+	float thit, rayEpsilon;
+	if (mesh)
+	{
+		if (mesh->Intersect(primIdx, ray, &thit, diffGeoHit))
+		{
+			ray.tMax = thit;
+			return true;
+		}			
+	}
+	else
+	{
+		if( mShapes[shapeIdx]->Intersect(ray, &thit, diffGeoHit) )
+		{
+			ray.tMax = thit;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool KDTree::IntersectP( uint32_t primIdx, const Ray& ray ) const
+{
+	uint32_t shapeIdx = FindShape(primIdx);
+
+	const Mesh* mesh = mShapes[shapeIdx]->GetTriangleMesh();
+
+	if (mesh)
+	{
+		if (mesh->IntersectP(primIdx, ray))
+			return true;			
+	}
+	else
+	{
+		if( mShapes[shapeIdx]->IntersectP(ray) )
+			return true;
+	}
+
+	return false;
 }
 
 }

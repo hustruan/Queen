@@ -87,6 +87,41 @@ public:
 		return true;
 	}
 
+	bool IntersectP(const Mesh* parentMesh, const Ray& ray) const
+	{
+		const float3& p1 = parentMesh->mPositions[mIdx[0]];
+		const float3& p2 = parentMesh->mPositions[mIdx[1]];
+		const float3& p3 = parentMesh->mPositions[mIdx[2]];
+
+		float3 e1 = p2 - p1;
+		float3 e2 = p3 - p1;
+		float3 s1 = Cross(ray.Direction, e2);
+		float divisor = Dot(s1, e1);
+
+		if (divisor == 0.)
+			return false;
+		float invDivisor = 1.f / divisor;
+
+		// Compute first barycentric coordinate
+		float3 d = ray.Origin - p1;
+		float b1 = Dot(d, s1) * invDivisor;
+		if (b1 < 0. || b1 > 1.)
+			return false;
+
+		// Compute second barycentric coordinate
+		float3 s2 = Cross(d, e1);
+		float b2 = Dot(ray.Direction, s2) * invDivisor;
+		if (b2 < 0.0f || b1 + b2 > 1.0f)
+			return false;
+
+		// Compute _t_ to intersection point
+		float t = Dot(e2, s2) * invDivisor;
+		if (t < ray.tMin || t > ray.tMax)
+			return false;
+
+		return true;
+	}
+
 	void GetShadingGeometry(const Mesh* parentMesh, const float44& obj2world, const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const
 	{
 
@@ -220,10 +255,10 @@ float Mesh::Area() const
 	return mSurfaceArea;
 }
 
-float3 Mesh::Sample( float u1, float u2, float3* n ) const
+float3 Mesh::Sample( float u1, float u2, float u3,  float3* n ) const
 {
 	// use u2 to sample triangle index
-	int32_t index = mAreaDistrib->SampleDiscrete(u2, NULL);
+	int32_t index = mAreaDistrib->SampleDiscrete(u3, NULL);
 	float3 pt = mTriangles[index].Sample(this, u1, u2, n);
 
 	if (mReverseOrientation)
@@ -232,9 +267,9 @@ float3 Mesh::Sample( float u1, float u2, float3* n ) const
 	return pt;
 }
 
-float3 Mesh::Sample( const float3& p, float u1, float u2, float3* n ) const
+float3 Mesh::Sample( const float3& p, float u1, float u2, float u3,  float3* n ) const
 {
-	int32_t index = mAreaDistrib->SampleDiscrete(u2, NULL);
+	int32_t index = mAreaDistrib->SampleDiscrete(u3, NULL);
 	float3 pt = mTriangles[index].Sample(this, u1, u2, n);
 
 	// Find closest intersection of ray with triangles 
@@ -248,14 +283,14 @@ float3 Mesh::Sample( const float3& p, float u1, float u2, float3* n ) const
 	return r.Eval(thit);
 }
 
-bool Mesh::Intersect( const Ray& ray, float* tHit, DifferentialGeometry* diffGeoHit ) const
+bool Mesh::Intersect( uint32_t index, const Ray& ray, float* tHit, DifferentialGeometry* diffGeoHit ) const
 {
-	return false;
+	return mTriangles[index].Intersect(this, ray, tHit, diffGeoHit);
 }
 
-bool Mesh::IntersectP( const Ray& ray ) const
+bool Mesh::IntersectP( uint32_t index, const Ray& ray ) const
 {
-	return false;
+	return mTriangles[index].IntersectP(this, ray);
 }
 
 BoundingBoxf Mesh::GetWorldBound( uint32_t index ) const
@@ -265,9 +300,9 @@ BoundingBoxf Mesh::GetWorldBound( uint32_t index ) const
 
 void Mesh::GetShadingGeometry( const float44& local2world, const DifferentialGeometry &dg, DifferentialGeometry *dgShading ) const
 {
-	if (mNormals )
-	{
-	}
+	/*	if (mNormals )
+		{
+		}*/
 }
 
 }

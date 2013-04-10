@@ -36,13 +36,16 @@ public:
 
 	void BuildTree();
 
-	bool Intersect(const Ray& ray, Intersection* isect) const;
+	bool Intersect(const Ray& ray, DifferentialGeometry* isect) const;
+	bool IntersectP(const Ray& ray) const;
 
 protected:
 	inline bool IsBuilt() const  { return mNodes != NULL; }
 	BoundingBoxf GetBound(uint32_t index) const;
 	uint32_t FindShape( uint32_t& idx ) const;
-
+	
+	bool Intersect(uint32_t primIdx, const Ray& ray, DifferentialGeometry* isect) const;
+	bool IntersectP(uint32_t primIdx, const Ray& ray) const;
 	
 	void BuildInternal(int32_t nodeNum, const BoundingBoxf& nodeBounds, const vector<BoundingBoxf>& allPrimBounds, uint32_t* primNums,
 		int32_t nPrimitives, int32_t depth, BoundEdge* edges[3], uint32_t* prims0, uint32_t* prims1, int32_t badRefines = 0);

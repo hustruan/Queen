@@ -27,5 +27,19 @@ inline bool SoveQuadratic(Real A, Real B, Real C, Real* t0, Real* t1)
 	return true;
 }
 
+template<typename Real>
+inline bool SolveLinearSystem2x2(const Real A[2][2], const Real B[2], Real *x0, Real *x1)
+{
+	Real det = A[0][0]*A[1][1] - A[0][1]*A[1][0];
+    if (fabs(det) < Real(1e-10))
+        return false;
+    
+    *x0 = (A[1][1]*B[0] - A[0][1]*B[1]) / det;
+    *x1 = (A[0][0]*B[1] - A[1][0]*B[0]) / det;
+    
+    return true;
+
+}
+
 
 #endif // SoveEquation_h__

@@ -28,15 +28,15 @@ public:
 	
 	BoundingBoxf GetWorldBound(uint32_t index) const;
 
-	bool Intersect(const Ray& ray, float* tHit, DifferentialGeometry* diffGeoHit) const;
-	bool IntersectP(const Ray& ray) const;
+	bool Intersect(uint32_t index, const Ray& ray, float* tHit, DifferentialGeometry* diffGeoHit) const;
+	bool IntersectP(uint32_t index, const Ray& ray) const;
 
 	void GetShadingGeometry(const float44& local2world, const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const;
 
 	float Area() const;
 
-	float3 Sample(float u1, float u2, float3* n) const;
-	float3 Sample(const float3& pt, float u1, float u2, float3* n) const;
+	float3 Sample(float u1, float u2, float u3,  float3* n) const;
+	float3 Sample(const float3& pt, float u1, float u2, float u3,  float3* n) const;
 
 protected:
 	void PrepareSampleDistribution();

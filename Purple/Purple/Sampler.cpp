@@ -1,5 +1,6 @@
 #include "Sampler.h"
 #include "MentoCarlo.h"
+#include <aligned_allocator.h>
 #include <assert.h>
 #include <FloatCast.hpp>
 #include <Math.hpp>
@@ -8,8 +9,8 @@ namespace Purple {
 
 using namespace RxLib;
 
-Sampler::Sampler( int32_t xStart, int32_t xEnd, int32_t yStart, int32_t yEnd )
-	: mPixelStartX(xStart), mPixelStartY(yStart), mPixelEndY(yEnd), mPixelEndX(xEnd)
+Sampler::Sampler( int32_t xStart, int32_t xEnd, int32_t yStart, int32_t yEnd, int32_t samplerPerPixel )
+	: mPixelStartX(xStart), mPixelStartY(yStart), mPixelEndY(yEnd), mPixelEndX(xEnd), SamplesPerPixel(samplerPerPixel)
 {
 
 }
@@ -39,7 +40,7 @@ void Sampler::ComputeSubWindow( int32_t num, int32_t count, int32_t* newXStart, 
 }
 
 StratifiedSampler::StratifiedSampler( int32_t xStart, int32_t xEnd, int32_t yStart, int32_t yEnd, int32_t xNumSamples, int32_t yNumSamples )
-	: Sampler(xStart, xEnd, yStart, yEnd), mPixelSamplesX(xNumSamples), mPixelSamplesY(yNumSamples)
+	: Sampler(xStart, xEnd, yStart, yEnd, xNumSamples * yNumSamples), mPixelSamplesX(xNumSamples), mPixelSamplesY(yNumSamples)
 {
 	mCurrPixelX = xStart;
 	mCurrPixelY = yStart;
@@ -63,7 +64,7 @@ Sampler* StratifiedSampler::GetSubSampler( int32_t num, int32_t count )
 	return new StratifiedSampler(x0, x1, y0, y1, mPixelSamplesX, mPixelSamplesY);
 }
 
-uint32_t StratifiedSampler::GetMoreSamples( CameraSample* samples, Random& rng )
+uint32_t StratifiedSampler::GetMoreSamples( Sample* samples, Random& rng )
 {
 	if (mCurrPixelY == mPixelEndY)
 		return 0;
@@ -105,6 +106,63 @@ uint32_t StratifiedSampler::GetMoreSamples( CameraSample* samples, Random& rng )
 	}
 
 	return numSamples;
+}
+
+
+void Sample::AllocateSampleMemory()
+{
+	// Allocate storage for sample pointers
+	int nPtrs = mSamplesRecord1D.size() + mSamplesRecord2D.size();
+	
+	if (!nPtrs) {
+		oneD = twoD = NULL;
+		return;
+	}
+
+	oneD = (float**)aligned_malloc(sizeof(float*) * nPtrs, L1_CACHE_LINE_SIZE);
+	twoD = oneD + mSamplesRecord1D.size();
+
+	// Compute total number of sample values needed
+	int totSamples = 0;
+	for (uint32_t i = 0; i < mSamplesRecord1D.size(); ++i)
+		totSamples += mSamplesRecord1D[i];
+	for (uint32_t i = 0; i < mSamplesRecord2D.size(); ++i)
+		totSamples += 2 * mSamplesRecord2D[i];
+
+	// Allocate storage for sample values
+	float *mem = (float*)aligned_malloc(sizeof(float) * totSamples, L1_CACHE_LINE_SIZE);
+	
+	for (uint32_t i = 0; i < mSamplesRecord1D.size(); ++i)
+	{
+		oneD[i] = mem;
+		mem += mSamplesRecord1D[i];
+	}
+	
+	for (uint32_t i = 0; i < mSamplesRecord2D.size(); ++i)
+	{
+		twoD[i] = mem;
+		mem += 2 * mSamplesRecord2D[i];
+	}
+}
+
+Sample::~Sample()
+{
+	if (oneD)
+	{
+		aligned_free(oneD[0]);
+		aligned_free(oneD);
+	}
+}
+
+Sample* Sample::Duplicate( int count ) const
+{
+	Sample *ret = new Sample[count];
+	for (int i = 0; i < count; ++i) {
+		ret[i].mSamplesRecord1D = mSamplesRecord1D;
+		ret[i].mSamplesRecord2D = mSamplesRecord2D;
+		ret[i].AllocateSampleMemory();
+	}
+	return ret;
 }
 
 }

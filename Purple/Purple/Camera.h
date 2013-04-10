@@ -24,6 +24,9 @@ public:
 	
 	virtual float GenerateRayDifferential(const float2& rasterSample, const float2& lensSample, RayDifferential* ray) = 0;
 
+public:
+	uint32_t Width, Height;
+
 protected:
 	float44 mCameraToWorld;
 	const float mShutterOpen, mShutterClose;

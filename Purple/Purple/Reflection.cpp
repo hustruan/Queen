@@ -1,5 +1,6 @@
 #include "Reflection.h"
 #include "MentoCarlo.h"
+#include "Sampler.h"
 
 namespace Purple {
 
@@ -197,6 +198,80 @@ ColorRGB BSDF::Eval( const float3& woW, const float3& wiW, BSDFType flags /*= BS
 	return retVal;
 }
 
+ColorRGB BSDF::Sample( const float3& woW, float3* wiW, const BSDFSample& bsdfSample, float *pdf, uint32_t bsdfFlags /*= BSDF_All*/, uint32_t* sampledType /*= NULL*/ ) const
+{
+	ColorRGB retVal;
+
+	int matchingComps = NumComponents(bsdfFlags);
+
+	if (matchingComps == 0)
+	{
+		*pdf = 0.0f;
+		if(sampledType) *sampledType = (0);
+		return ColorRGB::Black;
+	}
+
+	int which = std::min(Floor2Int(matchingComps * bsdfSample.uComponent), matchingComps-1);
+
+	BxDF* bxdf = NULL;
+
+	for (int i = 0; i < mNumBxDFs; ++i)
+	{
+		if (mBxDFs[i]->MatchFlags(bsdfFlags) && which-- == 0) 
+		{
+			bxdf = mBxDFs[i];
+			break;
+		}
+	}
+	assert(bxdf);
+
+	float3 wo = WorldToLocal(woW);
+	float3 wi;
+	*pdf = 0.f;
+	retVal = bxdf->Sample(wo, &wi, bsdfSample.uDir[0], bsdfSample.uDir[1], pdf);
+
+	if (*pdf == 0.f)
+	{
+		if(sampledType) *sampledType = BSDFType(0);
+		return ColorRGB::Black;
+	}
+
+	if (sampledType) *sampledType = bxdf->BxDFType;
+	*wiW = LocalToWorld(wi);
+
+
+	if ( !(bsdfFlags & BSDF_Specular) && matchingComps > 1)
+	{
+		for (int i = 0; i < mNumBxDFs; ++i)
+		{
+			if (mBxDFs[i] != bxdf && mBxDFs[i]->MatchFlags(bsdfFlags)) 
+				*pdf += mBxDFs[i]->Pdf(wo, wi);
+		}
+	}
+
+	if (matchingComps > 1)
+		*pdf /= float(matchingComps);
+
+
+	if ( !(bsdfFlags & BSDF_Specular) )
+	{
+		retVal = ColorRGB::Black;
+		if (Dot(*wiW, mGeoNormal) * Dot(woW, mGeoNormal) > 0) // ignore BTDFs
+			bsdfFlags = (bsdfFlags & ~BSDF_Transmission);
+		else // ignore BRDFs
+			bsdfFlags = (bsdfFlags & ~BSDF_Reflection);
+
+		for (int i = 0; i < mNumBxDFs; ++i)
+		{
+			if (mBxDFs[i]->MatchFlags(bsdfFlags))
+				retVal += mBxDFs[i]->Eval(wo, wi);
+		}
+
+	}
+
+	return retVal;
+}
+
 float BSDF::Pdf( const float3& woW, const float3& wiW, BSDFType flags /*= BSDF_All*/ ) const
 {
 	float3 wi = WorldToLocal(wiW), wo = WorldToLocal(woW);
@@ -229,6 +304,8 @@ ColorRGB BSDF::Rho( Random& rng, BSDFType flags /*= BSDF_All*/, int sqrtSamples 
 			retVal += mBxDFs[i]->Rho(nSamples, s1, s2);
 		}
 	}
+	
+	return retVal;
 }
 
 ColorRGB BSDF::Rho( const float3& wo, Random& rng, BSDFType flags /*= BSDF_All*/, int sqrtSamples /*= 6*/ ) const
@@ -247,6 +324,34 @@ ColorRGB BSDF::Rho( const float3& wo, Random& rng, BSDFType flags /*= BSDF_All*/
 	}
 
 	return retVal;
+}
+
+int BSDF::NumComponents( uint32_t bsdfFlags ) const
+{
+	int num = 0;
+	for (int i = 0; i < mNumBxDFs; ++i)
+	{
+		if (mBxDFs[i]->MatchFlags(bsdfFlags))
+			++num;
+	}
+
+	return num;
+}
+
+
+BSDFSampleOffsets::BSDFSampleOffsets( int count, Sample* sample )
+	: nSamples(count)
+{
+	componentOffset = sample->Add1D(nSamples);
+	dirOffset = sample->Add2D(nSamples);
+}
+
+
+BSDFSample::BSDFSample( Sample* sample, const BSDFSampleOffsets& offset, uint32_t n )
+{
+	uDir[0] = sample->twoD[offset.dirOffset][2*n];
+	uDir[1] = sample->twoD[offset.dirOffset][2*n+1];
+	uComponent = sample->oneD[offset.componentOffset][n];
 }
 
 }
