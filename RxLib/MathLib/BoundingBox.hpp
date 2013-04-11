@@ -61,11 +61,11 @@ public:
 
 		if (point.X() < Min.X())	Min.X() = point.X();
 		if (point.Y() < Min.Y())	Min.Y() = point.Y();
-		if (point.Z() < Min.Z())	Min.X() = point.Z();
+		if (point.Z() < Min.Z())	Min.Z() = point.Z();
 
 		if (point.X() > Max.X())	Max.X() = point.X();
 		if (point.Y() > Max.Y())	Max.Y() = point.Y();
-		if (point.Z() > Max.Z())	Max.X() = point.Z();
+		if (point.Z() > Max.Z())	Max.Z() = point.Z();
 	}
 	
 	/**
@@ -181,6 +181,12 @@ public:
 template<typename Real>
 BoundingBox<Real> Merge( const BoundingBox<Real>& box1, const BoundingBox<Real>& box2 )
 {
+	if (!box1.Defined)
+		return box2;
+
+	if (!box2.Defined)
+		return box1;
+
 	BoundingBox<Real> retVal = box2;
 
 	if (box1.Min.X() < box2.Min.X())	retVal.Min.X() = box1.Min.X();

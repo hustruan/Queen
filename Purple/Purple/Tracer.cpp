@@ -5,67 +5,25 @@
 #include "Shape.h"
 #include "Scene.h"
 #include "Light.h"
+#include "DifferentialGeometry.h"
 #include "Integrator.h"
 #include "MemoryArena.h"
+#include "threadpool.h"
+
+#define TilesPackageSize 16
 
 namespace Purple {
 
-void SamplerRenderer::Render( const Scene *scene )
+SamplerRenderer::SamplerRenderer( Sampler* sampler, Camera* cam, SurfaceIntegrator* si )
 {
-	// Compute number of _SamplerRendererTask_s to create for rendering
-	int nPixels = mCamera->Width * mCamera->Height;
+	mMainSampler = sampler;
+	mCamera = cam;
+	mSurfaceIntegrator = si;
+}
 
-	//int nTasks = max(32 * NumSystemCores(), nPixels / (16*16));
+SamplerRenderer::~SamplerRenderer()
+{
 
-	int nTasks = nPixels / (16*16);
-
-	for (int taskNum = 0; taskNum < nTasks; ++taskNum)
-	{
-		 Sampler* sampler = mSampler->GetSubSampler(taskNum, nTasks);
-
-		 // Declare local variables used for rendering loop
-		 MemoryArena arena;
-		 Random rng(taskNum);
-
-		 // Allocate space for samples and intersections
-		 int maxSamples = sampler->GetSampleCount();
-
-		 Sample *samples;// = origSample->Duplicate(maxSamples);
-
-		 RayDifferential *rays = new RayDifferential[maxSamples];
-		 ColorRGB *Ls = new ColorRGB[maxSamples];
-		 ColorRGB *Ts = new ColorRGB[maxSamples];
-		 DifferentialGeometry* isects = new DifferentialGeometry[maxSamples];
-
-		 // Get samples from _Sampler_ and update image
-		 int sampleCount;
-		 while ((sampleCount = sampler->GetMoreSamples(samples, rng)) > 0)
-		 {
-			 // Generate camera rays and compute radiance along rays
-			 for (int i = 0; i < sampleCount; ++i)
-			 {
-				// Find camera ray for _sample[i]_
-		
-				float rayWeight = mCamera->GenerateRayDifferential(samples[i].ImageSample, samples[i].LensSample, &rays[i]);
-				rays[i].ScaleDifferentials(1.f / sqrtf(float(sampler->SamplesPerPixel)));
-
-				//	// Evaluate radiance along camera ray
-				if (rayWeight > 0.f)
-				{
-					Ls[i] = rayWeight * Li(scene, rays[i], &samples[i], rng, arena, &isects[i], &Ts[i]);
-				}
-				else
-				{
-					Ls[i] = ColorRGB::Black;
-					Ts[i] = ColorRGB::White;
-				}
-		
-			 }
-
-			 // Free _MemoryArena_ memory from computing image sample values
-			 arena.FreeAll();
-		 }
-	}
 }
 
 ColorRGB SamplerRenderer::Li( const Scene *scene, const RayDifferential &ray, const Sample *sample, Random& rng, MemoryArena &arena, DifferentialGeometry* isect /*= NULL*/, ColorRGB* T /*= NULL*/ ) const
@@ -83,8 +41,8 @@ ColorRGB SamplerRenderer::Li( const Scene *scene, const RayDifferential &ray, co
 	else 
 	{
 		// Handle ray that doesn't intersect any geometry
-		for (uint32_t i = 0; i < scene->mLights.size(); ++i)
-			Li += scene->mLights[i]->Le(ray);
+		for (uint32_t i = 0; i < scene->Lights.size(); ++i)
+			Li += scene->Lights[i]->Le(ray);
 	}
 	
 	return *T * Li;
@@ -94,6 +52,134 @@ ColorRGB SamplerRenderer::Transmittance( const Scene *scene, const RayDifferenti
 {
 	return ColorRGB::Black;
 }
+
+
+void SamplerRenderer::Render( const Scene *scene )
+{
+	//// Compute number of _SamplerRendererTask_s to create for rendering
+	int nPixels = mCamera->Width * mCamera->Height;
+
+	int nTasks = (std::max)(int(32 * GetNumWorkThreads()), nPixels / (16*16));
+		
+	pool& tp = GlobalThreadPool();
+
+	std::atomic<int> workingPackage = 0;
+	for (size_t iCore = 0; iCore < tp.size(); ++iCore)
+	{
+		//tp.schedule(std::bind(&SamplerRenderer::TileRender, this, scene, std::ref(workingPackage), nTasks));
+
+		std::bind(&SamplerRenderer::TileRender, this, scene, std::ref(workingPackage), nTasks)();
+	}
+	tp.wait();
+	//for (int taskNum = 0; taskNum < nTasks; ++taskNum)
+	//{
+	//	Sampler* sampler = mMainSampler->GetSubSampler(taskNum, nTasks);
+
+	//	// Declare local variables used for rendering loop
+	//	MemoryArena arena;
+	//	Random rng(taskNum);
+
+	//	// Allocate space for samples and intersections
+	//	int maxSamples = sampler->GetSampleCount();
+
+	//	Sample *samples;// = origSample->Duplicate(maxSamples);
+
+	//	RayDifferential *rays = new RayDifferential[maxSamples];
+	//	ColorRGB *Ls = new ColorRGB[maxSamples];
+	//	ColorRGB *Ts = new ColorRGB[maxSamples];
+	//	DifferentialGeometry* isects = new DifferentialGeometry[maxSamples];
+
+	//	// Get samples from _Sampler_ and update image
+	//	int sampleCount;
+	//	while ((sampleCount = sampler->GetMoreSamples(samples, rng)) > 0)
+	//	{
+	//		// Generate camera rays and compute radiance along rays
+	//		for (int i = 0; i < sampleCount; ++i)
+	//		{
+	//			// Find camera ray for _sample[i]_
+
+	//			float rayWeight = mCamera->GenerateRayDifferential(samples[i].ImageSample, samples[i].LensSample, &rays[i]);
+	//			rays[i].ScaleDifferentials(1.f / sqrtf(float(sampler->SamplesPerPixel)));
+
+	//			//	// Evaluate radiance along camera ray
+	//			if (rayWeight > 0.f)
+	//			{
+	//				Ls[i] = rayWeight * Li(scene, rays[i], &samples[i], rng, arena, &isects[i], &Ts[i]);
+	//			}
+	//			else
+	//			{
+	//				Ls[i] = ColorRGB::Black;
+	//				Ts[i] = ColorRGB::White;
+	//			}
+
+	//		}
+
+	//		// Free _MemoryArena_ memory from computing image sample values
+	//		arena.FreeAll();
+	//	}
+	//}
+}
+
+void SamplerRenderer::TileRender( const Scene* scene, std::atomic<int32_t>& workingPackage, int32_t numTiles )
+{
+	int32_t numPackages = (numTiles + TilesPackageSize - 1) / TilesPackageSize;
+	int32_t localWorkingPackage = workingPackage ++;
+
+	while (localWorkingPackage < numPackages)
+	{
+		const int32_t start = localWorkingPackage * TilesPackageSize;
+		const int32_t end = (std::min)(numTiles, start + TilesPackageSize);
+
+		for (int32_t iTile = start; iTile < end; ++iTile)
+		{
+			Sampler* sampler = mMainSampler->GetSubSampler(iTile, numTiles);
+
+			// Declare local variables used for rendering loop
+			MemoryArena arena;
+			Random rng(iTile);
+
+			// Allocate space for samples and intersections
+			int maxSamples = sampler->GetSampleCount();
+
+			Sample *samples = mMainSample->Duplicate(maxSamples);
+
+			RayDifferential *rays = new RayDifferential[maxSamples];
+			ColorRGB *Ls = new ColorRGB[maxSamples];
+			ColorRGB *Ts = new ColorRGB[maxSamples];
+			DifferentialGeometry* isects = new DifferentialGeometry[maxSamples];
+
+			// Get samples from _Sampler_ and update image
+			int sampleCount;
+			while ((sampleCount = sampler->GetMoreSamples(samples, rng)) > 0)
+			{
+				// Generate camera rays and compute radiance along rays
+				for (int i = 0; i < sampleCount; ++i)
+				{
+					// Find camera ray for _sample[i]_
+
+					float rayWeight = mCamera->GenerateRayDifferential(samples[i].ImageSample, samples[i].LensSample, &rays[i]);
+					rays[i].ScaleDifferentials(1.f / sqrtf(float(sampler->SamplesPerPixel)));
+
+					// Evaluate radiance along camera ray
+					if (rayWeight > 0.f)
+					{
+						Ls[i] = rayWeight * Li(scene, rays[i], &samples[i], rng, arena, &isects[i], &Ts[i]);
+					}
+					else
+					{
+						Ls[i] = ColorRGB::Black;
+						Ts[i] = ColorRGB::White;
+					}
+
+				}
+
+				// Free _MemoryArena_ memory from computing image sample values
+				arena.FreeAll();
+			}
+		}
+	}
+}
+
 
 
 }

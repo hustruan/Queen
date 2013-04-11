@@ -64,6 +64,9 @@
     <ClCompile Include="SimpleShape.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DifferentialGeometry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Ray.h">
@@ -118,6 +121,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MemoryArena.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="threadpool.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DifferentialGeometry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,8 +1,9 @@
 #include "KdTree.h"
 #include "Shape.h"
 #include "Mesh.h"
+#include <cmath>
 #include <aligned_allocator.h>
-
+#include <FloatCast.hpp>
 
 namespace {
 
@@ -104,9 +105,9 @@ struct BoundEdge
 
 //-----------------------------------------------------------------------------------------
 KDTree::KDTree( float icost /*= 80.0f*/, float tcost /*= 1.0f*/, float ebonus /*= 0.5f*/, int maxp /*= 1*/, int maxDepth /*= -1*/ )
-	:mIntersectCost(icost), mTraversalCost(tcost), mEmptySpaceBonus(ebonus), mMaxPrimitive(maxp), mMaxDepth(mMaxDepth)
+	: mIntersectCost(icost), mTraversalCost(tcost), mEmptySpaceBonus(ebonus), mMaxPrimitive(maxp), mMaxDepth(mMaxDepth), mNodes(NULL)
 {
-
+	mShapeMap.push_back(0);
 }
 
 KDTree::~KDTree()
@@ -129,7 +130,7 @@ void KDTree::AddShape( const shared_ptr<Shape>& shape )
 	} 
 	else
 	{
-		mShapeMap.push_back(1);
+		mShapeMap.push_back(mShapeMap.back() + 1);
 		mTriangleFlag.push_back(false);
 	}
 	
@@ -144,12 +145,17 @@ uint32_t KDTree::GetPrimitiveCount() const
 void KDTree::BuildTree()
 {
 	uint32_t primCount = GetPrimitiveCount();
-	
+
+	// Compute max depth 
+	mNextFreeNode = mNumAllocedNodes = 0;
+	if (mMaxDepth <= 0)
+		mMaxDepth = (int32_t) (8 + 1.3f * (int32_t)RxLib::log2(float(primCount)));
+
 	// Compute bounds for kd-tree construction
 	uint32_t* primNums = new uint32_t[primCount];
 	vector<BoundingBoxf> primBounds;
 	primBounds.reserve(primCount);
-	for (uint32_t i = 0; i < GetPrimitiveCount(); ++i) 
+	for (uint32_t i = 0; i < primCount; ++i) 
 	{
 		primNums[i] = i;
 		BoundingBoxf b = GetBound(i);
@@ -164,8 +170,6 @@ void KDTree::BuildTree()
 	uint32_t *prims0 = new uint32_t[primCount];
 	uint32_t *prims1 = new uint32_t[(mMaxDepth+1) *primCount];
 
-	mNextFreeNode = mNumAllocedNodes = 0;
-
 	// Start recursive construction of kd-tree
 	BuildInternal(0, mBound, primBounds, primNums, primCount, mMaxDepth, edges, prims0, prims1);
 
@@ -175,7 +179,6 @@ void KDTree::BuildTree()
 		delete[] edges[i];
 	delete[] prims0;
 	delete[] prims1;
-
 }
 
 void KDTree::BuildInternal( int32_t nodeNum, const BoundingBoxf& nodeBounds, const vector<BoundingBoxf>& allPrimBounds, uint32_t* primNums, int32_t nPrimitives, int32_t depth, BoundEdge* edges[3], uint32_t* prims0, uint32_t* prims1, int badRefines )
@@ -189,7 +192,7 @@ void KDTree::BuildInternal( int32_t nodeNum, const BoundingBoxf& nodeBounds, con
 		if (nAlloc > 0) 
 		{
 			memcpy(n, mNodes, mNumAllocedNodes * sizeof(KDNode));
-			aligned_free(mNodes);
+			if(mNodes) aligned_free(mNodes);
 		}
 		mNodes = n;
 		mNumAllocedNodes = nAlloc;
@@ -284,11 +287,15 @@ retrySplit:
 
 	int32_t n0 = 0, n1 = 0;
 	for (int32_t i = 0; i < bestOffset; ++i)
+	{
 		if (edges[bestAxis][i].type == BoundEdge::START)
 			prims0[n0++] = edges[bestAxis][i].primNum;
+	}
 	for (int i = bestOffset+1; i < 2*nPrimitives; ++i)
+	{
 		if (edges[bestAxis][i].type == BoundEdge::END)
 			prims1[n1++] = edges[bestAxis][i].primNum;
+	}
 
 	// Recursively initialize children nodes
 	float tsplit = edges[bestAxis][bestOffset].t;

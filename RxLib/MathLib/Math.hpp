@@ -70,6 +70,13 @@ inline Real Lerp(Real a, Real b, float t)
 	return a + (b-a)*t;
 }
 
+template <typename Real>
+inline Real log2(Real x)
+{
+	static Real invLog2 = Real(1) / log(Real(2));
+	return log(x) * invLog2;
+}
+ 
 
 typedef Math<float> Mathf;
 

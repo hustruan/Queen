@@ -95,10 +95,15 @@ uint32_t StratifiedSampler::GetMoreSamples( Sample* samples, Random& rng )
 		samples[i].ImageSample = float2(imageSamplesBuffer[i*2], imageSamplesBuffer[i*2+1]);
 		samples[i].LensSample = float2(lensSamplesBuffer[i*2], lensSamplesBuffer[i*2+1]);
 		samples[i].TimeSample = timeSamplesBuffer[i];/*Lerp(timeSamplesBuffer[i], mShutterOpen, shutterClose)*/; 
+
+		// Generate stratified samples for integrators
+		for (uint32_t j = 0; j < samples[i].Num1D.size(); ++j)
+			LatinHypercube(samples[i].OneD[j], samples[i].Num1D[j], 1, rng);
+		for (uint32_t j = 0; j < samples[i].Num2D.size(); ++j)
+			LatinHypercube(samples[i].TwoD[j], samples[i].Num2D[j], 2, rng);
 	}
 
-
-	// advance to next 
+	// Advance to next pixel for stratified sampling
 	if ( ++mCurrPixelX == mPixelEndX )
 	{
 		mCurrPixelX = mPixelStartX;
@@ -108,58 +113,60 @@ uint32_t StratifiedSampler::GetMoreSamples( Sample* samples, Random& rng )
 	return numSamples;
 }
 
+//--------------------------------------------------------------------------------------------
 
 void Sample::AllocateSampleMemory()
 {
 	// Allocate storage for sample pointers
-	int nPtrs = mSamplesRecord1D.size() + mSamplesRecord2D.size();
+	int nPtrs = Num1D.size() + Num2D.size();
 	
 	if (!nPtrs) {
-		oneD = twoD = NULL;
+		OneD = TwoD = NULL;
 		return;
 	}
 
-	oneD = (float**)aligned_malloc(sizeof(float*) * nPtrs, L1_CACHE_LINE_SIZE);
-	twoD = oneD + mSamplesRecord1D.size();
+	OneD = (float**)aligned_malloc(sizeof(float*) * nPtrs, L1_CACHE_LINE_SIZE);
+	TwoD = OneD + Num1D.size();
 
 	// Compute total number of sample values needed
 	int totSamples = 0;
-	for (uint32_t i = 0; i < mSamplesRecord1D.size(); ++i)
-		totSamples += mSamplesRecord1D[i];
-	for (uint32_t i = 0; i < mSamplesRecord2D.size(); ++i)
-		totSamples += 2 * mSamplesRecord2D[i];
+	for (uint32_t i = 0; i < Num1D.size(); ++i)
+		totSamples += Num1D[i];
+	for (uint32_t i = 0; i < Num2D.size(); ++i)
+		totSamples += 2 * Num2D[i];
 
 	// Allocate storage for sample values
 	float *mem = (float*)aligned_malloc(sizeof(float) * totSamples, L1_CACHE_LINE_SIZE);
 	
-	for (uint32_t i = 0; i < mSamplesRecord1D.size(); ++i)
+	for (uint32_t i = 0; i < Num1D.size(); ++i)
 	{
-		oneD[i] = mem;
-		mem += mSamplesRecord1D[i];
+		OneD[i] = mem;
+		mem += Num1D[i];
 	}
 	
-	for (uint32_t i = 0; i < mSamplesRecord2D.size(); ++i)
+	for (uint32_t i = 0; i < Num2D.size(); ++i)
 	{
-		twoD[i] = mem;
-		mem += 2 * mSamplesRecord2D[i];
+		TwoD[i] = mem;
+		mem += 2 * Num2D[i];
 	}
 }
 
 Sample::~Sample()
 {
-	if (oneD)
+	if (OneD)
 	{
-		aligned_free(oneD[0]);
-		aligned_free(oneD);
+		aligned_free(OneD[0]);
+		aligned_free(OneD);
 	}
 }
 
 Sample* Sample::Duplicate( int count ) const
 {
 	Sample *ret = new Sample[count];
-	for (int i = 0; i < count; ++i) {
-		ret[i].mSamplesRecord1D = mSamplesRecord1D;
-		ret[i].mSamplesRecord2D = mSamplesRecord2D;
+	for (int i = 0; i < count; ++i)
+	{
+		ret[i].Num1D = Num1D;
+		ret[i].Num2D = Num2D;
 		ret[i].AllocateSampleMemory();
 	}
 	return ret;

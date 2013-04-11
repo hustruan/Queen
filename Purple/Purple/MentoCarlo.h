@@ -89,6 +89,8 @@ inline void UniformSampleTriangle(float u1, float u2, float* u, float* v)
 void StratifiedSample1D(float* samples, int32_t numSamples, Random& rng, bool jitter = true);
 void StratifiedSample2D(float* samples, int32_t xNumSamples, int32_t yNumSamples, Random& rng, bool jitter = true);
 
+void LatinHypercube(float* samples, int32_t numSamples, int32_t dim, Random& rng);
+
 /**
  * Shuffle 
  */

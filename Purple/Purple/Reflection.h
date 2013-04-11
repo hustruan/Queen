@@ -2,7 +2,7 @@
 #define Reflection_h__
 
 #include "Prerequisites.h"
-#include "Shape.h"
+#include "DifferentialGeometry.h"
 #include "Random.h"
 #include <Math.hpp>
 

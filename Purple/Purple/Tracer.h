@@ -3,6 +3,7 @@
 
 #include "Prerequisites.h"
 #include "Ray.h"
+#include <atomic>
 
 namespace Purple {
 
@@ -13,7 +14,7 @@ class Renderer
 public:
 	virtual ~Renderer(void) {};
 
-	virtual void Render(Scene* scene) = 0;
+	virtual void Render(const Scene* scene) = 0;
 
 	virtual ColorRGB Li(const Scene *scene, const RayDifferential &ray, const Sample *sample, Random& rng, MemoryArena &arena,
 		DifferentialGeometry* isect = NULL, ColorRGB* T = NULL) const = 0;
@@ -26,7 +27,7 @@ public:
 class SamplerRenderer : public Renderer
 {
 public:
-	SamplerRenderer();
+	SamplerRenderer(Sampler* sampler, Camera* cam, SurfaceIntegrator* si);
 	~SamplerRenderer();
 
 	virtual ColorRGB Li(const Scene *scene, const RayDifferential &ray, const Sample *sample, Random& rng, MemoryArena &arena,
@@ -37,10 +38,16 @@ public:
 
 	void Render(const Scene *scene);
 
+
+private:
+
+	void TileRender(const Scene *scene, std::atomic<int32_t>& workingPackage, int32_t numTiles);
+
 protected:
 	Camera* mCamera;	
-	Sampler* mSampler;
-
+	Sampler* mMainSampler;
+	Sample* mMainSample;
+	SurfaceIntegrator* mSurfaceIntegrator;
 };
 
 }

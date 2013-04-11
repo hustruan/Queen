@@ -19,7 +19,7 @@ PointLight::~PointLight()
 {
 }
 
-ColorRGB PointLight::Sample_f( const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis )
+ColorRGB PointLight::Sample( const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis )
 {
 	*wi = Normalize(mLightPosW - pt);
 	*pdf = 1.0f;
@@ -48,7 +48,7 @@ SpotLight::~SpotLight()
 
 }
 
-ColorRGB SpotLight::Sample_f( const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis )
+ColorRGB SpotLight::Sample( const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis )
 {
 	*wi = Normalize(mLightPosW - pt);
 	*pdf = 1.0f;
@@ -82,7 +82,7 @@ DirectionalLight::~DirectionalLight()
 
 }
 
-ColorRGB DirectionalLight::Sample_f( const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis )
+ColorRGB DirectionalLight::Sample( const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis )
 {
 	*wi = -mLightDirectionW;
 	*pdf = 1.0f;
@@ -111,7 +111,7 @@ AreaLight::~AreaLight()
 }
 
 
-ColorRGB AreaLight::Sample_f( const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis )
+ColorRGB AreaLight::Sample( const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis )
 {
 	float3 ns;
 	float3 ps = mShape->Sample(pt, lightSample.uPos[0], lightSample.uPos[1], lightSample.uComponent, &ns);
@@ -137,9 +137,9 @@ LightSampleOffsets::LightSampleOffsets( int count, Sample* sample )
 
 LightSample::LightSample( Sample* sample, const LightSampleOffsets& offset, uint32_t n )
 {
-	uPos[0] = sample->twoD[offset.posOffset][2*n];
-	uPos[1] = sample->twoD[offset.posOffset][2*n+1];
-	uComponent = sample->oneD[offset.componentOffset][n];
+	uPos[0] = sample->TwoD[offset.posOffset][2*n];
+	uPos[1] = sample->TwoD[offset.posOffset][2*n+1];
+	uComponent = sample->OneD[offset.componentOffset][n];
 }
 
 

@@ -1,5 +1,6 @@
 #include "Mesh.h"
 #include "MentoCarlo.h"
+#include "DifferentialGeometry.h"
 #include <MathUtil.hpp>
 
 namespace Purple {

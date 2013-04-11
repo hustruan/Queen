@@ -6,6 +6,12 @@
 
 namespace Purple {
 
+enum LightStrategy 
+{ 
+	LS_Sample_All_Uniform,
+	LS_Sample_One_Uniform 
+};
+
 class Integrator
 {
 public:
@@ -19,7 +25,7 @@ public:
 	/**
 	 * @brief Integrator may need samples to integral light or BRDF, use this method to init samples
 	 */
-	virtual void RequestSamples(Sampler* sampler, Sample* sample, const Scene& scene) {}
+	virtual void RequestSamples(Sampler* sampler, Sample* sample, const Scene* scene) {}
 };
 
 class SurfaceIntegrator : public Integrator
@@ -27,17 +33,42 @@ class SurfaceIntegrator : public Integrator
 public:
 	virtual ~SurfaceIntegrator(void) { }
 
-	virtual ColorRGB Li(const Scene& scene, const Sample& sample, const RayDifferential &ray, const DifferentialGeometry& isect) const = 0;
+	virtual ColorRGB Li(const Scene* scene, const Renderer* renderer, const RayDifferential& ray, const DifferentialGeometry& isect,
+			const Sample* sample, Random& rng, MemoryArena& arena) const = 0;
+};
 
-	//virtual ColorRGB Li(const Scene *scene, const Renderer *renderer, const RayDifferential &ray, const Intersection &isect,
-	//	const Sample *sample, RNG &rng, MemoryArena &arena) const = 0;
+
+class WhittedIntegrator : public SurfaceIntegrator 
+{
+public:
+	WhittedIntegrator(int32_t md) : mMaxDepth(md) {}
+
+	virtual ColorRGB Li(const Scene* scene, const Renderer* renderer, const RayDifferential& ray, const DifferentialGeometry& isect,
+		const Sample* sample, Random& rng, MemoryArena& arena) const;
+
+private:
+	int32_t mMaxDepth;
 };
 
 
 class DirectLightingIntegrator : public SurfaceIntegrator
 {
 public:
-	DirectLightingIntegrator();
+	DirectLightingIntegrator(LightStrategy ls = LS_Sample_All_Uniform, int32_t md = 5);
+	~DirectLightingIntegrator();
+
+	virtual ColorRGB Li(const Scene* scene, const Renderer* renderer, const RayDifferential& ray, const DifferentialGeometry& isect,
+		const Sample* sample, Random& rng, MemoryArena& arena) const;
+
+	void RequestSamples(Sampler* sampler, Sample* sample, const Scene* scene);
+
+private:
+	LightSampleOffsets* mLightSampleOffsets;
+	BSDFSampleOffsets* mBSDFSampleOffsets;
+	uint32_t mLightNumOffset;
+
+	LightStrategy mLightStrategy;
+	int32_t mMaxDepth;
 };
 
 

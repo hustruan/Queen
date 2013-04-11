@@ -94,6 +94,29 @@ void StratifiedSample2D( float* samples, int32_t xNumSamples, int32_t yNumSample
 	}
 }
 
+void LatinHypercube( float* samples, int32_t numSamples, int32_t dims, Random& rng )
+{
+	// Generate LHS samples along diagonal
+	float invDiagonal = 1.0f / numSamples;
+	for (int32_t i = 0; i < numSamples; ++i)
+	{
+		for (int32_t j = 0; j < dims; ++j)
+		{
+			samples[dims * i + j] = std::min((i + rng.RandomFloat()) * invDiagonal, OneMinusEpsilon);
+		}
+	}
+
+	// Permute LHS samples in each dimension
+	for (int32_t i = 0; i < dims; ++i)
+	{
+		for (int32_t j = numSamples - 1; j > 0; --j)
+		{
+			int32_t other = (rng.RandomUInt() % (j+1));
+			std::swap(samples[dims*j  + i], samples[dims*other + i]);
+		}
+	}
+}
+
 
 
 }

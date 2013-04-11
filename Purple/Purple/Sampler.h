@@ -12,26 +12,24 @@ struct Sample
 	float2 LensSample;
 	float TimeSample;
 
-
 	uint32_t Add1D(uint32_t nSamples)
 	{
-		mSamplesRecord1D.push_back(nSamples);
-		return mSamplesRecord1D.size() -1;
+		Num1D.push_back(nSamples);
+		return Num1D.size() -1;
 	}
 
 	uint32_t Add2D(uint32_t nSamples)
 	{
-		mSamplesRecord2D.push_back(nSamples);
-		return mSamplesRecord2D.size() -1;
+		Num2D.push_back(nSamples);
+		return Num2D.size() -1;
 	}
 
 	Sample* Duplicate(int count) const;
 
-
 	~Sample();
 
-	std::vector<uint32_t> mSamplesRecord1D, mSamplesRecord2D;
-	float **oneD, **twoD;
+	std::vector<uint32_t> Num1D, Num2D;
+	float **OneD, **TwoD;
 
 private:
 
@@ -60,6 +58,8 @@ public:
 	 * @param num, subsampler index
 	 */
 	virtual Sampler* GetSubSampler(int32_t num, int32_t count) = 0;
+
+	virtual int32_t RoundSize(int32_t size) const = 0;
 
 protected:
 
@@ -92,6 +92,8 @@ public:
 	Sampler* GetSubSampler(int32_t num, int32_t count);
 
 	uint32_t GetMoreSamples(Sample* samples, Random& rng);
+
+	int32_t RoundSize(int32_t size) const { return size; }
 
 private:
 

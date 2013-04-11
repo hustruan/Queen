@@ -1,6 +1,11 @@
 #ifndef Prerequisites_h__
 #define Prerequisites_h__
 
+#if !defined(_VARIADIC_MAX)
+	#define _VARIADIC_MAX    10
+#endif
+
+
 #include <iostream>
 #include <string>
 #include <vector>
@@ -48,9 +53,13 @@ class Light;
 class AreaLight;
 class MemoryArena;
 class BSDF;
+class SurfaceIntegrator;
 struct Sample;
 struct CameraSample;
 struct DifferentialGeometry;
+struct LightSampleOffsets;
+struct BSDFSampleOffsets;
+
 }
 
 

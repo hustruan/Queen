@@ -10,6 +10,9 @@ using namespace RxLib;
 PerspectiveCamera::PerspectiveCamera( const float44& cam2world, float fov, uint32_t width, uint32_t height, float shutterOpen, float shutterClose )
 	: Camera(cam2world, shutterOpen, shutterClose)
 {
+	Width = width;
+	Height = height;
+
 	// Compute perspective transform
 	float aspect = float(width) / float(height);
 	float44 perspective = CreatePerspectiveFovLH(fov, aspect, 1e-4f, 1e4f);

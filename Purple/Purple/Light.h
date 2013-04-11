@@ -47,14 +47,14 @@ class Light
 {
 public:
 	Light(const float44& light2world, int32_t numSamples = 1)
-		: mLightToWorld(light2world), mNumSamples(numSamples) {}
+		: mLightToWorld(light2world), NumSamples(numSamples) {}
 	
 	virtual ~Light(void) {}
 
 	/** 
 	 * 
 	 */
-	virtual ColorRGB Sample_f(const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis) = 0;
+	virtual ColorRGB Sample(const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis) = 0;
 
 	virtual float Pdf(const float3& pt, const float3& wi) const = 0;
 
@@ -64,9 +64,11 @@ public:
 
 	virtual ColorRGB Le(const RayDifferential &r) const;
 
+public:
+	int32_t NumSamples;  // used for mento carlo integration
+
 protected:
 	float44 mLightToWorld;
-	int32_t mNumSamples;  // used for mento carlo integration
 };
 
 class PointLight : public Light
@@ -75,7 +77,7 @@ public:
 	PointLight(const float44& light2world, const ColorRGB& intensity);
 	~PointLight();
 
-	ColorRGB Sample_f(const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis);
+	ColorRGB Sample(const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis);
 
 	ColorRGB Power(const Scene& scene) const;
 
@@ -98,7 +100,7 @@ public:
 	DirectionalLight(const float44& light2world, const float3& dir, const ColorRGB& radiance);
 	~DirectionalLight();
 
-	ColorRGB Sample_f(const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis);
+	ColorRGB Sample(const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis);
 
 	ColorRGB Power(const Scene& scene) const;
 
@@ -118,7 +120,7 @@ public:
 	SpotLight(const float44& light2world, const ColorRGB& intensity, float inner, float outer, float falloff);
 	~SpotLight();
 
-	ColorRGB Sample_f(const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis);
+	ColorRGB Sample(const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis);
 
 	ColorRGB Power(const Scene& scene) const;
 
@@ -147,7 +149,7 @@ public:
 	AreaLight(const float44& light2world, const ColorRGB& intensity, const shared_ptr<Shape>& shape, int32_t numSamples);
 	~AreaLight();
 
-	ColorRGB Sample_f(const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis);
+	ColorRGB Sample(const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis);
 
 	bool DeltaLight() const  { return false; } 
 

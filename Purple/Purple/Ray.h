@@ -10,13 +10,13 @@ using RxLib::float3;
 struct Ray
 {
 	Ray()
-		: Origin(0, 0, 0), Direction(0, 0, 0)
+		: Origin(0, 0, 0), Direction(0, 0, 0), tMin(0.0f), tMax(RxLib::Mathf::INFINITY), Time(0.0f), Depth(0)
 	{
 
 	}
 
 	Ray(const float3& origin, const float3& dir, float min, float max = RxLib::Mathf::INFINITY)
-		: Origin(origin), Direction(dir), tMin(min), tMax(max)
+		: Origin(origin), Direction(dir), tMin(min), tMax(max), Time(0.0f), Depth(0)
 	{
 
 	}
@@ -28,7 +28,9 @@ struct Ray
 
 	float3 Origin;
 	float3 Direction;
+	float Time;
 	mutable float tMin, tMax;
+	int Depth;
 };
 
 struct RayDifferential : public Ray

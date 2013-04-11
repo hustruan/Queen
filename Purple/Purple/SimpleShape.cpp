@@ -1,5 +1,6 @@
 #include "SimpleShape.h"
 #include "MentoCarlo.h"
+#include "DifferentialGeometry.h"
 #include <MathUtil.hpp>
 #include <SoveEquation.hpp>
 
@@ -24,7 +25,7 @@ Sphere::~Sphere(void)
 
 BoundingBoxf Sphere::GetLocalBound() const
 {
-	return BoundingBoxf( float3(-mRadius, -mRadius, -mRadius), float3(-mRadius, -mRadius, -mRadius) );
+	return BoundingBoxf( float3(-mRadius, -mRadius, mMinZ), float3(mRadius, mRadius, mMaxZ) );
 }
 
 bool Sphere::Intersect( const Ray& r, float* tHit, DifferentialGeometry* diffGeoHit ) const
