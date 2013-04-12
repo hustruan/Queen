@@ -26,13 +26,15 @@ struct Sample
 
 	Sample* Duplicate(int count) const;
 
+
+	Sample(Sampler* sampler, SurfaceIntegrator* si, const Scene* scene);
 	~Sample();
 
 	std::vector<uint32_t> Num1D, Num2D;
 	float **OneD, **TwoD;
 
 private:
-
+	Sample() { OneD = TwoD = NULL; }
     void AllocateSampleMemory();
 };
 

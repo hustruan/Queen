@@ -17,7 +17,17 @@ public:
 };
 
 
+class DiffuseMaterial : public Material
+{
+public:
+	DiffuseMaterial(const ColorRGB& abedo);
+	virtual ~DiffuseMaterial(void);
 
+	virtual BSDF* GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, MemoryArena &arena);
+
+private:
+	ColorRGB mAbedo;
+};
 
 
 }

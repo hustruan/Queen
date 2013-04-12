@@ -12,6 +12,10 @@ public:
 	Shape(const float44& o2w, bool ro);
 	virtual ~Shape(void);
 
+	inline bool HasMaterial() const { return (mMaterial != NULL); }
+	inline void SetMaterial(const shared_ptr<Material>& mat)  { mMaterial = mat; }
+	inline const shared_ptr<Material>& GetMaterial() const { return mMaterial; }
+
 	virtual BoundingBoxf GetLocalBound() const = 0;
 	virtual BoundingBoxf GetWorldBound() const;
 
@@ -51,10 +55,10 @@ protected:
 };
 
 
-class AreaLightShape : Shape
+class AreaLightShape : public Shape
 {
 public:
-	AreaLightShape(const shared_ptr<Shape>& shape, Light* light);
+	AreaLightShape(const shared_ptr<Shape>& shape, AreaLight* light);
 	~AreaLightShape() { }
 
 	BoundingBoxf GetLocalBound() const     { return mShape->GetLocalBound(); }
@@ -83,7 +87,7 @@ public:
 
 protected:
 	const shared_ptr<Shape> mShape;
-	Light* mAreaLight;
+	AreaLight* mAreaLight;
 };
 
 }

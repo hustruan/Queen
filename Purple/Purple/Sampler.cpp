@@ -1,5 +1,6 @@
 #include "Sampler.h"
 #include "MentoCarlo.h"
+#include "Integrator.h"
 #include <aligned_allocator.h>
 #include <assert.h>
 #include <FloatCast.hpp>
@@ -114,12 +115,26 @@ uint32_t StratifiedSampler::GetMoreSamples( Sample* samples, Random& rng )
 }
 
 //--------------------------------------------------------------------------------------------
+Sample::Sample( Sampler* sampler, SurfaceIntegrator* si, const Scene* scene )
+{
+	if(si) si->RequestSamples(sampler, this, scene);
+	AllocateSampleMemory();
+}
+
+Sample::~Sample()
+{
+	if (OneD)
+	{
+		aligned_free(OneD[0]);
+		aligned_free(OneD);
+	}
+}
 
 void Sample::AllocateSampleMemory()
 {
 	// Allocate storage for sample pointers
 	int nPtrs = Num1D.size() + Num2D.size();
-	
+
 	if (!nPtrs) {
 		OneD = TwoD = NULL;
 		return;
@@ -137,26 +152,17 @@ void Sample::AllocateSampleMemory()
 
 	// Allocate storage for sample values
 	float *mem = (float*)aligned_malloc(sizeof(float) * totSamples, L1_CACHE_LINE_SIZE);
-	
+
 	for (uint32_t i = 0; i < Num1D.size(); ++i)
 	{
 		OneD[i] = mem;
 		mem += Num1D[i];
 	}
-	
+
 	for (uint32_t i = 0; i < Num2D.size(); ++i)
 	{
 		TwoD[i] = mem;
 		mem += 2 * Num2D[i];
-	}
-}
-
-Sample::~Sample()
-{
-	if (OneD)
-	{
-		aligned_free(OneD[0]);
-		aligned_free(OneD);
 	}
 }
 
@@ -171,6 +177,8 @@ Sample* Sample::Duplicate( int count ) const
 	}
 	return ret;
 }
+
+
 
 }
 

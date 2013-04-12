@@ -192,8 +192,10 @@ ColorRGB BSDF::Eval( const float3& woW, const float3& wiW, BSDFType flags /*= BS
 	ColorRGB retVal = ColorRGB::Black;
 	
 	for (int i = 0; i < mNumBxDFs; ++i)
+	{
 		if (mBxDFs[i]->MatchFlags(flags))
 			retVal += mBxDFs[i]->Eval(wo, wi);
+	}
 
 	return retVal;
 }

@@ -159,6 +159,7 @@ private:
 	BxDF* mBxDFs[MAX_BxDFS];
 };
 
+#define BSDF_ALLOC(arena, Type) new (arena.Alloc(sizeof(Type))) Type
 
 class BxDF 
 {
@@ -229,7 +230,7 @@ public:
 	Lambertian(const ColorRGB& reflectance) 
 		: BxDF(BSDF_Reflection | BSDF_Diffuse), mR(reflectance) { }
 
-	ColorRGB Eval(const float3& wo, const float3& wi) const	{ return mR / RxLib::Mathf::INV_PI; }
+	ColorRGB Eval(const float3& wo, const float3& wi) const	{ return mR * RxLib::Mathf::INV_PI; }
 
 	ColorRGB Rho(const float3& wo, int32_t numSamples, const float* samples) const { return mR; }
 

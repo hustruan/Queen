@@ -12,6 +12,12 @@ enum LightStrategy
 	LS_Sample_One_Uniform 
 };
 
+ColorRGB SpecularReflect(const RayDifferential& ray, BSDF* bsdf, Random& rng, const DifferentialGeometry& isect,
+						 const Renderer* renderer, const Scene* scene, const Sample *sample, MemoryArena &arena);
+
+ColorRGB SpecularTransmit(const RayDifferential& ray, BSDF* bsdf, Random& rng, const DifferentialGeometry& isect,
+						  const Renderer* renderer, const Scene* scene, const Sample *sample, MemoryArena &arena);
+
 class Integrator
 {
 public:
@@ -41,7 +47,7 @@ public:
 class WhittedIntegrator : public SurfaceIntegrator 
 {
 public:
-	WhittedIntegrator(int32_t md) : mMaxDepth(md) {}
+	WhittedIntegrator(int32_t md = 5) : mMaxDepth(md) {}
 
 	virtual ColorRGB Li(const Scene* scene, const Renderer* renderer, const RayDifferential& ray, const DifferentialGeometry& isect,
 		const Sample* sample, Random& rng, MemoryArena& arena) const;

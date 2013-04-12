@@ -1,5 +1,5 @@
 #include "Scene.h"
-
+#include "Ray.h"
 
 namespace Purple {
 

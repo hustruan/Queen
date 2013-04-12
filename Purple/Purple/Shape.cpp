@@ -11,11 +11,10 @@ namespace Purple {
 using namespace RxLib;
 
 Shape::Shape( const float44& o2w, bool ro )
-	: mLocalToWorld(o2w), mWorldToLocal(MatrixInverse(o2w)), mReverseOrientation(ro)
+	: mLocalToWorld(o2w), mWorldToLocal(MatrixInverse(o2w)), mReverseOrientation(ro), mMaterial(NULL)
 {
 
 }
-
 
 Shape::~Shape(void)
 {
@@ -88,6 +87,11 @@ BSDF* Shape::GetBSDF( const DifferentialGeometry& dgGeom, const float44& ObjectT
 	return mMaterial->GetBSDF(dgGeom, dgShading, arena);
 }
 
+AreaLightShape::AreaLightShape( const shared_ptr<Shape>& shape, AreaLight* light )
+	: Shape(float44::Identity(), false), mShape(shape), mAreaLight(light)
+{
+
+}
 
 bool AreaLightShape::Intersect( const Ray& ray, float* tHit, DifferentialGeometry* diffGeoHit ) const
 {

@@ -102,7 +102,7 @@
     <ClInclude Include="Shape.h" />
     <ClInclude Include="SimpleShape.h" />
     <ClInclude Include="threadpool.h" />
-    <ClInclude Include="Tracer.h" />
+    <ClInclude Include="Renderer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
@@ -121,7 +121,7 @@
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="Shape.cpp" />
     <ClCompile Include="SimpleShape.cpp" />
-    <ClCompile Include="Tracer.cpp" />
+    <ClCompile Include="Renderer.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

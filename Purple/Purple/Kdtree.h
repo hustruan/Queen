@@ -39,6 +39,10 @@ public:
 	bool Intersect(const Ray& ray, DifferentialGeometry* isect) const;
 	bool IntersectP(const Ray& ray) const;
 
+	void PrintKDTree();
+	void PrintKDTree(int nodeIdx, int depth );
+
+
 protected:
 	inline bool IsBuilt() const  { return mNodes != NULL; }
 	BoundingBoxf GetBound(uint32_t index) const;

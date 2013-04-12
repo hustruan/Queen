@@ -15,8 +15,8 @@ struct Ray
 
 	}
 
-	Ray(const float3& origin, const float3& dir, float min, float max = RxLib::Mathf::INFINITY)
-		: Origin(origin), Direction(dir), tMin(min), tMax(max), Time(0.0f), Depth(0)
+	Ray(const float3& origin, const float3& dir, float min, float max = RxLib::Mathf::INFINITY, float time = 0.0f, int depth = 0)
+		: Origin(origin), Direction(dir), tMin(min), tMax(max), Time(time), Depth(depth)
 	{
 
 	}
@@ -38,6 +38,12 @@ struct RayDifferential : public Ray
 	RayDifferential()
 	{
 		hasDifferentials = false;
+	}
+
+	RayDifferential(const float3& org, const float3& dir, const Ray& parent, float start, float end = RxLib::Mathf::INFINITY)
+		: Ray(org, dir, start, end, parent.Time, parent.Depth+1) 
+	{
+			hasDifferentials = false;
 	}
 
 	explicit RayDifferential(const Ray &ray) : Ray(ray)

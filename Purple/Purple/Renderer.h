@@ -41,12 +41,11 @@ public:
 
 private:
 
-	void TileRender(const Scene *scene, std::atomic<int32_t>& workingPackage, int32_t numTiles);
+	void TileRender(const Scene* scene, const Sample* sample, std::atomic<int32_t>& workingPackage, int32_t numTiles);
 
 protected:
 	Camera* mCamera;	
 	Sampler* mMainSampler;
-	Sample* mMainSample;
 	SurfaceIntegrator* mSurfaceIntegrator;
 };
 

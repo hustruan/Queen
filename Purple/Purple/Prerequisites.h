@@ -38,6 +38,11 @@ using RxLib::BoundingBoxf;
 
 #define L1_CACHE_LINE_SIZE 64
 
+inline float AbsDot(const float3& a, const float3 b) 
+{
+	return fabsf(RxLib::Dot(a, b));
+}
+
 namespace Purple {
 
 class Shape;

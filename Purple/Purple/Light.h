@@ -153,6 +153,10 @@ public:
 
 	bool DeltaLight() const  { return false; } 
 
+	float Pdf(const float3& pt, const float3& wi) const;
+
+	ColorRGB Power(const Scene& scene) const;
+
 	ColorRGB L(const float3& p, const float3& n, const float3& w) const
 	{
 		return RxLib::Dot(n, w) > 0.0f ? mIntensity :  ColorRGB::Black;

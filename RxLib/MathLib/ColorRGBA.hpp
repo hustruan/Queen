@@ -86,10 +86,11 @@ public:
 
 	ColorRGB operator/ (float fScalar) const
 	{
+		float invScalar = 1.0f / fScalar;
 		return ColorRGB(
-			fScalar/Tuple[0],
-			fScalar/Tuple[1],
-			fScalar/Tuple[2]);
+			invScalar*Tuple[0],
+			invScalar*Tuple[1],
+			invScalar*Tuple[2]);
 	}
 
 	// arithmetic updates

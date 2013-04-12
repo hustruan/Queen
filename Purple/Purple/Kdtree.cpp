@@ -179,6 +179,8 @@ void KDTree::BuildTree()
 		delete[] edges[i];
 	delete[] prims0;
 	delete[] prims1;
+
+	PrintKDTree();
 }
 
 void KDTree::BuildInternal( int32_t nodeNum, const BoundingBoxf& nodeBounds, const vector<BoundingBoxf>& allPrimBounds, uint32_t* primNums, int32_t nPrimitives, int32_t depth, BoundEdge* edges[3], uint32_t* prims0, uint32_t* prims1, int badRefines )
@@ -427,20 +429,20 @@ bool KDTree::Intersect( const Ray& ray, DifferentialGeometry* diffGeoHit ) const
 					}
 				}
 			}
-		}
 
-		// Grab next node to process from todo list
-		if (todoPos > 0) {
-			--todoPos;
-			node = todo[todoPos].node;
-			tmin = todo[todoPos].tMin;
-			tmax = todo[todoPos].tMax;
-		}
-		else
-			break;
+			// Grab next node to process from todo list
+			if (todoPos > 0) {
+				--todoPos;
+				node = todo[todoPos].node;
+				tmin = todo[todoPos].tMin;
+				tmax = todo[todoPos].tMax;
+			}
+			else
+				break;
+		}	
 	}
 
-	return false;
+	return hit;
 }
 
 bool KDTree::IntersectP( const Ray& ray ) const
@@ -525,20 +527,20 @@ bool KDTree::IntersectP( const Ray& ray ) const
 					}
 				}
 			}
-		}
 
-		// Grab next node to process from todo list
-		if (todoPos > 0) {
-			--todoPos;
-			node = todo[todoPos].node;
-			tmin = todo[todoPos].tMin;
-			tmax = todo[todoPos].tMax;
+			// Grab next node to process from todo list
+			if (todoPos > 0) {
+				--todoPos;
+				node = todo[todoPos].node;
+				tmin = todo[todoPos].tMin;
+				tmax = todo[todoPos].tMax;
+			}
+			else
+				break;
 		}
-		else
-			break;
 	}
 
-	return false;
+	return hit;
 }
 
 bool KDTree::Intersect( uint32_t primIdx, const Ray& ray, DifferentialGeometry* diffGeoHit ) const
@@ -586,6 +588,45 @@ bool KDTree::IntersectP( uint32_t primIdx, const Ray& ray ) const
 	}
 
 	return false;
+}
+
+void KDTree::PrintKDTree()
+{
+	PrintKDTree(0, 0);
+}
+
+void KDTree::PrintKDTree( int nodeIdx, int depth )
+{
+	for (int i = 0; i < depth; ++i)
+		printf("    ");
+
+	KDNode* node = &mNodes[nodeIdx];
+
+	if (node->IsLeaf())
+	{
+		uint32_t nPrimitives = node->Primitives();
+
+		printf("Leaf(%d): nPrims: %d, ", nodeIdx, nPrimitives);
+		if (nPrimitives == 1)
+		{
+			printf(" idx: %d\n", node->onePrimitive);
+		}
+		else
+		{
+			uint32_t* prims = node->primitives;
+			printf(" idx: ");
+			for (uint32_t i = 0; i < nPrimitives; ++i) 
+			{
+				printf("%d", prims[i]);
+			}
+		}
+	}
+	else
+	{
+		printf("Innier(%d): Axis: %d, Split: %f, left: %d, right :%d \n", nodeIdx, node->SplitAxis(), node->SplitPos(), nodeIdx+1, node->AboveChild());
+		PrintKDTree(nodeIdx+1, depth+1);
+		PrintKDTree(node->AboveChild(), depth+1);
+	}
 }
 
 }

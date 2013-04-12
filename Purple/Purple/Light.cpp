@@ -100,7 +100,7 @@ ColorRGB DirectionalLight::Power( const Scene& scene ) const
 }
 
 AreaLight::AreaLight( const float44& light2world, const ColorRGB& intensity, const shared_ptr<Shape>& shape, int32_t numSamples )
-	: Light(light2world), mIntensity(intensity)
+	: Light(light2world, numSamples), mIntensity(intensity), mShape(shape)
 {
 	 
 }
@@ -124,6 +124,16 @@ ColorRGB AreaLight::Sample( const float3& pt, const LightSample& lightSample, fl
 	ColorRGB Ls = L(ps, ns, -*wi);
 
 	return Ls;
+}
+
+float AreaLight::Pdf( const float3& pt, const float3& wi ) const
+{
+	return mShape->Pdf(pt, wi);
+}
+
+RxLib::ColorRGB AreaLight::Power( const Scene& scene ) const
+{
+	return mIntensity * mShape->Area() * Mathf::PI;
 }
 
 
