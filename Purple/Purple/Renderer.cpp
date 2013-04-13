@@ -90,11 +90,11 @@ void SamplerRenderer::TileRender( const Scene* scene, const Sample* sample, std:
 
 		for (int32_t iTile = start; iTile < end; ++iTile)
 		{
-			Sampler* sampler = mMainSampler->GetSubSampler(iTile, numTiles);
-
 			// Declare local variables used for rendering loop
 			MemoryArena arena;
 			Random rng(iTile);
+
+			Sampler* sampler = mMainSampler->GetSubSampler(iTile, numTiles);
 
 			// Allocate space for samples and intersections
 			int maxSamples = sampler->GetSampleCount();
@@ -113,8 +113,6 @@ void SamplerRenderer::TileRender( const Scene* scene, const Sample* sample, std:
 				// Generate camera rays and compute radiance along rays
 				for (int i = 0; i < sampleCount; ++i)
 				{
-					// Find camera ray for _sample[i]_
-
 					float rayWeight = mCamera->GenerateRayDifferential(samples[i].ImageSample, samples[i].LensSample, &rays[i]);
 					rays[i].ScaleDifferentials(1.f / sqrtf(float(sampler->SamplesPerPixel)));
 
@@ -134,6 +132,14 @@ void SamplerRenderer::TileRender( const Scene* scene, const Sample* sample, std:
 				// Free _MemoryArena_ memory from computing image sample values
 				arena.FreeAll();
 			}
+
+			delete sampler;
+			delete [] samples;
+			delete [] rays;
+			delete [] Ls;
+			delete [] Ts;
+			delete [] isects;
+
 		}
 
 		localWorkingPackage = workingPackage++;
