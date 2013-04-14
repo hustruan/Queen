@@ -75,7 +75,6 @@ void ImageFilm::AddSample( const Sample& sample, const ColorRGB& L )
 
 	// Precompute x and y filter table offsets
 	int* ifx = (int* )_alloca(sizeof(int) * (x1 - x0 + 1) ); 
-	//std::vector<int> ifx(x1 - x0 + 1);
 	for (int x = x0; x <= x1; ++x) 
 	{
 		float fx = fabsf((x - dimageX) * mFilter->invXWidth * FILTER_TABLE_SIZE);
@@ -83,7 +82,6 @@ void ImageFilm::AddSample( const Sample& sample, const ColorRGB& L )
 	}
 
 	int *ify = (int* )_alloca(sizeof(int) * (y1 - y0 + 1) ); 
-	//std::vector<int> ify(y1 - y0 + 1);
 	for (int y = y0; y <= y1; ++y) 
 	{
 		float fy = fabsf((y - dimageY) * mFilter->invYWidth * FILTER_TABLE_SIZE);
@@ -101,7 +99,7 @@ void ImageFilm::AddSample( const Sample& sample, const ColorRGB& L )
 			float filterWt = mFilterTable[offset];
 	
 			//// Update pixel values with filtered sample contribution
-			printf("(%d, %d)\n", x - xPixelStart, y - yPixelStart);
+			//printf("(%d, %d)\n", x - xPixelStart, y - yPixelStart);
 			Pixel& pixel = (*pixels)(x - xPixelStart, y - yPixelStart);
 			
 			pixel.Lrgb[0] += filterWt * L[0];
@@ -133,27 +131,26 @@ void ImageFilm::WriteImage( const char* filename )
 	int nPix = xPixelCount * yPixelCount;
 	float *rgb = new float[3*nPix];
 
-	int offset = 0;
 	for (int y = 0; y < yPixelCount; ++y)
 	{
 		for (int x = 0; x < xPixelCount; ++x)
 		{
-			y = yPixelCount - y - 1;
 			float* src = (*pixels)(x, y).Lrgb;
-			rgb[3*offset  ] = std::max(0.f, src[0]);
-			rgb[3*offset+1] = std::max(0.f, src[1]);
-			rgb[3*offset+2] = std::max(0.f, src[2]);
+
+			int tmp = 3*((yPixelCount - y - 1) * xPixelCount + x);
+
+			rgb[tmp  ] = std::max(0.f, src[0]);
+			rgb[tmp+1] = std::max(0.f, src[1]);
+			rgb[tmp+2] = std::max(0.f, src[2]);
 
 			float weightSum = (*pixels)(x, y).weightSum;
 			if (weightSum != 0.f) 
 			{
 				float invWt = 1.f / weightSum;
-				rgb[3*offset  ] = std::max(0.0f, rgb[3*offset  ] * invWt);
-				rgb[3*offset+1] = std::max(0.0f, rgb[3*offset+1] * invWt);
-				rgb[3*offset+2] = std::max(0.0f, rgb[3*offset+2] * invWt);
+				rgb[tmp  ] = std::max(0.0f, rgb[tmp  ] * invWt);
+				rgb[tmp+1] = std::max(0.0f, rgb[tmp+1] * invWt);
+				rgb[tmp+2] = std::max(0.0f, rgb[tmp+2] * invWt);
 			}
-
-			offset++;
 		}
 	}
 

@@ -27,7 +27,7 @@ public:
 	
 	void LoadScene()
 	{
-		float44 light2World = CreateTranslation(0.0f, 10.0f, 10.0f);
+		float44 light2World = CreateTranslation(0.0f, 10.0f, 0.0f);
 		//shared_ptr<Sphere> areaLightShape = std::make_shared<Sphere>(light2World, false, 2.0f, -2.0f, 2.0f, Mathf::TWO_PI);
 		//AreaLight* areaLight = new AreaLight(areaLightShape->mLocalToWorld, ColorRGB::White, areaLightShape, 20);
 
@@ -39,13 +39,13 @@ public:
 		sphere1->SetMaterial(std::make_shared<DiffuseMaterial>(ColorRGB::Red));
 		mKDTree->AddShape(sphere1);
 
-		/*shared_ptr<Sphere> sphere2 = std::make_shared<Sphere>(CreateTranslation(5, 0, 10), false, 2.0f, -2.0f, 2.0f, Mathf::TWO_PI);
+		shared_ptr<Sphere> sphere2 = std::make_shared<Sphere>(CreateTranslation(5, 0, 10), false, 2.0f, -2.0f, 2.0f, Mathf::TWO_PI);
 		sphere2->SetMaterial(std::make_shared<DiffuseMaterial>(ColorRGB::Green));
 		mKDTree->AddShape(sphere2);
 
 		shared_ptr<Sphere> sphere3 = std::make_shared<Sphere>(CreateTranslation(-5, 0, 15), false, 2.0f, -2.0f, 2.0f, Mathf::TWO_PI);
 		sphere3->SetMaterial(std::make_shared<DiffuseMaterial>(ColorRGB::Blue));
-		mKDTree->AddShape(sphere3);*/
+		mKDTree->AddShape(sphere3);
 
 		mKDTree->BuildTree();
 	}
