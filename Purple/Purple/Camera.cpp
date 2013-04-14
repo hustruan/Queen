@@ -16,8 +16,8 @@ Camera::Camera( const float44& cam2world, float shutterOpen, float shutterClose,
 PerspectiveCamera::PerspectiveCamera( const float44& cam2world, float fov, float shutterOpen, float shutterClose, Film* film )
 	: Camera(cam2world, shutterOpen, shutterClose, film)
 {
-	float width = film->xResolution;
-	float height = film->yResolution;
+	float width = (float)film->xResolution;
+	float height = (float)film->yResolution;
 
 	// Compute perspective transform
 	float aspect = float(width) / float(height);

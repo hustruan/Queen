@@ -9,6 +9,17 @@ namespace Purple {
 
 using namespace RxLib;
 
+void VisibilityTester::SetRay( const float3& p, float eps, const float3& w, float time )
+{
+	mRay = Ray(p, w, eps, Mathf::INFINITY, time);
+}
+
+bool VisibilityTester::Unoccluded( const Scene *scene ) const
+{
+	return !scene->IntersectP(mRay);
+}
+
+//-----------------------------------------------------------------------------------
 PointLight::PointLight( const float44& light2world, const ColorRGB& intensity )
 	: Light(light2world), mIntensity(intensity)
 {
@@ -24,7 +35,10 @@ ColorRGB PointLight::Sample( const float3& pt, const LightSample& lightSample, f
 	*wi = Normalize(mLightPosW - pt);
 	*pdf = 1.0f;
 
-	return mIntensity / LengthSquared(mLightPosW - pt);
+	if (vis)
+		vis->SetRay(pt, 1e-4f, *wi, time);
+
+	return mIntensity /*/ LengthSquared(mLightPosW - pt)*/;
 }
 
 ColorRGB PointLight::Power( const Scene& scene ) const
@@ -52,6 +66,9 @@ ColorRGB SpotLight::Sample( const float3& pt, const LightSample& lightSample, fl
 {
 	*wi = Normalize(mLightPosW - pt);
 	*pdf = 1.0f;
+
+	if (vis)
+		vis->SetRay(pt, 1e-3f, *wi, time);
 
 	return mIntensity * FallOff(*wi) / LengthSquared(mLightPosW - pt);
 }
@@ -119,7 +136,8 @@ ColorRGB AreaLight::Sample( const float3& pt, const LightSample& lightSample, fl
 	*wi = Normalize(ps - pt);
 	*pdf = mShape->Pdf(pt, *wi);
 
-	//visibility->SetSegment(p, pEpsilon, ps, 1e-3f, time);
+	if (vis)
+		vis->SetRay(pt, 1e-3f, *wi, time);
 
 	ColorRGB Ls = L(ps, ns, -*wi);
 
@@ -157,5 +175,8 @@ ColorRGB Light::Le( const RayDifferential &r ) const
 {
 	return ColorRGB::Black;
 }
+
+
+
 
 }

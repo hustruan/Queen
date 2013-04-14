@@ -27,23 +27,25 @@ public:
 	
 	void LoadScene()
 	{
-		float44 light2World = CreateTranslation(0, 10, 10);
-		shared_ptr<Sphere> areaLightShape = std::make_shared<Sphere>(light2World, false, 2.0f, -2.0f, 2.0f, Mathf::TWO_PI);
-		AreaLight* areaLight = new AreaLight(areaLightShape->mLocalToWorld, ColorRGB::White, areaLightShape, 20);
-		Lights.push_back(areaLight);
-		mKDTree->AddShape(std::make_shared<AreaLightShape>(areaLightShape, areaLight));
+		float44 light2World = CreateTranslation(0.0f, 10.0f, 10.0f);
+		//shared_ptr<Sphere> areaLightShape = std::make_shared<Sphere>(light2World, false, 2.0f, -2.0f, 2.0f, Mathf::TWO_PI);
+		//AreaLight* areaLight = new AreaLight(areaLightShape->mLocalToWorld, ColorRGB::White, areaLightShape, 20);
 
-		shared_ptr<Sphere> sphere1 = std::make_shared<Sphere>(CreateTranslation(0, 0, 5), false, 2.0f, -2.0f, 2.0f, Mathf::TWO_PI);
+		PointLight* light = new PointLight(light2World,  ColorRGB::White);
+		Lights.push_back(light);
+		//mKDTree->AddShape(std::make_shared<AreaLightShape>(areaLightShape, areaLight));
+
+		shared_ptr<Shape> sphere1 = std::make_shared<Sphere>(CreateTranslation(0.0f, 0.0f, 7.5f), false, 2.0f, -2.0f, 2.0f, Mathf::TWO_PI);
 		sphere1->SetMaterial(std::make_shared<DiffuseMaterial>(ColorRGB::Red));
 		mKDTree->AddShape(sphere1);
 
-		shared_ptr<Sphere> sphere2 = std::make_shared<Sphere>(CreateTranslation(5, 0, 10), false, 2.0f, -2.0f, 2.0f, Mathf::TWO_PI);
+		/*shared_ptr<Sphere> sphere2 = std::make_shared<Sphere>(CreateTranslation(5, 0, 10), false, 2.0f, -2.0f, 2.0f, Mathf::TWO_PI);
 		sphere2->SetMaterial(std::make_shared<DiffuseMaterial>(ColorRGB::Green));
 		mKDTree->AddShape(sphere2);
 
 		shared_ptr<Sphere> sphere3 = std::make_shared<Sphere>(CreateTranslation(-5, 0, 15), false, 2.0f, -2.0f, 2.0f, Mathf::TWO_PI);
 		sphere3->SetMaterial(std::make_shared<DiffuseMaterial>(ColorRGB::Blue));
-		mKDTree->AddShape(sphere3);
+		mKDTree->AddShape(sphere3);*/
 
 		mKDTree->BuildTree();
 	}
@@ -58,7 +60,7 @@ void CreateScene()
 	gCamera = new PerspectiveCamera(float44::Identity(), ToRadian(60.0f), 0, 1,
 		new ImageFilm(512, 512, new GaussianFilter(4.0f, 4.0f, 1.0f)));
 
-	gSampler = new StratifiedSampler(0, 512, 0, 512, 2, 2);
+	gSampler = new StratifiedSampler(0, 512, 0, 512, 1, 1);
 	gSurfaceIntegrator = new WhittedIntegrator();
 }
 

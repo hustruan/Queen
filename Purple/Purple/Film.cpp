@@ -101,7 +101,7 @@ void ImageFilm::AddSample( const Sample& sample, const ColorRGB& L )
 			float filterWt = mFilterTable[offset];
 	
 			//// Update pixel values with filtered sample contribution
-			//printf("x=%d, y=%d\n", x - xPixelStart, y - yPixelStart);
+			printf("(%d, %d)\n", x - xPixelStart, y - yPixelStart);
 			Pixel& pixel = (*pixels)(x - xPixelStart, y - yPixelStart);
 			
 			pixel.Lrgb[0] += filterWt * L[0];
@@ -138,6 +138,7 @@ void ImageFilm::WriteImage( const char* filename )
 	{
 		for (int x = 0; x < xPixelCount; ++x)
 		{
+			y = yPixelCount - y - 1;
 			float* src = (*pixels)(x, y).Lrgb;
 			rgb[3*offset  ] = std::max(0.f, src[0]);
 			rgb[3*offset+1] = std::max(0.f, src[1]);
@@ -147,9 +148,9 @@ void ImageFilm::WriteImage( const char* filename )
 			if (weightSum != 0.f) 
 			{
 				float invWt = 1.f / weightSum;
-				rgb[3*offset  ] = std::max(0.f, rgb[3*offset  ] * invWt);
-				rgb[3*offset+1] = std::max(0.f, rgb[3*offset+1] * invWt);
-				rgb[3*offset+2] = std::max(0.f, rgb[3*offset+2] * invWt);
+				rgb[3*offset  ] = std::max(0.0f, rgb[3*offset  ] * invWt);
+				rgb[3*offset+1] = std::max(0.0f, rgb[3*offset+1] * invWt);
+				rgb[3*offset+2] = std::max(0.0f, rgb[3*offset+2] * invWt);
 			}
 
 			offset++;

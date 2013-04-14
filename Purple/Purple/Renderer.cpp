@@ -69,10 +69,10 @@ void SamplerRenderer::Render( const Scene *scene )
 
 	std::atomic<int> workingPackage = 0;
 	pool& tp = GlobalThreadPool();
-	for (size_t iCore = 0; iCore < tp.size(); ++iCore)
+	//for (size_t iCore = 0; iCore < tp.size(); ++iCore)
 	{
-		tp.schedule(std::bind(&SamplerRenderer::TileRender, this, scene, sample, std::ref(workingPackage), nTasks));
-		//std::bind(&SamplerRenderer::TileRender, this, scene, sample, std::ref(workingPackage), nTasks)();
+		//tp.schedule(std::bind(&SamplerRenderer::TileRender, this, scene, sample, std::ref(workingPackage), nTasks));
+		std::bind(&SamplerRenderer::TileRender, this, scene, sample, std::ref(workingPackage), nTasks)();
 	}
 	tp.wait();
 
@@ -90,10 +90,12 @@ void SamplerRenderer::TileRender( const Scene* scene, const Sample* sample, std:
 
 	while (localWorkingPackage < numPackages)
 	{
-		const int32_t start = localWorkingPackage * TilesPackageSize;
-		const int32_t end = (std::min)(numTiles, start + TilesPackageSize);
+	    int32_t start = localWorkingPackage * TilesPackageSize;
+		int32_t end = (std::min)(numTiles, start + TilesPackageSize);
 
-		for (int32_t iTile = start; iTile < end; ++iTile)
+		int32_t iTile = 6;
+		
+		/*for (int32_t iTile = start; iTile < 10; ++iTile)*/
 		{
 			// Declare local variables used for rendering loop
 			MemoryArena arena;

@@ -287,7 +287,7 @@ float BSDF::Pdf( const float3& woW, const float3& wiW, BSDFType flags /*= BSDF_A
 			pdf += mBxDFs[i]->Pdf(wo, wi);
 		}
 	}
-	return matchingComps > 0 ? pdf / matchingComps : 0.f;
+	return matchingComps > 0 ? pdf / matchingComps : 0.0f;
 }
 
 ColorRGB BSDF::Rho( Random& rng, BSDFType flags /*= BSDF_All*/, int sqrtSamples /*= 6*/ ) const

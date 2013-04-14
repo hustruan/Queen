@@ -50,10 +50,12 @@ float Shape::Pdf( const float3& pt, const float3& wi ) const
 	if( !Intersect(ray, &hit, &dgLight) )
 		return 0.0f;
 
+	float s = Area();
+
 	/**
 	 * Py(y) = (dy/dx)-1 * Px(x)
 	 */
-	float pdf = LengthSquared(pt - ray.Eval(hit)) / (fabsf(Dot(dgLight.Normal, -wi)) * Area());
+	float pdf = LengthSquared(pt - ray.Eval(hit)) / (AbsDot(dgLight.Normal, -wi) * Area());
 	return pdf;
 }
 

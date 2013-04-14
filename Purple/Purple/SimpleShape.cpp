@@ -181,11 +181,12 @@ float Sphere::Pdf( const float3& pt, const float3& wi ) const
 
 	// pt is inside in the sphere
 	if (distanceSquared - mRadius*mRadius < 1e-4f)
-		return UniformSpherePdf();
+		return Shape::Pdf(pt, wi);
 
 	float sinThetaMax2 = mRadius*mRadius /distanceSquared;
 	float cosThetaMax = sqrtf(std::max(0.0f, 1.f - sinThetaMax2));
 
+	//return Shape::Pdf(pt, wi);
 	return UniformConePdf(cosThetaMax);
 }
 

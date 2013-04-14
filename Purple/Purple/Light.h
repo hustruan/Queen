@@ -37,10 +37,12 @@ struct LightSample
 
 struct VisibilityTester
 {
-
+public:
+	void SetRay(const float3& p, float eps, const float3& w, float time);
+	bool Unoccluded(const Scene *scene) const;
 
 private:
-	Ray Ray;
+	Ray mRay;
 };
 
 class Light
