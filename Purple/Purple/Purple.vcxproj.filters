@@ -76,6 +76,7 @@
     <ClCompile Include="Film.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="pfm.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Ray.h">
@@ -144,5 +145,6 @@
     <ClInclude Include="Filter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="pfm.h" />
   </ItemGroup>
 </Project>

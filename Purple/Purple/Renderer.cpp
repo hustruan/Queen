@@ -46,7 +46,7 @@ ColorRGB SamplerRenderer::Li( const Scene *scene, const RayDifferential &ray, co
 			Li += scene->Lights[i]->Le(ray);
 	}
 	
-	return *T * Li;
+	return /**T **/ Li;
 }
 
 ColorRGB SamplerRenderer::Transmittance( const Scene *scene, const RayDifferential &ray, const Sample *sample, Random &rng, MemoryArena &arena ) const
@@ -71,11 +71,12 @@ void SamplerRenderer::Render( const Scene *scene )
 	pool& tp = GlobalThreadPool();
 	for (size_t iCore = 0; iCore < tp.size(); ++iCore)
 	{
-		//tp.schedule(std::bind(&SamplerRenderer::TileRender, this, scene, sample, std::ref(workingPackage), nTasks));
-
-		std::bind(&SamplerRenderer::TileRender, this, scene, sample, std::ref(workingPackage), nTasks)();
+		tp.schedule(std::bind(&SamplerRenderer::TileRender, this, scene, sample, std::ref(workingPackage), nTasks));
+		//std::bind(&SamplerRenderer::TileRender, this, scene, sample, std::ref(workingPackage), nTasks)();
 	}
 	tp.wait();
+
+	mCamera->GetFilm()->WriteImage("test.pfm");
 
 	delete sample;
 }
@@ -84,6 +85,8 @@ void SamplerRenderer::TileRender( const Scene* scene, const Sample* sample, std:
 {
 	int32_t numPackages = (numTiles + TilesPackageSize - 1) / TilesPackageSize;
 	int32_t localWorkingPackage = workingPackage ++;
+
+	Film* film = mCamera->GetFilm();
 
 	while (localWorkingPackage < numPackages)
 	{
@@ -101,11 +104,11 @@ void SamplerRenderer::TileRender( const Scene* scene, const Sample* sample, std:
 			// Allocate space for samples and intersections
 			int maxSamples = sampler->GetSampleCount();
 
-			Sample *samples = sample->Duplicate(maxSamples);
+			Sample* samples = sample->Duplicate(maxSamples);
 
-			RayDifferential *rays = new RayDifferential[maxSamples];
-			ColorRGB *Ls = new ColorRGB[maxSamples];
-			ColorRGB *Ts = new ColorRGB[maxSamples];
+			RayDifferential* rays = new RayDifferential[maxSamples];
+			ColorRGB* Ls = new ColorRGB[maxSamples];
+			ColorRGB* Ts = new ColorRGB[maxSamples];
 			DifferentialGeometry* isects = new DifferentialGeometry[maxSamples];
 
 			// Get samples from _Sampler_ and update image
@@ -134,7 +137,9 @@ void SamplerRenderer::TileRender( const Scene* scene, const Sample* sample, std:
 				// Add sample to film
 				for (int i = 0; i < sampleCount; ++i)
 				{
-					mCamera->GetFilm()->AddSample(samples[i], Ls[i]);
+					//printf("x=%f, y=%f, r=%f, g=%f, b=%f", samples[i].ImageSample.X(), samples[i].ImageSample.Y(),
+					//	Ls[i].R, Ls[i].G, Ls[i].B);
+					film->AddSample(samples[i], Ls[i]);
 				}
 
 				arena.FreeAll();

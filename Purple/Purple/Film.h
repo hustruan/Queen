@@ -17,6 +17,7 @@ public:
 
 	virtual void AddSample(const Sample& sample, const ColorRGB& L) = 0;
 
+	virtual void WriteImage(const char* filename) = 0;
 
 	const int xResolution, yResolution;
 };
@@ -29,6 +30,8 @@ public:
 	~ImageFilm();
 
 	void AddSample(const Sample& sample, const ColorRGB& L);
+
+	void WriteImage(const char* filename);
 
 private:
 	Filter* mFilter;

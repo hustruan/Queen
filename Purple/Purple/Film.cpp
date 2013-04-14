@@ -1,6 +1,7 @@
 #include "Film.h"
 #include "Sampler.h"
 #include "Filter.h"
+#include "pfm.h"
 #include <FloatCast.hpp>
 
 #define FILTER_TABLE_SIZE  16
@@ -28,6 +29,9 @@ ImageFilm::ImageFilm( int xRes, int yRes, Filter* filter )
 	xPixelCount = xRes;
 	yPixelStart = 0;
 	yPixelCount = yRes;
+
+	// Allocate film image storage
+	pixels = new BlockedArray<Pixel, 2>(xPixelCount, yPixelCount);
 
 	mFilterTable = new float[FILTER_TABLE_SIZE * FILTER_TABLE_SIZE];
 	float *ftp = mFilterTable;
@@ -95,14 +99,15 @@ void ImageFilm::AddSample( const Sample& sample, const ColorRGB& L )
 			// Evaluate filter value at(x,y) pixel
 			int offset = ify[y-y0]*FILTER_TABLE_SIZE + ifx[x-x0];
 			float filterWt = mFilterTable[offset];
-
-			// Update pixel values with filtered sample contribution
-			/*Pixel& pixel = (*pixels)(x - xPixelStart, y - yPixelStart);
+	
+			//// Update pixel values with filtered sample contribution
+			//printf("x=%d, y=%d\n", x - xPixelStart, y - yPixelStart);
+			Pixel& pixel = (*pixels)(x - xPixelStart, y - yPixelStart);
 			
 			pixel.Lrgb[0] += filterWt * L[0];
 			pixel.Lrgb[1] += filterWt * L[1];
 			pixel.Lrgb[2] += filterWt * L[2];
-			pixel.weightSum += filterWt;*/
+			pixel.weightSum += filterWt;
 
 			//if (!syncNeeded) 
 			//{
@@ -121,6 +126,39 @@ void ImageFilm::AddSample( const Sample& sample, const ColorRGB& L )
 			//}
 		}
 	}
+}
+
+void ImageFilm::WriteImage( const char* filename )
+{
+	int nPix = xPixelCount * yPixelCount;
+	float *rgb = new float[3*nPix];
+
+	int offset = 0;
+	for (int y = 0; y < yPixelCount; ++y)
+	{
+		for (int x = 0; x < xPixelCount; ++x)
+		{
+			float* src = (*pixels)(x, y).Lrgb;
+			rgb[3*offset  ] = std::max(0.f, src[0]);
+			rgb[3*offset+1] = std::max(0.f, src[1]);
+			rgb[3*offset+2] = std::max(0.f, src[2]);
+
+			float weightSum = (*pixels)(x, y).weightSum;
+			if (weightSum != 0.f) 
+			{
+				float invWt = 1.f / weightSum;
+				rgb[3*offset  ] = std::max(0.f, rgb[3*offset  ] * invWt);
+				rgb[3*offset+1] = std::max(0.f, rgb[3*offset+1] * invWt);
+				rgb[3*offset+2] = std::max(0.f, rgb[3*offset+2] * invWt);
+			}
+
+			offset++;
+		}
+	}
+
+	WritePfm(filename, xPixelCount, yPixelCount, 3, rgb);
+
+	delete[] rgb;
 }
 
 

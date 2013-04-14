@@ -17,9 +17,9 @@ public:
 	{
 		uRes = nu; 
 		vRes = nv;
-		uBlocks = RoundUp(nu);
+		uBlocks = RoundUp(nu) >> logBlockSize;
 		
-		uint32_t nAlloc = uBlocks * RoundUp(nv);
+		uint32_t nAlloc = RoundUp(nu) * RoundUp(nv);
 		data = (T*)aligned_malloc(nAlloc * sizeof(T), CACHE_LINE_SIZE);
 
 		for (uint32_t i = 0; i < nAlloc; ++i)

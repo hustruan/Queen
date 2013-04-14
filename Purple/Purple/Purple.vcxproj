@@ -94,6 +94,7 @@
     <ClInclude Include="MemoryArena.h" />
     <ClInclude Include="MentoCarlo.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="pfm.h" />
     <ClInclude Include="Prerequisites.h" />
     <ClInclude Include="Random.h" />
     <ClInclude Include="Ray.h" />
@@ -118,6 +119,7 @@
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="MentoCarlo.cpp" />
     <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="pfm.cpp" />
     <ClCompile Include="Random.cpp" />
     <ClCompile Include="Ray.cpp" />
     <ClCompile Include="Reflection.cpp" />
