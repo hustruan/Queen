@@ -9,13 +9,11 @@ namespace Purple {
 class Camera
 {
 public:
-	Camera(const float44& cam2world, float shutterOpen, float shutterClose)
-		: mCameraToWorld(cam2world), mShutterOpen(shutterOpen), mShutterClose(shutterClose)
-	{
-
-	}
+	Camera(const float44& cam2world, float shutterOpen, float shutterClose, Film* film);
 
 	virtual ~Camera(void) { }
+
+	Film* GetFilm() const { return mFilm; }
 
 	/**
 	 * Generate world space ray corresponding to a sample on the image plane
@@ -24,18 +22,16 @@ public:
 	
 	virtual float GenerateRayDifferential(const float2& rasterSample, const float2& lensSample, RayDifferential* ray) = 0;
 
-public:
-	uint32_t Width, Height;
-
 protected:
 	float44 mCameraToWorld;
 	const float mShutterOpen, mShutterClose;
+	Film* mFilm;
 };
 
 class PerspectiveCamera : public Camera
 {
 public:
-	PerspectiveCamera(const float44& cam2world, float fov, uint32_t width, uint32_t height, float shutterOpen, float shutterClose);
+	PerspectiveCamera(const float44& cam2world, float fov, float shutterOpen, float shutterClose, Film* film);
 	~PerspectiveCamera();
 
 	float GenerateRay(const float2& rasterSample, const float2& lensSample, Ray* ray);

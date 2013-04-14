@@ -3,19 +3,48 @@
 #include "Filter.h"
 #include <FloatCast.hpp>
 
+#define FILTER_TABLE_SIZE  16
+
 namespace Purple {
 
 using namespace RxLib;
 
-ImageFilm::ImageFilm( int xRes, int yRes, Filter* filter )
-	: Film(xRes, yRes, filter)
+Film::Film( int xRes, int yRes ) : xResolution(xRes), yResolution(yRes)
 {
 
 }
 
-ImageFilm::~ImageFilm()
+Film::~Film()
 {
 
+}
+
+//-------------------------------------------------------------------------------
+ImageFilm::ImageFilm( int xRes, int yRes, Filter* filter )
+	: Film(xRes, yRes), mFilter(filter)
+{
+	// Compute film image extent
+	xPixelStart = 0;
+	xPixelCount = xRes;
+	yPixelStart = 0;
+	yPixelCount = yRes;
+
+	mFilterTable = new float[FILTER_TABLE_SIZE * FILTER_TABLE_SIZE];
+	float *ftp = mFilterTable;
+	for (int y = 0; y < FILTER_TABLE_SIZE; ++y)
+	{
+		float fy = ((float)y + 0.5f) * filter->yWidth / FILTER_TABLE_SIZE;
+		for (int x = 0; x < FILTER_TABLE_SIZE; ++x) 
+		{
+			float fx = ((float)x + 0.5f) * filter->xWidth / FILTER_TABLE_SIZE;
+			*ftp++ = filter->Evaluate(fx, fy);
+		}
+	}
+}
+
+ImageFilm::~ImageFilm()
+{
+	delete mFilter;
 }
 
 void ImageFilm::AddSample( const Sample& sample, const ColorRGB& L )
@@ -23,10 +52,10 @@ void ImageFilm::AddSample( const Sample& sample, const ColorRGB& L )
 	// Compute sample's raster extent
 	float dimageX = sample.ImageSample.X() - 0.5f;
 	float dimageY = sample.ImageSample.Y() - 0.5f;
-	int x0 = Ceil2Int (dimageX - filter->xWidth);
-	int x1 = Floor2Int(dimageX + filter->xWidth);
-	int y0 = Ceil2Int (dimageY - filter->yWidth);
-	int y1 = Floor2Int(dimageY + filter->yWidth);
+	int x0 = Ceil2Int (dimageX - mFilter->xWidth);
+	int x1 = Floor2Int(dimageX + mFilter->xWidth);
+	int y0 = Ceil2Int (dimageY - mFilter->yWidth);
+	int y1 = Floor2Int(dimageY + mFilter->yWidth);
 	
 	x0 = std::max(x0, 0);
 	x1 = std::min(x1, xResolution - 1);
@@ -39,44 +68,57 @@ void ImageFilm::AddSample( const Sample& sample, const ColorRGB& L )
 	}
 
 	// Loop over filter support and add sample to pixel arrays
-	float xyz[3];
-	L.ToXYZ(xyz);
 
-	// Precompute $x$ and $y$ filter table offsets
-	int *ifx = ALLOCA(int, x1 - x0 + 1);
-	for (int x = x0; x <= x1; ++x) {
-		float fx = fabsf((x - dimageX) *
-			filter->invXWidth * FILTER_TABLE_SIZE);
-		ifx[x-x0] = min(Floor2Int(fx), FILTER_TABLE_SIZE-1);
+	// Precompute x and y filter table offsets
+	int* ifx = (int* )_alloca(sizeof(int) * (x1 - x0 + 1) ); 
+	//std::vector<int> ifx(x1 - x0 + 1);
+	for (int x = x0; x <= x1; ++x) 
+	{
+		float fx = fabsf((x - dimageX) * mFilter->invXWidth * FILTER_TABLE_SIZE);
+		ifx[x-x0] = std::min(Floor2Int(fx), FILTER_TABLE_SIZE-1);
 	}
-	int *ify = ALLOCA(int, y1 - y0 + 1);
-	for (int y = y0; y <= y1; ++y) {
-		float fy = fabsf((y - dimageY) *
-			filter->invYWidth * FILTER_TABLE_SIZE);
-		ify[y-y0] = min(Floor2Int(fy), FILTER_TABLE_SIZE-1);
+
+	int *ify = (int* )_alloca(sizeof(int) * (y1 - y0 + 1) ); 
+	//std::vector<int> ify(y1 - y0 + 1);
+	for (int y = y0; y <= y1; ++y) 
+	{
+		float fy = fabsf((y - dimageY) * mFilter->invYWidth * FILTER_TABLE_SIZE);
+		ify[y-y0] = std::min(Floor2Int(fy), FILTER_TABLE_SIZE-1);
 	}
-	bool syncNeeded = (filter->xWidth > 0.5f || filter->yWidth > 0.5f);
-	for (int y = y0; y <= y1; ++y) {
-		for (int x = x0; x <= x1; ++x) {
-			// Evaluate filter value at $(x,y)$ pixel
+
+
+	bool syncNeeded = (mFilter->xWidth > 0.5f || mFilter->yWidth > 0.5f);
+	for (int y = y0; y <= y1; ++y)
+	{
+		for (int x = x0; x <= x1; ++x)
+		{
+			// Evaluate filter value at(x,y) pixel
 			int offset = ify[y-y0]*FILTER_TABLE_SIZE + ifx[x-x0];
-			float filterWt = filterTable[offset];
+			float filterWt = mFilterTable[offset];
 
 			// Update pixel values with filtered sample contribution
-			Pixel &pixel = (*pixels)(x - xPixelStart, y - yPixelStart);
-			if (!syncNeeded) {
-				pixel.Lxyz[0] += filterWt * xyz[0];
-				pixel.Lxyz[1] += filterWt * xyz[1];
-				pixel.Lxyz[2] += filterWt * xyz[2];
-				pixel.weightSum += filterWt;
-			}
-			else {
-				// Safely update _Lxyz_ and _weightSum_ even with concurrency
-				AtomicAdd(&pixel.Lxyz[0], filterWt * xyz[0]);
-				AtomicAdd(&pixel.Lxyz[1], filterWt * xyz[1]);
-				AtomicAdd(&pixel.Lxyz[2], filterWt * xyz[2]);
-				AtomicAdd(&pixel.weightSum, filterWt);
-			}
+			/*Pixel& pixel = (*pixels)(x - xPixelStart, y - yPixelStart);
+			
+			pixel.Lrgb[0] += filterWt * L[0];
+			pixel.Lrgb[1] += filterWt * L[1];
+			pixel.Lrgb[2] += filterWt * L[2];
+			pixel.weightSum += filterWt;*/
+
+			//if (!syncNeeded) 
+			//{
+			//	pixel.Lrgb[0] += filterWt * L[0];
+			//	pixel.Lrgb[1] += filterWt * L[1];
+			//	pixel.Lrgb[2] += filterWt * L[2];
+			//	pixel.weightSum += filterWt;
+			//}
+			//else
+			//{
+			//	// Safely update _Lxyz_ and _weightSum_ even with concurrency
+			//	AtomicAdd(&pixel.Lrgb[0], filterWt * L[0]);
+			//	AtomicAdd(&pixel.Lrgb[1], filterWt * L[1]);
+			//	AtomicAdd(&pixel.Lrgb[2], filterWt * L[2]);
+			//	AtomicAdd(&pixel.weightSum, filterWt);
+			//}
 		}
 	}
 }

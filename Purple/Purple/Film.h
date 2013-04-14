@@ -2,6 +2,7 @@
 #define Film_h__
 
 #include "Prerequisites.h"
+#include <BlockedArray.h>
 
 namespace Purple {
 
@@ -10,24 +11,14 @@ class Filter;
 class Film 
 {
 public:
-	Film(int xRes, int yRes, Filter* filter)
-		: xResolution(xRes), yResolution(yRes), mFilter(filter)
-	{
+	Film(int xRes, int yRes);
 
-	}
-
-	virtual ~Film() 
-	{
-		delete mFilter;
-	}
+	virtual ~Film();
 
 	virtual void AddSample(const Sample& sample, const ColorRGB& L) = 0;
 
 
-	 const int xResolution, yResolution;
-
-protected:
-	 Filter* mFilter;
+	const int xResolution, yResolution;
 };
 
 
@@ -39,6 +30,25 @@ public:
 
 	void AddSample(const Sample& sample, const ColorRGB& L);
 
+private:
+	Filter* mFilter;
+	float* mFilterTable;
+	int xPixelStart, yPixelStart, xPixelCount, yPixelCount;
+
+	struct Pixel 
+	{
+		Pixel() {
+			for (int i = 0; i < 3; ++i) Lrgb[i] = splatRGB[i] = 0.f;
+			weightSum = 0.f;
+		}
+
+		float Lrgb[3];
+		float weightSum;
+		float splatRGB[3];
+		float pad;
+	};
+
+	RxLib::BlockedArray<Pixel, 2>* pixels;
 };
 
 }

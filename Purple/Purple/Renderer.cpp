@@ -5,6 +5,7 @@
 #include "Shape.h"
 #include "Scene.h"
 #include "Light.h"
+#include "Film.h"
 #include "DifferentialGeometry.h"
 #include "Integrator.h"
 #include "MemoryArena.h"
@@ -57,7 +58,8 @@ ColorRGB SamplerRenderer::Transmittance( const Scene *scene, const RayDifferenti
 void SamplerRenderer::Render( const Scene *scene )
 {
 	//// Compute number of _SamplerRendererTask_s to create for rendering
-	int nPixels = mCamera->Width * mCamera->Height;
+	Film* film = mCamera->GetFilm();
+	int nPixels = film->xResolution * film->yResolution;
 
 	/*int nTasks = (std::max)(int(32 * GetNumWorkThreads()), nPixels / (128*128));*/
 	int nTasks = nPixels / (128*128);
@@ -129,7 +131,12 @@ void SamplerRenderer::TileRender( const Scene* scene, const Sample* sample, std:
 
 				}
 
-				// Free _MemoryArena_ memory from computing image sample values
+				// Add sample to film
+				for (int i = 0; i < sampleCount; ++i)
+				{
+					mCamera->GetFilm()->AddSample(samples[i], Ls[i]);
+				}
+
 				arena.FreeAll();
 			}
 

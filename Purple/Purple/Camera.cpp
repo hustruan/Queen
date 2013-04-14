@@ -7,11 +7,18 @@ namespace Purple {
 
 using namespace RxLib;
 
-PerspectiveCamera::PerspectiveCamera( const float44& cam2world, float fov, uint32_t width, uint32_t height, float shutterOpen, float shutterClose )
-	: Camera(cam2world, shutterOpen, shutterClose)
+Camera::Camera( const float44& cam2world, float shutterOpen, float shutterClose, Film* film ) : mCameraToWorld(cam2world), mShutterOpen(shutterOpen), mShutterClose(shutterClose), mFilm(film)
 {
-	Width = width;
-	Height = height;
+
+}
+
+
+
+PerspectiveCamera::PerspectiveCamera( const float44& cam2world, float fov, float shutterOpen, float shutterClose, Film* film )
+	: Camera(cam2world, shutterOpen, shutterClose, film)
+{
+	float width = film->xResolution;
+	float height = film->yResolution;
 
 	// Compute perspective transform
 	float aspect = float(width) / float(height);
@@ -37,6 +44,7 @@ PerspectiveCamera::PerspectiveCamera( const float44& cam2world, float fov, uint3
 	dxCamera = TransformCoord(float3(1, 0, 0), mRasterToCamera) - TransformCoord(float3(0, 0, 0), mRasterToCamera);
 	dyCamera = TransformCoord(float3(0, 1, 0), mRasterToCamera) - TransformCoord(float3(0, 0, 0), mRasterToCamera);
 }
+
 
 PerspectiveCamera::~PerspectiveCamera()
 {

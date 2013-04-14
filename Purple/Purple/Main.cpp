@@ -7,6 +7,8 @@
 #include "Renderer.h"
 #include "Material.h"
 #include "Light.h"
+#include "Filter.h"
+#include "Film.h"
 #include <MathUtil.hpp>
 
 using namespace RxLib;
@@ -17,6 +19,7 @@ Sampler* gSampler;
 Scene* gScene;
 SamplerRenderer* gRenderer;
 SurfaceIntegrator* gSurfaceIntegrator;
+Film* gFilm;
 
 class TestScene1 : public Scene
 {
@@ -52,9 +55,10 @@ void CreateScene()
 	gScene = new TestScene1;
 	gScene->LoadScene();
 
-	gCamera = new PerspectiveCamera(float44::Identity(), ToRadian(60.0f), 512, 512, 0, 1);
+	gCamera = new PerspectiveCamera(float44::Identity(), ToRadian(60.0f), 0, 1,
+		new ImageFilm(512, 512, new GaussianFilter(4.0f, 4.0f, 1.0f)));
 
-	gSampler = new StratifiedSampler(0, 512, 0, 512, 1, 1);
+	gSampler = new StratifiedSampler(0, 512, 0, 512, 2, 2);
 	gSurfaceIntegrator = new WhittedIntegrator();
 }
 
