@@ -429,4 +429,122 @@ float3 Cylinder::Sample( float u1, float u2, float u3,  float3* normal ) const
 	return Transform(pt, mLocalToWorld);
 }
 
+
+Disk::Disk( const float44& o2w, bool ro, float height, float radius, float innerRadius, float maxPhi )
+	: Shape(o2w, ro), mRadius(radius), mInnerRadius(innerRadius), mHeight(height)
+{
+	mMaxPhi = Clamp(maxPhi, 0.0f, Mathf::TWO_PI);
+}
+
+Disk::~Disk()
+{
+
+}
+
+BoundingBoxf Disk::GetLocalBound() const
+{
+	return BoundingBoxf(float3(-mRadius, -mRadius, mHeight),
+		float3( mRadius,  mRadius, mHeight));
+}
+
+bool Disk::Intersect( const Ray& r, float* tHit, DifferentialGeometry* diffGeoHit ) const
+{
+	// Transform ray into local frame
+	Ray ray(r);
+	ray.Origin = Transform(r.Origin, mWorldToLocal);
+	ray.Direction = TransformDirection(r.Direction, mWorldToLocal);
+
+	// Compute plane intersection for disk
+	if (fabsf(ray.Direction.Z()) < 1e-7) return false;
+	float thit = (mHeight - ray.Origin.Z()) / ray.Direction.Z();
+	if (thit < ray.tMin || thit > ray.tMax)
+		return false;
+
+	// See if hit point is inside disk radii and $\phimax$
+	float3 phit = ray.Eval(thit);
+	float dist2 = phit.X() * phit.X() + phit.Y() * phit.Y();
+	if (dist2 > mRadius * mRadius || dist2 < mInnerRadius * mInnerRadius)
+		return false;
+
+	// Test disk $\phi$ value against $\phimax$
+	float phi = atan2f(phit.Y(), phit.X());
+	if (phi < 0) phi += 2.0f * Mathf::PI;
+	if (phi > mMaxPhi)
+		return false;
+
+	// Find parametric representation of disk hit
+	float u = phi / mMaxPhi;
+	float oneMinusV = ((sqrtf(dist2)-mInnerRadius) / (mRadius-mInnerRadius));
+	float invOneMinusV = (oneMinusV > 0.f) ? (1.f / oneMinusV) : 0.f;
+	float v = 1.f - oneMinusV;
+	float3 dpdu(-mMaxPhi * phit.Y(), mMaxPhi * phit.X(), 0.);
+	float3 dpdv(-phit.X() * invOneMinusV, -phit.Y() * invOneMinusV, 0.);
+	dpdu *= mMaxPhi * Mathf::INV_TWO_PI;
+	dpdv *= (mRadius - mInnerRadius) / mRadius;
+
+	float3 dndu(0,0,0), dndv(0,0,0);
+
+	// Initialize _DifferentialGeometry_ from parametric information
+	
+	*diffGeoHit = DifferentialGeometry(Transform(phit, mLocalToWorld), TransformDirection(dpdu, mLocalToWorld), 
+		TransformDirection(dpdv, mLocalToWorld), TransformNormal(dndu, mLocalToWorld), TransformNormal(dndv, mLocalToWorld), float2(u,v), this);
+
+	// Update _tHit_ for quadric intersection
+	*tHit = thit;
+
+	// Compute _rayEpsilon_ for quadric intersection
+	//*rayEpsilon = 5e-4f * *tHit;
+	return true;
+}
+
+bool Disk::IntersectP( const Ray &r ) const
+{
+	// Transform ray into local frame
+	Ray ray(r);
+	ray.Origin = Transform(r.Origin, mWorldToLocal);
+	ray.Direction = TransformDirection(r.Direction, mWorldToLocal);
+
+	// Compute plane intersection for disk
+	if (fabsf(ray.Direction.Z()) < 1e-7) return false;
+	float thit = (mHeight - ray.Origin.Z()) / ray.Direction.Z();
+	if (thit < ray.tMin || thit > ray.tMax)
+		return false;
+
+	// See if hit point is inside disk radii and $\phimax$
+	float3 phit = ray.Eval(thit);
+	float dist2 = phit.X() * phit.X() + phit.Y() * phit.Y();
+	if (dist2 > mRadius * mRadius || dist2 < mInnerRadius * mInnerRadius)
+		return false;
+
+	// Test disk $\phi$ value against $\phimax$
+	float phi = atan2f(phit.Y(), phit.X());
+	if (phi < 0) phi += 2.0f * Mathf::PI;
+	if (phi > mMaxPhi)
+		return false;
+
+	return true;
+}
+
+float Disk::Area() const
+{
+	return mMaxPhi * 0.5f *
+		(mRadius * mRadius - mInnerRadius * mInnerRadius);
+}
+
+float3 Disk::Sample( float u1, float u2, float3* n ) const
+{
+	float3 p;
+	ConcentricSampleDisk(u1, u2, &p[0], &p[1]);
+	
+	p.X() *= mRadius;
+	p.Y() *= mRadius;
+	p.Z() = mHeight;
+
+	*n = Normalize(TransformNormal(float3(0,0,1), mLocalToWorld));
+	
+	if (mReverseOrientation) *n  *= -1.f;
+	
+	return Transform(p, mWorldToLocal);
+}
+
 }

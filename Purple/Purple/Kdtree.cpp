@@ -180,7 +180,7 @@ void KDTree::BuildTree()
 	delete[] prims0;
 	delete[] prims1;
 
-	PrintKDTree();
+	//PrintKDTree();
 }
 
 void KDTree::BuildInternal( int32_t nodeNum, const BoundingBoxf& nodeBounds, const vector<BoundingBoxf>& allPrimBounds, uint32_t* primNums, int32_t nPrimitives, int32_t depth, BoundEdge* edges[3], uint32_t* prims0, uint32_t* prims1, int badRefines )
@@ -319,7 +319,7 @@ BoundingBoxf KDTree::GetBound( uint32_t idx ) const
 {
 	uint32_t meshIdx = FindShape(idx);
 
-	const Mesh* mesh = mShapes[idx]->GetTriangleMesh();
+	const Mesh* mesh = mShapes[meshIdx]->GetTriangleMesh();
 
 	if (mesh)
 	{
@@ -339,7 +339,6 @@ uint32_t KDTree::FindShape( uint32_t& idx ) const
 	// if it is not a mesh, directly use mesh index to get primitive
 	return (uint32_t) (it - mShapeMap.begin());
 }
-
 
 struct KDToDo 
 {
@@ -617,8 +616,9 @@ void KDTree::PrintKDTree( int nodeIdx, int depth )
 			printf(" idx: ");
 			for (uint32_t i = 0; i < nPrimitives; ++i) 
 			{
-				printf("%d", prims[i]);
+				printf("%d ", prims[i]);
 			}
+			printf("\n");
 		}
 	}
 	else

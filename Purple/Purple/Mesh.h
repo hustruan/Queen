@@ -13,7 +13,7 @@ class Mesh : public Shape
 {
 public:
 	Mesh(const float44& o2w, bool ro, int32_t numTriangle, int32_t numVertices, 
-		const uint32_t* indices, const float3* positions, const float3* normals, const float3* tangent, const float3* texcoords);
+		const uint32_t* indices, const float3* positions, const float3* normals, const float3* tangent, const float2* texcoords);
 	~Mesh(void);
 
 	const Mesh* GetTriangleMesh() const { return this; }
@@ -25,7 +25,7 @@ public:
 	uint32_t GetTriangleCount() const        { return mNumTriangles; }
 
 	BoundingBoxf GetLocalBound() const       { return mLocalBound; }
-	
+
 	BoundingBoxf GetWorldBound(uint32_t index) const;
 
 	bool Intersect(uint32_t index, const Ray& ray, float* tHit, DifferentialGeometry* diffGeoHit) const;
@@ -60,7 +60,6 @@ private:
 
 	friend class Triangle;
 };
-
 
 
 }

@@ -44,6 +44,8 @@ ImageFilm::ImageFilm( int xRes, int yRes, Filter* filter )
 			*ftp++ = filter->Evaluate(fx, fy);
 		}
 	}
+
+	//mColorBuffer.resize(xPixelCount*yPixelCount*3);
 }
 
 ImageFilm::~ImageFilm()
@@ -158,6 +160,34 @@ void ImageFilm::WriteImage( const char* filename )
 
 	delete[] rgb;
 }
+
+//void ImageFilm::RefreshColor( Sampler* tileSampler )
+//{
+//	for (int y = tileSampler->PixelStartY; y < tileSampler->PixelEndY; ++y)
+//	{
+//		float* rgb = &mColorBuffer[tileSampler->PixelStartY * xPixelCount * 3];
+//
+//		for (int x = tileSampler->PixelStartX; x < tileSampler->PixelEndX; ++x)
+//		{
+//			float* src = (*pixels)(x, y).Lrgb;
+//
+//			int tmp = 3*((yPixelCount - y - 1) * xPixelCount + x);
+//
+//			rgb[tmp  ] = std::max(0.f, src[0]);
+//			rgb[tmp+1] = std::max(0.f, src[1]);
+//			rgb[tmp+2] = std::max(0.f, src[2]);
+//
+//			float weightSum = (*pixels)(x, y).weightSum;
+//			if (weightSum != 0.f) 
+//			{
+//				float invWt = 1.f / weightSum;
+//				rgb[tmp  ] = std::max(0.0f, rgb[tmp  ] * invWt);
+//				rgb[tmp+1] = std::max(0.0f, rgb[tmp+1] * invWt);
+//				rgb[tmp+2] = std::max(0.0f, rgb[tmp+2] * invWt);
+//			}
+//		}
+//	}
+//}
 
 
 

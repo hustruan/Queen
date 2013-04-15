@@ -33,6 +33,8 @@ public:
 
 	void WriteImage(const char* filename);
 
+	//void RefreshColor(Sampler* tileSampler);
+
 private:
 	Filter* mFilter;
 	float* mFilterTable;
@@ -52,7 +54,11 @@ private:
 	};
 
 	RxLib::BlockedArray<Pixel, 2>* pixels;
+
+
+	//std::vector<float> mColorBuffer;
 };
+
 
 }
 

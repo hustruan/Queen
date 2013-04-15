@@ -15,6 +15,8 @@
 
 namespace Purple {
 
+GLuint SamplerRenderer::mTexture;
+
 SamplerRenderer::SamplerRenderer( Sampler* sampler, Camera* cam, SurfaceIntegrator* si )
 {
 	mMainSampler = sampler;
@@ -69,7 +71,7 @@ void SamplerRenderer::Render( const Scene *scene )
 
 	std::atomic<int> workingPackage = 0;
 	pool& tp = GlobalThreadPool();
-	//for (size_t iCore = 0; iCore < tp.size(); ++iCore)
+	for (size_t iCore = 0; iCore < tp.size(); ++iCore)
 	{
 		tp.schedule(std::bind(&SamplerRenderer::TileRender, this, scene, sample, std::ref(workingPackage), nTasks));
 		//std::bind(&SamplerRenderer::TileRender, this, scene, sample, std::ref(workingPackage), nTasks)();
@@ -137,8 +139,6 @@ void SamplerRenderer::TileRender( const Scene* scene, const Sample* sample, std:
 				// Add sample to film
 				for (int i = 0; i < sampleCount; ++i)
 				{
-					//printf("x=%f, y=%f, r=%f, g=%f, b=%f", samples[i].ImageSample.X(), samples[i].ImageSample.Y(),
-					//	Ls[i].R, Ls[i].G, Ls[i].B);
 					film->AddSample(samples[i], Ls[i]);
 				}
 
@@ -157,6 +157,69 @@ void SamplerRenderer::TileRender( const Scene* scene, const Sample* sample, std:
 		localWorkingPackage = workingPackage++;
 	}
 }
+
+//void SamplerRenderer::DrawScreen()
+//{
+//	glClear(GL_COLOR_BUFFER_BIT);
+//
+//	glBindTexture(GL_TEXTURE_2D, mTexture);
+//
+//	glBegin(GL_QUADS);
+//	glTexCoord2f(0.0f, 0.0f);
+//	glVertex2f(0.0f, 0.0f);
+//	glTexCoord2f(1.0f, 0.0f);
+//	glVertex2f(1.0f, 0.0f);
+//	glTexCoord2f(1.0f, 1.0f);
+//	glVertex2f(1.0f, 1.0f);
+//	glTexCoord2f(0.0f, 1.0f);
+//	glVertex2f(0.0f, 1.0f);
+//	glEnd();
+//}
+//
+//void SamplerRenderer::ResizeWindow( int w, int h )
+//{
+//	glViewport(0, 0, w, h);
+//	glMatrixMode(GL_PROJECTION);
+//	glLoadIdentity();
+//	glOrtho(0, 1, 1, 0, -1, 1);
+//	glMatrixMode(GL_MODELVIEW);
+//	glLoadIdentity();
+//	glEnable(GL_TEXTURE_2D);
+//	glDisable(GL_LIGHTING);
+//	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+//}
+//
+//void SamplerRenderer::InitPreviewWindow(int width, int height)
+//{
+//	glutInit(NULL, NULL);
+//	
+//	glutInitWindowSize(width, height);
+//	glutCreateWindow("Ray Tracer");
+//
+//	glutDisplayFunc(SamplerRenderer::DrawScreen);
+//	glutReshapeFunc(SamplerRenderer::ResizeWindow);
+//
+//
+//	glPixelStorei(GL_PACK_ALIGNMENT, 1);
+//	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+//
+//	glClearColor(0.0, 0.0, 0.0, 0.0);
+//	/* Allocate texture memory for the rendered image */
+//	glGenTextures(1, &mTexture);
+//	glBindTexture(GL_TEXTURE_2D, mTexture);
+//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+//	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+//}
+//
+//void SamplerRenderer::PutTile( Sampler* sampler, Film* film )
+//{
+//	ImageFilm* file = static_cast<ImageFilm*>(film);
+//
+//	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
+//		film->xResolution, film->yResolution, GL_RGB32F, GL_FLOAT, pBufferData);
+//
+//}
 
 
 

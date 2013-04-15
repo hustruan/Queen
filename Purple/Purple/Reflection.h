@@ -240,6 +240,26 @@ private:
 	ColorRGB mR;			// reflect color
 };
 
+class GlossySpecular : public BxDF
+{
+public:
+	GlossySpecular(const ColorRGB& reflectance, float exp) 
+		: BxDF(BSDF_Reflection | BSDF_Glossy), mR(reflectance), mExponent(exp) { }
+
+	ColorRGB Eval(const float3& wo, const float3& wi) const;
+
+	float Pdf(const float3& wo, const float3& wi) const;
+
+	/**
+	 * this computes wi: the direction of perfect mirror reflection
+	 */
+	ColorRGB Sample(const float3& wo, float3* wi, float u1, float u2, float* pdf) const;
+
+private:
+	ColorRGB mR;			// reflect color
+	float mExponent;
+};
+
 class OrenNayar : public BxDF
 {
 public:
@@ -295,9 +315,9 @@ private:
 	MicrofacetDistribution* mD;
 };
 
-struct Blin : MicrofacetDistribution
+struct Blinn : MicrofacetDistribution
 {
-	Blin(float e) : mExponent(e) {}
+	Blinn(float e) : mExponent(e) {}
 	
 	float D(const float3& wh) const
 	{

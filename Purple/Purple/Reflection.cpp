@@ -2,9 +2,55 @@
 #include "MentoCarlo.h"
 #include "Sampler.h"
 
+namespace {
+
+using namespace RxLib;
+using namespace Purple;
+	
+
+// BxDF Utility Functions
+ColorRGB FrDiel(float cosi, float cost, const ColorRGB &etai, const ColorRGB &etat) 
+{
+		ColorRGB Rparl = ((etat * cosi) - (etai * cost)) /
+			((etat * cosi) + (etai * cost));
+		ColorRGB Rperp = ((etai * cosi) - (etat * cost)) /
+			((etai * cosi) + (etat * cost));
+		return (Rparl*Rparl + Rperp*Rperp) / 2.f;
+}
+
+
+ColorRGB FrCond(float cosi, const ColorRGB &eta, const ColorRGB &k) {
+	ColorRGB tmp = (eta*eta + k*k) * cosi*cosi;
+	ColorRGB Rparl2 = (tmp - (2.f * eta * cosi) + ColorRGB::White) /
+		(tmp + (2.f * eta * cosi) + ColorRGB::White);
+	ColorRGB tmp_f = eta*eta + k*k;
+	ColorRGB Rperp2 =
+		(tmp_f - (2.f * eta * cosi) + ColorRGB(cosi*cosi)) /
+		(tmp_f + (2.f * eta * cosi) + ColorRGB(cosi*cosi));
+	return (Rparl2 + Rperp2) / 2.f;
+}
+
+
+}
+
 namespace Purple {
 
 using namespace RxLib;
+
+BSDFSampleOffsets::BSDFSampleOffsets( int count, Sample* sample )
+	: nSamples(count)
+{
+	componentOffset = sample->Add1D(nSamples);
+	dirOffset = sample->Add2D(nSamples);
+}
+
+
+BSDFSample::BSDFSample( Sample* sample, const BSDFSampleOffsets& offset, uint32_t n )
+{
+	uDir[0] = sample->TwoD[offset.dirOffset][2*n];
+	uDir[1] = sample->TwoD[offset.dirOffset][2*n+1];
+	uComponent = sample->OneD[offset.componentOffset][n];
+}
 
 ColorRGB BxDF::Sample( const float3& wo, float3* wi, float u1, float u2, float* pdf ) const
 {
@@ -60,6 +106,31 @@ ColorRGB SpecularRelection::Sample( const float3& wo, float3* wi, float u1, floa
 	*pdf = 1.0f;
 
 	return mFresnel->Evaluate(CosTheta(wo)) * mR / AbsCosTheta(*wi);
+}
+
+
+ColorRGB GlossySpecular::Eval( const float3& wo, const float3& wi ) const
+{
+	ColorRGB L;
+
+	// Compute reflect vector
+	float3 wr = float3(-wo.X(), -wo.Y(), wo.Z());
+	float alpha = Dot(wo, wr);
+
+	if (alpha > 0.0f)
+		L = mR * std::pow(alpha, mExponent);
+
+	return L;
+}
+
+float GlossySpecular::Pdf( const float3& wo, const float3& wi ) const
+{
+	return 0.0f;
+}
+
+ColorRGB GlossySpecular::Sample( const float3& wo, float3* wi, float u1, float u2, float* pdf ) const
+{
+	return ColorRGB::Black;
 }
 
 
@@ -138,7 +209,7 @@ float TorranceSparrow::Pdf( const float3& wo, const float3& wi ) const
 	return mD->Pdf(wo, wi);
 }
 
-void Blin::Sample_f( const float3& wo, float3* wi, float u1, float u2, float* pdf ) const
+void Blinn::Sample_f( const float3& wo, float3* wi, float u1, float u2, float* pdf ) const
 {
 	float cosTheta = powf(u1, 1.0f / (mExponent + 1.0f));
 	float sinTheta = sqrtf(std::max(0.0f, 1- cosTheta * cosTheta));
@@ -159,7 +230,7 @@ void Blin::Sample_f( const float3& wo, float3* wi, float u1, float u2, float* pd
 	*pdf = blinPdf;
 }
 
-float Blin::Pdf( const float3& wo, const float3& wi ) const
+float Blinn::Pdf( const float3& wo, const float3& wi ) const
 {
 	float3 wh = Normalize(wo + wi);
 
@@ -341,20 +412,6 @@ int BSDF::NumComponents( uint32_t bsdfFlags ) const
 }
 
 
-BSDFSampleOffsets::BSDFSampleOffsets( int count, Sample* sample )
-	: nSamples(count)
-{
-	componentOffset = sample->Add1D(nSamples);
-	dirOffset = sample->Add2D(nSamples);
-}
-
-
-BSDFSample::BSDFSample( Sample* sample, const BSDFSampleOffsets& offset, uint32_t n )
-{
-	uDir[0] = sample->TwoD[offset.dirOffset][2*n];
-	uDir[1] = sample->TwoD[offset.dirOffset][2*n+1];
-	uComponent = sample->OneD[offset.componentOffset][n];
-}
 
 }
 

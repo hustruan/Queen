@@ -73,9 +73,7 @@ protected:
 
 public:
 	const int32_t SamplesPerPixel;
-
-protected:
-	int32_t mPixelStartX, mPixelStartY, mPixelEndX, mPixelEndY;
+	int32_t PixelStartX, PixelStartY, PixelEndX, PixelEndY;
 
 };
 

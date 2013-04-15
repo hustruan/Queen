@@ -2,6 +2,7 @@
 #include "MentoCarlo.h"
 #include "DifferentialGeometry.h"
 #include <MathUtil.hpp>
+#include <SoveEquation.hpp>
 
 namespace Purple {
 
@@ -46,18 +47,7 @@ public:
 		float3 dpdu, dpdv;
 			
 		float2 uvs[3];
-		if (parentMesh->mTexcoords) 
-		{
-			uvs[0] = parentMesh->mTexcoords[mIdx[0]];
-			uvs[1] = parentMesh->mTexcoords[mIdx[1]];
-			uvs[2] = parentMesh->mTexcoords[mIdx[2]];
-		} 
-		else 
-		{
-			uvs[0] = float2(0.0f, 0.0f);
-			uvs[1] = float2(1.0f, 0.0f);
-			uvs[2] = float2(1.0f, 1.0f);
-		}
+		GetUVs(parentMesh, uvs);
 
 		// Compute deltas for triangle partial derivatives
 		float du1 = uvs[0][0] - uvs[2][0];
@@ -125,7 +115,103 @@ public:
 
 	void GetShadingGeometry(const Mesh* parentMesh, const float44& obj2world, const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const
 	{
+		// Compute barycentric coordinates for point
+		float b[3];
 
+		// Initialize _A_ and _C_ matrices for barycentrics
+		float2 uvs[3];
+		GetUVs(parentMesh, uvs);
+
+		float A[2][2] ={
+			{ uvs[1][0] - uvs[0][0], uvs[2][0] - uvs[0][0] },
+		    { uvs[1][1] - uvs[0][1], uvs[2][1] - uvs[0][1] } 
+		};
+
+		float C[2] = { dg.UV[0]- uvs[0][0], dg.UV[1] - uvs[0][1] };
+		if (!SolveLinearSystem2x2(A, C, &b[1], &b[2]))
+		{
+			// Handle degenerate parametric mapping
+			b[0] = b[1] = b[2] = 1.f/3.f;
+		}
+		else
+			b[0] = 1.f - b[1] - b[2];
+
+		float3 shadingNormal;
+		float3 shadingTangent, shadingBinormal;
+		if (parentMesh->mNormals) 
+		{
+			shadingNormal = parentMesh->mNormals[mIdx[0]] * b[0] + parentMesh->mNormals[mIdx[1]] * b[1] + parentMesh->mNormals[mIdx[2]] * b[2];
+			shadingNormal = Normalize(TransformNormal(shadingNormal, obj2world));
+		}
+		else   
+			shadingNormal = dg.Normal;
+
+		if (parentMesh->mTangents)
+		{
+			shadingTangent = parentMesh->mTangents[mIdx[0]] * b[0] + parentMesh->mTangents[mIdx[1]] * b[1] + parentMesh->mTangents[mIdx[2]] * b[2];
+			shadingTangent = Normalize(TransformDirection(shadingNormal, obj2world));
+		}
+		else  
+			shadingTangent = Normalize(dg.dpdu);
+
+		shadingBinormal = Cross(shadingTangent, shadingNormal);
+
+		if (LengthSquared(shadingBinormal) > 0.f)
+		{
+			shadingBinormal = Normalize(shadingBinormal);
+			shadingTangent = Cross(shadingBinormal, shadingNormal);
+		}
+		else
+			CoordinateSystem(shadingNormal, &shadingTangent, &shadingBinormal);
+
+		float3 dndu, dndv;
+
+		if (parentMesh->mNormals) 
+		{
+			// Compute deltas for triangle partial derivatives of normal
+			float du1 = uvs[0][0] - uvs[2][0];
+			float du2 = uvs[1][0] - uvs[2][0];
+			float dv1 = uvs[0][1] - uvs[2][1];
+			float dv2 = uvs[1][1] - uvs[2][1];
+			
+			float3 dn1 = parentMesh->mNormals[mIdx[0]] - parentMesh->mNormals[mIdx[2]];
+			float3 dn2 = parentMesh->mNormals[mIdx[1]] - parentMesh->mNormals[mIdx[2]];
+			float determinant = du1 * dv2 - dv1 * du2;
+			
+			if (determinant == 0.f)
+				dndu = dndv = float3(0,0,0);
+			else {
+				float invdet = 1.f / determinant;
+				dndu = ( dv2 * dn1 - dv1 * dn2) * invdet;
+				dndv = (-du2 * dn1 + du1 * dn2) * invdet;
+			}
+		}
+		else
+			dndu = dndv = float3(0,0,0);
+
+		*dgShading = DifferentialGeometry(dg.Point, shadingTangent, shadingBinormal,
+			TransformNormal(dndu, obj2world), TransformNormal(dndv, obj2world),
+			dg.UV, dg.Shape);
+
+		dgShading->dudx = dg.dudx;  dgShading->dvdx = dg.dvdx;
+		dgShading->dudy = dg.dudy;  dgShading->dvdy = dg.dvdy;
+		dgShading->dpdx = dg.dpdx;  dgShading->dpdy = dg.dpdy;
+	}
+
+	void GetUVs(const Mesh* parentMesh, float2 uvs[3]) const
+	{
+		if (parentMesh->mTexcoords) 
+		{
+			uvs[0] = parentMesh->mTexcoords[mIdx[0]];
+			uvs[1] = parentMesh->mTexcoords[mIdx[1]];
+			uvs[2] = parentMesh->mTexcoords[mIdx[2]];
+		} 
+		else 
+		{
+			uvs[0] = float2(0.0f, 0.0f);
+			uvs[1] = float2(1.0f, 0.0f);
+			uvs[2] = float2(1.0f, 1.0f);
+		}
 	}
 
 	float Area(const Mesh* parentMesh) const
@@ -158,31 +244,37 @@ public:
 		const float3& p2 = parentMesh->mPositions[mIdx[1]];
 		const float3& p3 = parentMesh->mPositions[mIdx[2]];
 
-		BoundingBoxf retVal(p1, p2);
+		BoundingBoxf retVal;
+		
+		retVal.Merge(p1);
+		retVal.Merge(p2);
 		retVal.Merge(p3);
 
 		return retVal;
 	}
-
-	
 
 public:
 	uint32_t mIdx[3];
 };
 
 //--------------------------------------------------------------------	
-Mesh::Mesh( const float44& o2w, bool ro, int32_t numTriangle, int32_t numVertices, const uint32_t* indices, const float3* positions, const float3* normals, const float3* tangents, const float3* texcoords )
+Mesh::Mesh( const float44& o2w, bool ro, int32_t numTriangle, int32_t numVertices, const uint32_t* indices, const float3* positions, const float3* normals, const float3* tangents, const float2* texcoords )
 : Shape(o2w, ro), mNumTriangles(numTriangle), mNumVertices(numVertices), mSurfaceArea(-1)
 {
 	mTriangles = new Triangle[mNumTriangles];
 	memcpy(reinterpret_cast<uint32_t *>(mTriangles), indices, mNumTriangles * 3 * sizeof(uint32_t));
-	/*for (int32_t tri = 0; tri < numTriangle; ++tri)
-	{
-	mTriangles[tri].mIdx[0] =  indices[tri*3+0];
-	mTriangles[tri].mIdx[0] =  indices[tri*3+0];
-	mTriangles[tri].mIdx[0] =  indices[tri*3+0];
-	}*/
+
+	mPositions = new float3[numVertices];
+	memcpy(mPositions, positions, numVertices*sizeof(float3));
 	
+	if (normals) 
+	{
+		mNormals= new float3[numVertices];
+		memcpy(mNormals, normals, numVertices*sizeof(float3));
+	}
+	else 
+		mNormals = NULL;
+
 	if (texcoords)
 	{
 		mTexcoords = new float2[numVertices];
@@ -198,28 +290,16 @@ Mesh::Mesh( const float44& o2w, bool ro, int32_t numTriangle, int32_t numVertice
 	}
 	else
 		mTangents = NULL;
-	
-	if (normals) 
-	{
-		mNormals= new float3[numVertices];
-		memcpy(mNormals, normals, numVertices*sizeof(float3));
-	}
-	else 
-		mNormals = NULL;
-
-	/*if (S) {
-		s = new Vector[nverts];
-		memcpy(s, S, nverts*sizeof(Vector));
-	}
-	else s = NULL;*/
 
 	// Transform mesh vertices to world space
-	mPositions = new float3[numVertices];
 	for (int i = 0; i < numVertices; ++i)
 	{
 		mLocalBound.Merge(positions[i]);
 		mPositions[i] = Transform(positions[i], o2w);
 	}
+
+	// Build Distribution
+	PrepareSampleDistribution();
 }
 
 
@@ -286,7 +366,12 @@ float3 Mesh::Sample( const float3& p, float u1, float u2, float u3,  float3* n )
 
 bool Mesh::Intersect( uint32_t index, const Ray& ray, float* tHit, DifferentialGeometry* diffGeoHit ) const
 {
-	return mTriangles[index].Intersect(this, ray, tHit, diffGeoHit);
+	bool intersect = mTriangles[index].Intersect(this, ray, tHit, diffGeoHit);
+
+	if (intersect)
+		diffGeoHit->PrimIndex = index;
+		
+	return intersect;
 }
 
 bool Mesh::IntersectP( uint32_t index, const Ray& ray ) const
@@ -299,11 +384,18 @@ BoundingBoxf Mesh::GetWorldBound( uint32_t index ) const
 	return mTriangles[index].GetBoundingBox(this);
 }
 
+
 void Mesh::GetShadingGeometry( const float44& local2world, const DifferentialGeometry &dg, DifferentialGeometry *dgShading ) const
 {
-	/*	if (mNormals )
-		{
-		}*/
+	if (!mNormals && !mTangents)
+	{
+		*dgShading = dg;
+		return;
+	}
+
+	*dgShading = dg;
+	
+	//mTriangles[dg.PrimIndex].GetShadingGeometry(this, local2world, dg, dgShading);
 }
 
 }

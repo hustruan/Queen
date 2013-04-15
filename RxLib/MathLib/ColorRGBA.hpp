@@ -13,6 +13,13 @@ public:
 		Tuple[2] = 0.0f;
 	}
 
+	ColorRGB (float f)
+	{
+		Tuple[0] = f;
+		Tuple[1] = f;
+		Tuple[2] = f;
+	}
+
 	ColorRGB (float fR, float fG, float fB)
 	{
 		Tuple[0] = fR;
@@ -74,6 +81,14 @@ public:
 			Tuple[0]*rkC.Tuple[0],
 			Tuple[1]*rkC.Tuple[1],
 			Tuple[2]*rkC.Tuple[2]);
+	}
+
+	ColorRGB operator/ (const ColorRGB& rkC) const
+	{
+		return ColorRGB(
+			Tuple[0]/rkC.Tuple[0],
+			Tuple[1]/rkC.Tuple[1],
+			Tuple[2]/rkC.Tuple[2]);
 	}
 
 	ColorRGB operator* (float fScalar) const

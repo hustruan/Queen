@@ -13,6 +13,7 @@ struct DifferentialGeometry
 	{
 		dudx = dvdx = dudy = dvdy = 0.0f;
 		Shape = NULL; 
+		PrimIndex = std::numeric_limits<uint32_t>::max();
 	}
 
 	DifferentialGeometry(const float3 &P, const float3 &DPDU, const float3 &DPDV, const float3 &DNDU, const float3 &DNDV, const float2& uv, const Shape *sh)
@@ -31,6 +32,9 @@ struct DifferentialGeometry
 	ColorRGB Le(const float3& wo) const;
 
 	const Shape* Shape;
+
+	/// Primitive index, e.g. the triangle ID (if applicable)
+	uint32_t PrimIndex;
 
 	float3 Point;
 	float3 Normal;

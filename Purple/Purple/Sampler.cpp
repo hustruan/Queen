@@ -11,7 +11,7 @@ namespace Purple {
 using namespace RxLib;
 
 Sampler::Sampler( int32_t xStart, int32_t xEnd, int32_t yStart, int32_t yEnd, int32_t samplerPerPixel )
-	: mPixelStartX(xStart), mPixelStartY(yStart), mPixelEndY(yEnd), mPixelEndX(xEnd), SamplesPerPixel(samplerPerPixel)
+	: PixelStartX(xStart), PixelStartY(yStart), PixelEndY(yEnd), PixelEndX(xEnd), SamplesPerPixel(samplerPerPixel)
 {
 
 }
@@ -23,7 +23,7 @@ Sampler::~Sampler(void)
 
 void Sampler::ComputeSubWindow( int32_t num, int32_t count, int32_t* newXStart, int32_t* newXEnd, int32_t* newYStart, int32_t* newYEnd )
 {
-	int32_t width = mPixelEndX - mPixelStartX, height = mPixelEndY - mPixelStartY;
+	int32_t width = PixelEndX - PixelStartX, height = PixelEndY - PixelStartY;
 	int32_t nx = count, ny = 1;
 	while ((nx & 0x1) == 0 && 2 * width * ny < height * nx) {
 		nx >>= 1;
@@ -67,7 +67,7 @@ Sampler* StratifiedSampler::GetSubSampler( int32_t num, int32_t count )
 
 uint32_t StratifiedSampler::GetMoreSamples( Sample* samples, Random& rng )
 {
-	if (mCurrPixelY == mPixelEndY)
+	if (mCurrPixelY == PixelEndY)
 		return 0;
 
 	int32_t numSamples = mPixelSamplesX * mPixelSamplesY;
@@ -105,9 +105,9 @@ uint32_t StratifiedSampler::GetMoreSamples( Sample* samples, Random& rng )
 	}
 
 	// Advance to next pixel for stratified sampling
-	if ( ++mCurrPixelX == mPixelEndX )
+	if ( ++mCurrPixelX == PixelEndX )
 	{
-		mCurrPixelX = mPixelStartX;
+		mCurrPixelX = PixelStartX;
 		++mCurrPixelY;
 	}
 

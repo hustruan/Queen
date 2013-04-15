@@ -129,7 +129,7 @@ ColorRGB WhittedIntegrator::Li( const Scene* scene, const Renderer* renderer, co
 		auto b = visibility.Unoccluded(scene);
 
 		if (f != ColorRGB::Black && visibility.Unoccluded(scene))
-			L += f * ColorRGB::White * fabsf(Dot(wi, n)) /** visibility.Transmittance(scene, renderer, sample, rng, arena)*/ /*/ pdf*/;
+			L += f * Li * fabsf(Dot(wi, n)) /** visibility.Transmittance(scene, renderer, sample, rng, arena)*/ /*/ pdf*/;
 	}
 	
 	if (ray.Depth + 1 < mMaxDepth) 

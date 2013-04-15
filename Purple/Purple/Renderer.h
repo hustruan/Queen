@@ -5,6 +5,9 @@
 #include "Ray.h"
 #include <atomic>
 
+#include <GL/glew.h>
+#include <GL/glut.h>
+
 namespace Purple {
 
 using RxLib::ColorRGB;
@@ -30,6 +33,8 @@ public:
 	SamplerRenderer(Sampler* sampler, Camera* cam, SurfaceIntegrator* si);
 	~SamplerRenderer();
 
+	void InitPreviewWindow(int width, int height);
+
 	virtual ColorRGB Li(const Scene *scene, const RayDifferential &ray, const Sample *sample, Random& rng, MemoryArena &arena,
 		DifferentialGeometry* isect = NULL, ColorRGB* T = NULL) const;
 
@@ -39,14 +44,23 @@ public:
 	void Render(const Scene *scene);
 
 
+//public:
+//	static void DrawScreen();
+//	static void ResizeWindow(int w, int h);
+//
 private:
 
 	void TileRender(const Scene* scene, const Sample* sample, std::atomic<int32_t>& workingPackage, int32_t numTiles);
+
+	//void PutTile(Sampler* sampler, Film* film);
 
 protected:
 	Camera* mCamera;	
 	Sampler* mMainSampler;
 	SurfaceIntegrator* mSurfaceIntegrator;
+
+	static GLuint mTexture;
+
 };
 
 }

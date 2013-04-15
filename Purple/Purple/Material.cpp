@@ -35,5 +35,13 @@ BSDF* DiffuseMaterial::GetBSDF( const DifferentialGeometry &dgGeom, const Differ
 	return bsdf;
 }
 
+BSDF* PhongMaterial::GetBSDF( const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, MemoryArena &arena )
+{
+	BSDF *bsdf = BSDF_ALLOC(arena, BSDF)(dgShading, dgGeom.Normal);
+	
+
+	return bsdf;
+}
+
 }
 

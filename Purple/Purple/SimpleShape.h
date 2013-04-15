@@ -42,9 +42,24 @@ public:
 public:
 	float mRadius;
 	float mMinZ, mMaxZ, mMaxPhi;
-
 };
 
+class Disk : public Shape
+{
+public:
+	Disk(const float44& o2w, bool ro, float height, float radius, float innerRadius, float phiMax);
+	~Disk();
+
+	BoundingBoxf GetLocalBound() const;
+	bool Intersect(const Ray& ray, float* tHit, DifferentialGeometry* diffGeoHit) const;
+	bool IntersectP(const Ray &ray) const;
+	float Area() const;
+	float3 Sample(float u1, float u2, float3* n) const;
+
+private:
+	// Disk Private Data
+	float mHeight, mRadius, mInnerRadius, mMaxPhi;
+};
 
 }
 

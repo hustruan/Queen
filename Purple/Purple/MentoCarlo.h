@@ -75,6 +75,8 @@ inline float UniformConePdf(float cosThetaMax)
 	return 1.0f / (2.f * RxLib::Mathf::PI * (1.0f - cosThetaMax));
 }
 
+void ConcentricSampleDisk(float u1, float u2, float *dx, float *dy);
+
 inline void UniformSampleTriangle(float u1, float u2, float* u, float* v)
 {
 	float su1 = sqrtf(u1);	

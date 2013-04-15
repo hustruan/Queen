@@ -30,6 +30,19 @@ private:
 };
 
 
+class PhongMaterial : public Material
+{
+public:
+	PhongMaterial(const ColorRGB& abedo);
+	virtual ~PhongMaterial(void);
+
+	virtual BSDF* GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, MemoryArena &arena);
+
+private:
+	ColorRGB mAbedo;
+};
+
+
 }
 
 
