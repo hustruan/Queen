@@ -80,6 +80,8 @@ struct BSDFSampleOffsets
 
 struct BSDFSample
 {
+	BSDFSample() {}
+
 	BSDFSample(Random& rng)
 	{
 		uDir[0] = rng.RandomFloat();
@@ -94,7 +96,7 @@ struct BSDFSample
 		uComponent = uCom;
 	}
 
-	BSDFSample(Sample* sample, const BSDFSampleOffsets& offset, uint32_t num);
+	BSDFSample(const Sample* sample, const BSDFSampleOffsets& offset, uint32_t num);
 
 	float uDir[2], uComponent;
 };

@@ -40,6 +40,12 @@ struct RayDifferential : public Ray
 		hasDifferentials = false;
 	}
 
+	RayDifferential(const float3& org, const float3& dir, float start, float end = RxLib::Mathf::INFINITY, float t = 0.0f, int d = 0)
+		: Ray(org, dir, start, end, t, d)
+	{
+			hasDifferentials = false;
+	}
+
 	RayDifferential(const float3& org, const float3& dir, const Ray& parent, float start, float end = RxLib::Mathf::INFINITY)
 		: Ray(org, dir, start, end, parent.Time, parent.Depth+1) 
 	{

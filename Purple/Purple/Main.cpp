@@ -78,11 +78,18 @@ public:
 			std::make_shared<ConstantTexture<ColorRGB>>(ColorRGB(.25,.25,.75))));
 		mKDTree->AddShape(rightWall);
 
-		// standford bunny
-		shared_ptr<Shape> bunny = LoadMesh("../../Media/bunny.md", CreateScaling(300.0f, 300.0f, 300.0f) * CreateRotationY(Mathf::PI) * CreateTranslation(50.0f, 0.0f, 50.0f));
-		bunny->SetMaterial(std::make_shared<DiffuseMaterial>(cTexture));
-		mKDTree->AddShape(bunny);
+		//// standford bunny
+		//shared_ptr<Shape> bunny = LoadMesh("../../Media/bunny.md", CreateScaling(300.0f, 300.0f, 300.0f) * CreateRotationY(Mathf::PI) * CreateTranslation(50.0f, 0.0f, 50.0f));
+		//bunny->SetMaterial(std::make_shared<DiffuseMaterial>(cTexture));
+		//mKDTree->AddShape(bunny);
 
+		shared_ptr<Shape> sphere1 = std::make_shared<Sphere>(CreateTranslation(75.0f, 20.0f, 44.4f), false, 20.0f, -20.0f, 20.0f, Mathf::TWO_PI);
+		sphere1->SetMaterial(std::make_shared<GlassMaterial>(whiteTexture, whiteTexture, indexTexture));
+		mKDTree->AddShape(sphere1);
+
+		shared_ptr<Shape> sphere2 = std::make_shared<Sphere>(CreateTranslation(25.0f, 20.0f, 75.0f), false, 20.0f, -20.0f, 20.0f, Mathf::TWO_PI);
+		sphere2->SetMaterial(std::make_shared<DiffuseMaterial>(cTexture));
+		mKDTree->AddShape(sphere2);
 
 		mKDTree->BuildTree();
 	}
@@ -134,8 +141,8 @@ void CreateScene()
 	gCamera = new PerspectiveCamera(camTrans, ToRadian(60.0f), 0, 1,
 		new ImageFilm(512, 512, new GaussianFilter(4.0f, 4.0f, 1.0f)));
 
-	gSampler = new StratifiedSampler(0, 512, 0, 512, 8, 8);
-	gSurfaceIntegrator = new WhittedIntegrator();
+	gSampler = new StratifiedSampler(0, 512, 0, 512, 1, 1);
+	gSurfaceIntegrator = new DirectLightingIntegrator();
 }
 
 

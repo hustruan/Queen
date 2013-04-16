@@ -46,7 +46,7 @@ BSDFSampleOffsets::BSDFSampleOffsets( int count, Sample* sample )
 }
 
 
-BSDFSample::BSDFSample( Sample* sample, const BSDFSampleOffsets& offset, uint32_t n )
+BSDFSample::BSDFSample( const  Sample* sample, const BSDFSampleOffsets& offset, uint32_t n )
 {
 	uDir[0] = sample->TwoD[offset.dirOffset][2*n];
 	uDir[1] = sample->TwoD[offset.dirOffset][2*n+1];

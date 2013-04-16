@@ -84,6 +84,12 @@ inline void UniformSampleTriangle(float u1, float u2, float* u, float* v)
 	*v = u2 * su1;
 }
 
+inline float PowerHeuristic(int nf, float fPdf, int ng, float gPdf)
+{
+	float f = nf * fPdf, g = ng * gPdf;
+	return (f*f) / (f*f + g*g);
+}
+
 /**
  * Generate 1D and 2D samples using stratified method
  * @param jitter add jitter offset 

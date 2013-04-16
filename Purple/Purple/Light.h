@@ -16,6 +16,8 @@ struct LightSampleOffsets
 
 struct LightSample
 {
+	LightSample() { }
+
 	LightSample(Random& rng)
 	{
 		uPos[0] = rng.RandomFloat();
@@ -30,7 +32,7 @@ struct LightSample
 		uComponent = uCom;
 	}
 
-	LightSample(Sample* sample, const LightSampleOffsets& offset, uint32_t num);
+	LightSample(const Sample* sample, const LightSampleOffsets& offset, uint32_t num);
 
 	float uPos[2], uComponent;
 };
@@ -57,7 +59,7 @@ public:
 	/** 
 	 * 
 	 */
-	virtual ColorRGB Sample(const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis) = 0;
+	virtual ColorRGB Sample(const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis) const = 0;
 
 	virtual float Pdf(const float3& pt, const float3& wi) const = 0;
 
@@ -80,7 +82,7 @@ public:
 	PointLight(const float44& light2world, const ColorRGB& intensity);
 	~PointLight();
 
-	ColorRGB Sample(const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis);
+	ColorRGB Sample(const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis) const;
 
 	ColorRGB Power(const Scene& scene) const;
 
@@ -103,7 +105,7 @@ public:
 	DirectionalLight(const float44& light2world, const float3& dir, const ColorRGB& radiance);
 	~DirectionalLight();
 
-	ColorRGB Sample(const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis);
+	ColorRGB Sample(const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis) const;
 
 	ColorRGB Power(const Scene& scene) const;
 
@@ -123,7 +125,7 @@ public:
 	SpotLight(const float44& light2world, const ColorRGB& intensity, float inner, float outer, float falloff);
 	~SpotLight();
 
-	ColorRGB Sample(const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis);
+	ColorRGB Sample(const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis) const;
 
 	ColorRGB Power(const Scene& scene) const;
 
@@ -132,7 +134,7 @@ public:
 	bool DeltaLight() const  { return true; }
 
 private:
-	float FallOff(const float3& wi);
+	float FallOff(const float3& wi) const;
 
 private:
 	ColorRGB mIntensity;
@@ -152,7 +154,7 @@ public:
 	AreaLight(const float44& light2world, const ColorRGB& intensity, const shared_ptr<Shape>& shape, int32_t numSamples);
 	~AreaLight();
 
-	ColorRGB Sample(const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis);
+	ColorRGB Sample(const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis) const;
 
 	bool DeltaLight() const  { return false; } 
 

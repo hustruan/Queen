@@ -64,6 +64,8 @@ struct CameraSample;
 struct DifferentialGeometry;
 struct LightSampleOffsets;
 struct BSDFSampleOffsets;
+struct LightSample;
+struct BSDFSample;
 
 }
 

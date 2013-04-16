@@ -59,10 +59,10 @@ BSDF* GlassMaterial::GetBSDF( const DifferentialGeometry &dgGeom, const Differen
 		bsdf->Add(BSDF_ALLOC(arena, Lambertian)(R));
 	}
 
-	/*if (T != ColorRGB::Black)
+	if (T != ColorRGB::Black)
 	{
 		bsdf->Add(BSDF_ALLOC(arena, SpecularTransmission)(T, 1.0f, ior));
-	}*/
+	}
 
 	return bsdf;
 }

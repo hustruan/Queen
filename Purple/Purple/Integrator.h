@@ -18,6 +18,11 @@ ColorRGB SpecularReflect(const RayDifferential& ray, BSDF* bsdf, Random& rng, co
 ColorRGB SpecularTransmit(const RayDifferential& ray, BSDF* bsdf, Random& rng, const DifferentialGeometry& isect,
 						  const Renderer* renderer, const Scene* scene, const Sample *sample, MemoryArena &arena);
 
+
+ColorRGB EstimateDirect(const Scene* scene, const Renderer* renderer, MemoryArena& arena, const Light* light, const float3& p,
+						const float3& n, const float3& wo, float time, const BSDF* bsdf, Random& rng, const LightSample& lightSample,
+						const BSDFSample& bsdfSample, uint32_t bsdfflags);
+
 class Integrator
 {
 public:

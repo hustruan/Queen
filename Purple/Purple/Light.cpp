@@ -16,8 +16,7 @@ LightSampleOffsets::LightSampleOffsets( int count, Sample* sample )
 	posOffset =  sample->Add2D(nSamples);
 }
 
-
-LightSample::LightSample( Sample* sample, const LightSampleOffsets& offset, uint32_t n )
+LightSample::LightSample( const Sample* sample, const LightSampleOffsets& offset, uint32_t n )
 {
 	uPos[0] = sample->TwoD[offset.posOffset][2*n];
 	uPos[1] = sample->TwoD[offset.posOffset][2*n+1];
@@ -53,7 +52,7 @@ PointLight::~PointLight()
 {
 }
 
-ColorRGB PointLight::Sample( const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis )
+ColorRGB PointLight::Sample( const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis ) const
 {
 	*wi = Normalize(mLightPosW - pt);
 	*pdf = 1.0f;
@@ -85,7 +84,7 @@ SpotLight::~SpotLight()
 
 }
 
-ColorRGB SpotLight::Sample( const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis )
+ColorRGB SpotLight::Sample( const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis ) const
 {
 	*wi = Normalize(mLightPosW - pt);
 	*pdf = 1.0f;
@@ -96,7 +95,7 @@ ColorRGB SpotLight::Sample( const float3& pt, const LightSample& lightSample, fl
 	return mIntensity * FallOff(*wi) / LengthSquared(mLightPosW - pt);
 }
 
-float SpotLight::FallOff( const float3& wi )
+float SpotLight::FallOff( const float3& wi ) const
 {
 	float costheta = Dot(wi, mLightDirectionW);
 	if(costheta < mCosSpotOuter) return 0.0f;
@@ -122,7 +121,7 @@ DirectionalLight::~DirectionalLight()
 
 }
 
-ColorRGB DirectionalLight::Sample( const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis )
+ColorRGB DirectionalLight::Sample( const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis ) const
 {
 	*wi = -mLightDirectionW;
 	*pdf = 1.0f;
@@ -152,7 +151,7 @@ AreaLight::~AreaLight()
 }
 
 
-ColorRGB AreaLight::Sample( const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis )
+ColorRGB AreaLight::Sample( const float3& pt, const LightSample& lightSample, float time, float3* wi, float* pdf, VisibilityTester* vis ) const
 {
 	float3 ns;
 	float3 ps = mShape->Sample(pt, lightSample.uPos[0], lightSample.uPos[1], lightSample.uComponent, &ns);
