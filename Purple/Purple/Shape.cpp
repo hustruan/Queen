@@ -90,16 +90,14 @@ BSDF* Shape::GetBSDF( const DifferentialGeometry& dgGeom, const float44& ObjectT
 }
 
 AreaLightShape::AreaLightShape( const shared_ptr<Shape>& shape, AreaLight* light )
-	: Shape(float44::Identity(), false), mShape(shape), mAreaLight(light)
+	: Shape(shape->mLocalToWorld, shape->ReverseOrientation), mShape(shape), mAreaLight(light)
 {
 
 }
 
 bool AreaLightShape::Intersect( const Ray& ray, float* tHit, DifferentialGeometry* diffGeoHit ) const
 {
-	bool retVal = mShape->Intersect(ray, tHit, diffGeoHit);
-
-	return retVal;
+	return mShape->Intersect(ray, tHit, diffGeoHit);
 }
 
 

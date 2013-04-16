@@ -19,9 +19,10 @@ public:
 	bool Intersect(const Ray &ray, DifferentialGeometry* diffGeoHit) const;
 
 	bool IntersectP(const Ray &ray) const;
-
 	
 	virtual void LoadScene() { }
+
+
 
 public:
 	vector<Light*> Lights;

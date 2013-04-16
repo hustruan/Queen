@@ -64,7 +64,7 @@ void SamplerRenderer::Render( const Scene *scene )
 	int nPixels = film->xResolution * film->yResolution;
 
 	/*int nTasks = (std::max)(int(32 * GetNumWorkThreads()), nPixels / (128*128));*/
-	int nTasks = nPixels / (128*128);
+	int nTasks = nPixels / (32*32);
 		
 	// Allocate and initialize _sample_
 	Sample* sample = new Sample(mMainSampler, mSurfaceIntegrator, scene);

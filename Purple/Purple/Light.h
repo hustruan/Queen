@@ -38,6 +38,7 @@ struct LightSample
 struct VisibilityTester
 {
 public:
+	void SetSegment(const float3&  p1, float eps1, const float3& p2, float eps2, float time);
 	void SetRay(const float3& p, float eps, const float3& w, float time);
 	bool Unoccluded(const Scene *scene) const;
 
@@ -64,7 +65,7 @@ public:
 	
 	virtual bool DeltaLight() const = 0;
 
-	virtual ColorRGB Le(const RayDifferential &r) const;
+	virtual ColorRGB Le(const RayDifferential &r) const { return ColorRGB::Black; }
 
 public:
 	int32_t NumSamples;  // used for mento carlo integration
@@ -159,10 +160,7 @@ public:
 
 	ColorRGB Power(const Scene& scene) const;
 
-	ColorRGB L(const float3& p, const float3& n, const float3& w) const
-	{
-		return RxLib::Dot(n, w) > 0.0f ? mIntensity :  ColorRGB::Black;
-	}
+	ColorRGB L(const float3& p, const float3& n, const float3& w) const;
 
 private:
 	float mArea;

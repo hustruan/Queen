@@ -30,6 +30,7 @@ public:
 
 	bool Intersect(uint32_t index, const Ray& ray, float* tHit, DifferentialGeometry* diffGeoHit) const;
 	bool IntersectP(uint32_t index, const Ray& ray) const;
+	bool Intersect( const Ray& ray, float* tHit, DifferentialGeometry* diffGeoHit ) const;
 
 	void GetShadingGeometry(const float44& local2world, const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const;
 

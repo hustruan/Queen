@@ -85,8 +85,7 @@ fail:
 ColorRGB DifferentialGeometry::Le( const float3& wo ) const
 {
 	AreaLight* light = Instance->GetAreaLight();
-	
-	 return light ? light->L(Point, Normal, wo) : ColorRGB::Black;
+	return light ? light->L(Point, Normal, wo) : ColorRGB::Black;
 }
 
 

@@ -10,7 +10,7 @@ using namespace RxLib;
 
 int main(int argc, char** argv)
 {
-	string filename = "../../Media/plane.obj";
+	string filename = "../../Media/bunny.obj";
 	
 	nv::Model model;
 	if( !model.loadModelFromFile(filename.c_str()) )

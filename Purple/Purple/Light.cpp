@@ -9,6 +9,29 @@ namespace Purple {
 
 using namespace RxLib;
 
+LightSampleOffsets::LightSampleOffsets( int count, Sample* sample )
+	:nSamples(count)
+{
+	componentOffset = sample->Add1D(nSamples);
+	posOffset =  sample->Add2D(nSamples);
+}
+
+
+LightSample::LightSample( Sample* sample, const LightSampleOffsets& offset, uint32_t n )
+{
+	uPos[0] = sample->TwoD[offset.posOffset][2*n];
+	uPos[1] = sample->TwoD[offset.posOffset][2*n+1];
+	uComponent = sample->OneD[offset.componentOffset][n];
+}
+
+//----------------------------------------------------------------------------------------
+void VisibilityTester::SetSegment( const float3& p1, float eps1, const float3& p2, float eps2, float time )
+{
+	float3 dir = (p2-p1);
+	float dist = Length(dir);
+	mRay = Ray(p1, dir / dist, eps1, dist * (1.0f - eps2), time);
+}
+
 void VisibilityTester::SetRay( const float3& p, float eps, const float3& w, float time )
 {
 	mRay = Ray(p, w, eps, Mathf::INFINITY, time);
@@ -36,7 +59,7 @@ ColorRGB PointLight::Sample( const float3& pt, const LightSample& lightSample, f
 	*pdf = 1.0f;
 
 	if (vis)
-		vis->SetRay(pt, 1e-4f, *wi, time);
+		vis->SetSegment(pt, 1e-4f, mLightPosW, 0.0f, time);
 
 	return mIntensity /*/ LengthSquared(mLightPosW - pt)*/;
 }
@@ -46,7 +69,7 @@ ColorRGB PointLight::Power( const Scene& scene ) const
 	return 4.0f * Mathf::PI * mIntensity;
 }
 
-
+//-------------------------------------------------------------------------------------------------------------
 SpotLight::SpotLight( const float44& light2world, const ColorRGB& intensity, float inner, float outer, float falloff )
 	: Light(light2world), mIntensity(intensity), mCosSpotInner(cosf(inner)),
 	  mCosSpotOuter(cosf(outer)), mSpotFalloff(falloff)
@@ -68,7 +91,7 @@ ColorRGB SpotLight::Sample( const float3& pt, const LightSample& lightSample, fl
 	*pdf = 1.0f;
 
 	if (vis)
-		vis->SetRay(pt, 1e-3f, *wi, time);
+		vis->SetSegment(pt, 1e-4f, mLightPosW, 0.0f, time);
 
 	return mIntensity * FallOff(*wi) / LengthSquared(mLightPosW - pt);
 }
@@ -87,7 +110,7 @@ ColorRGB SpotLight::Power( const Scene& scene ) const
 }
 
 
-
+//--------------------------------------------------------------------------------------------------------
 DirectionalLight::DirectionalLight( const float44& light2world, const float3& dir, const ColorRGB& radiance )
 	:Light(light2world), mRadiance(radiance)
 {
@@ -116,6 +139,7 @@ ColorRGB DirectionalLight::Power( const Scene& scene ) const
 
 }
 
+//-----------------------------------------------------------------------------------------------
 AreaLight::AreaLight( const float44& light2world, const ColorRGB& intensity, const shared_ptr<Shape>& shape, int32_t numSamples )
 	: Light(light2world, numSamples), mIntensity(intensity), mShape(shape)
 {
@@ -137,7 +161,7 @@ ColorRGB AreaLight::Sample( const float3& pt, const LightSample& lightSample, fl
 	*pdf = mShape->Pdf(pt, *wi);
 
 	if (vis)
-		vis->SetRay(pt, 1e-3f, *wi, time);
+		vis->SetSegment(pt, 1e-3f, ps, 1e-3f, time);
 
 	ColorRGB Ls = L(ps, ns, -*wi);
 
@@ -154,29 +178,9 @@ RxLib::ColorRGB AreaLight::Power( const Scene& scene ) const
 	return mIntensity * mShape->Area() * Mathf::PI;
 }
 
-
-LightSampleOffsets::LightSampleOffsets( int count, Sample* sample )
-	:nSamples(count)
+ColorRGB AreaLight::L( const float3& p, const float3& n, const float3& w ) const
 {
-	componentOffset = sample->Add1D(nSamples);
-	posOffset =  sample->Add2D(nSamples);
+	return Dot(n, w) > 0.0f ? mIntensity :  ColorRGB::Black;
 }
-
-
-LightSample::LightSample( Sample* sample, const LightSampleOffsets& offset, uint32_t n )
-{
-	uPos[0] = sample->TwoD[offset.posOffset][2*n];
-	uPos[1] = sample->TwoD[offset.posOffset][2*n+1];
-	uComponent = sample->OneD[offset.componentOffset][n];
-}
-
-
-ColorRGB Light::Le( const RayDifferential &r ) const
-{
-	return ColorRGB::Black;
-}
-
-
-
 
 }

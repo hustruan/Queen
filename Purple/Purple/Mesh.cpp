@@ -376,6 +376,17 @@ bool Mesh::Intersect( uint32_t index, const Ray& ray, float* tHit, DifferentialG
 	return intersect;
 }
 
+bool Mesh::Intersect( const Ray& ray, float* tHit, DifferentialGeometry* diffGeoHit ) const
+{
+	// Find closest intersection of ray with triangles 
+
+	bool anyHit = false;
+	for (int32_t i = 0; i < mNumTriangles; ++i)
+		anyHit |= mTriangles[i].Intersect(this, ray, tHit, diffGeoHit);
+
+	return anyHit;
+}
+
 bool Mesh::IntersectP( uint32_t index, const Ray& ray ) const
 {
 	return mTriangles[index].IntersectP(this, ray);

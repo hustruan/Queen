@@ -64,6 +64,7 @@ public:
 	BoundingBoxf GetLocalBound() const     { return mShape->GetLocalBound(); }
 	BoundingBoxf GetWorldBound() const     { return mShape->GetWorldBound(); }
 
+	AreaLight* GetAreaLight() const        { return mAreaLight; }
 	const Mesh* GetTriangleMesh() const    { return mShape->GetTriangleMesh(); }
 
 	bool Intersect(const Ray& ray, float* tHit, DifferentialGeometry* diffGeoHit) const;

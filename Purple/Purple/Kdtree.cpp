@@ -1,6 +1,7 @@
 #include "KdTree.h"
 #include "Shape.h"
 #include "Mesh.h"
+#include "DifferentialGeometry.h"
 #include <cmath>
 #include <aligned_allocator.h>
 #include <FloatCast.hpp>
@@ -548,11 +549,13 @@ bool KDTree::Intersect( uint32_t primIdx, const Ray& ray, DifferentialGeometry* 
 
 	const Mesh* mesh = mShapes[shapeIdx]->GetTriangleMesh();
 
-	float thit, rayEpsilon;
+	float thit;
 	if (mesh)
 	{
 		if (mesh->Intersect(primIdx, ray, &thit, diffGeoHit))
 		{
+			// A litte hack, because of area light shape
+			diffGeoHit->Instance = mShapes[shapeIdx].get();
 			ray.tMax = thit;
 			return true;
 		}			
