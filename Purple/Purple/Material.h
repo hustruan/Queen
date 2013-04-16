@@ -2,6 +2,7 @@
 #define Material_h__
 
 #include "Prerequisites.h"
+#include "Texture.h"
 
 namespace Purple {
 
@@ -10,25 +11,33 @@ struct DifferentialGeometry;
 class Material
 {
 public:
-	Material(void);
-	virtual ~Material(void);
-
+	virtual ~Material(void) { }
 	virtual BSDF* GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, MemoryArena &arena) = 0;
 };
-
 
 class DiffuseMaterial : public Material
 {
 public:
-	DiffuseMaterial(const ColorRGB& abedo);
-	virtual ~DiffuseMaterial(void);
+	DiffuseMaterial(const shared_ptr<Texture<ColorRGB>>& kd);
 
-	virtual BSDF* GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, MemoryArena &arena);
+	BSDF* GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, MemoryArena &arena);
 
 private:
-	ColorRGB mAbedo;
+	shared_ptr<Texture<ColorRGB>> mKd;
 };
 
+class GlassMaterial : public Material
+{
+public:
+	GlassMaterial(const shared_ptr<Texture<ColorRGB>>& r, const shared_ptr<Texture<ColorRGB>>& t,
+		const shared_ptr<Texture<float>>& index);
+
+	BSDF* GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, MemoryArena &arena);
+
+private:
+	 shared_ptr<Texture<ColorRGB>> mKr, mKt;
+	 shared_ptr<Texture<float>> mIndex;
+};
 
 class PhongMaterial : public Material
 {

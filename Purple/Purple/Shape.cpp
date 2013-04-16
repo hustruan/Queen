@@ -11,7 +11,7 @@ namespace Purple {
 using namespace RxLib;
 
 Shape::Shape( const float44& o2w, bool ro )
-	: mLocalToWorld(o2w), mWorldToLocal(MatrixInverse(o2w)), mReverseOrientation(ro), mMaterial(NULL)
+	: mLocalToWorld(o2w), mWorldToLocal(MatrixInverse(o2w)), ReverseOrientation(ro), mMaterial(NULL)
 {
 
 }

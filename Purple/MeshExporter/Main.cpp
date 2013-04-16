@@ -10,7 +10,7 @@ using namespace RxLib;
 
 int main(int argc, char** argv)
 {
-	string filename = "../../Media/sphere.obj";
+	string filename = "../../Media/plane.obj";
 	
 	nv::Model model;
 	if( !model.loadModelFromFile(filename.c_str()) )
@@ -107,8 +107,6 @@ int main(int argc, char** argv)
 
 		fwrite(&tangents[0], sizeof(float) * tangents.size(), 1, pFile);
 	}
-
-	fclose(pFile);
 
 	fclose(pFile);
 	return 0;

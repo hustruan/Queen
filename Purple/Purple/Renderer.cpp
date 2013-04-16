@@ -152,6 +152,8 @@ void SamplerRenderer::TileRender( const Scene* scene, const Sample* sample, std:
 			delete [] Ts;
 			delete [] isects;
 
+			printf("Tile %d finished\n", iTile);
+
 		}
 
 		localWorkingPackage = workingPackage++;

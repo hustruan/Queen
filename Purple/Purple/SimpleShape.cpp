@@ -115,7 +115,7 @@ bool Sphere::Intersect( const Ray& r, float* tHit, DifferentialGeometry* diffGeo
 	diffGeoHit->Normal = TransformNormal(N, mLocalToWorld);
 	diffGeoHit->Point = Transform(phit, mLocalToWorld);;
 	diffGeoHit->UV = float2(u, v);
-	diffGeoHit->Shape = this;
+	diffGeoHit->Instance = this;
 
 	*tHit = thit;
 
@@ -133,7 +133,7 @@ float3 Sphere::Sample( float u1, float u2, float u3,  float3* normal ) const
 	
 	// normal 
 	*normal = Normalize(TransformNormal(pt, mLocalToWorld));
-	if (mReverseOrientation) 
+	if (ReverseOrientation) 
 		*normal *= -1.f;
 
 	return Transform(pt, mLocalToWorld);
@@ -168,7 +168,7 @@ float3 Sphere::Sample( const float3& pt, float u1, float u2, float u3,  float3* 
 	float3 ps = ray.Eval(hit);
 	*normal = Normalize(ps - centerW);
 
-	if (mReverseOrientation) 
+	if (ReverseOrientation) 
 		*normal *= -1.f;
 
 	return ps;
@@ -351,7 +351,7 @@ bool Cylinder::Intersect( const Ray& r, float* tHit, DifferentialGeometry* diffG
 	diffGeoHit->Normal = TransformNormal(N, mLocalToWorld);
 	diffGeoHit->Point = Transform(phit, mLocalToWorld);;
 	diffGeoHit->UV = float2(u, v);
-	diffGeoHit->Shape = this;
+	diffGeoHit->Instance = this;
 
 	*tHit = thit;
 
@@ -423,7 +423,7 @@ float3 Cylinder::Sample( float u1, float u2, float u3,  float3* normal ) const
 	float3 pt = float3(mRadius * cosf(t), mRadius * sinf(t), z);
 	*normal = Normalize(TransformNormal(float3(pt.X(), pt.Y(), 0.0f), mLocalToWorld)); 
 
-	if (mReverseOrientation) 
+	if (ReverseOrientation) 
 		*normal *= -1.f;
 	
 	return Transform(pt, mLocalToWorld);
@@ -542,7 +542,7 @@ float3 Disk::Sample( float u1, float u2, float3* n ) const
 
 	*n = Normalize(TransformNormal(float3(0,0,1), mLocalToWorld));
 	
-	if (mReverseOrientation) *n  *= -1.f;
+	if (ReverseOrientation) *n  *= -1.f;
 	
 	return Transform(p, mWorldToLocal);
 }

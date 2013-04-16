@@ -21,7 +21,7 @@ ColorRGB SpecularReflect( const RayDifferential& ray, BSDF* bsdf, Random& rng, c
 	ColorRGB f = bsdf->Sample(wo, &wi, BSDFSample(rng), &pdf, BSDF_Reflection | BSDF_Specular);
 
 	ColorRGB L = ColorRGB::Black;
-	if (f != ColorRGB::Black && AbsDot(wo, wi) != 0.0f && pdf > 0.0f)
+	if (f != ColorRGB::Black && AbsDot(n, wi) != 0.0f && pdf > 0.0f)
 	{
 		RayDifferential rd(p, wi, ray, 1e-4f, Mathf::INFINITY);
 		if (ray.hasDifferentials)
@@ -58,7 +58,7 @@ ColorRGB SpecularTransmit( const RayDifferential& ray, BSDF* bsdf, Random& rng, 
 	ColorRGB f = bsdf->Sample(wo, &wi, BSDFSample(rng), &pdf, BSDF_Transmission | BSDF_Specular);
 
 	ColorRGB L = ColorRGB::Black;
-	if (f != ColorRGB::Black && AbsDot(wo, wi) != 0.0f && pdf > 0.0f)
+	if (f != ColorRGB::Black && AbsDot(wo, n) != 0.0f && pdf > 0.0f)
 	{
 		RayDifferential rd(p, wi, ray, 1e-4f, Mathf::INFINITY);
 		if (ray.hasDifferentials)
@@ -129,13 +129,15 @@ ColorRGB WhittedIntegrator::Li( const Scene* scene, const Renderer* renderer, co
 		auto b = visibility.Unoccluded(scene);
 
 		if (f != ColorRGB::Black && visibility.Unoccluded(scene))
-			L += f * Li * fabsf(Dot(wi, n)) /** visibility.Transmittance(scene, renderer, sample, rng, arena)*/ /*/ pdf*/;
+			L += f * Li * fabsf(Dot(wi, n)) / pdf;
 	}
 	
 	if (ray.Depth + 1 < mMaxDepth) 
 	{
 		//// Trace rays for specular reflection and refraction
-		L += SpecularReflect(ray, bsdf, rng, isect, renderer, scene, sample, arena);
+		auto r = SpecularReflect(ray, bsdf, rng, isect, renderer, scene, sample, arena);
+		L += r;
+		//L += SpecularReflect(ray, bsdf, rng, isect, renderer, scene, sample, arena);
 		L += SpecularTransmit(ray, bsdf, rng, isect, renderer, scene, sample, arena);
 	}
 	return L;

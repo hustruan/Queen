@@ -12,18 +12,11 @@ struct DifferentialGeometry
 	DifferentialGeometry()
 	{
 		dudx = dvdx = dudy = dvdy = 0.0f;
-		Shape = NULL; 
+		Instance = NULL; 
 		PrimIndex = std::numeric_limits<uint32_t>::max();
 	}
 
-	DifferentialGeometry(const float3 &P, const float3 &DPDU, const float3 &DPDV, const float3 &DNDU, const float3 &DNDV, const float2& uv, const Shape *sh)
-		: Point(P), dpdv(DPDV), dpdu(DPDU), dndv(DNDV), dndu(DNDU), UV(uv)
-	{
-		Normal = Normalize(Normalize(Cross(dpdu, dpdv)));
-
-		Shape = sh;
-		dudx = dvdx = dudy = dvdy = 0;
-	}
+	DifferentialGeometry(const float3 &P, const float3 &DPDU, const float3 &DPDV, const float3 &DNDU, const float3 &DNDV, const float2& uv, const Shape *sh);
 
 	void ComputeDifferentials(const RayDifferential& ray) const;
 
@@ -31,7 +24,7 @@ struct DifferentialGeometry
 
 	ColorRGB Le(const float3& wo) const;
 
-	const Shape* Shape;
+	const Shape* Instance;
 
 	/// Primitive index, e.g. the triangle ID (if applicable)
 	uint32_t PrimIndex;

@@ -7,10 +7,23 @@
 
 namespace Purple {
 
+
+DifferentialGeometry::DifferentialGeometry( const float3 &P, const float3 &DPDU, const float3 &DPDV, const float3 &DNDU, const float3 &DNDV, const float2& uv, const Shape *sh ) : Point(P), dpdv(DPDV), dpdu(DPDU), dndv(DNDV), dndu(DNDU), UV(uv), Instance(sh)
+{
+	Normal = Normalize(Normalize(Cross(dpdu, dpdv)));
+
+	// Adjust normal based on orientation and handedness
+	if (Instance && Instance->ReverseOrientation)
+		Normal *= -1.0f;
+
+	dudx = dvdx = dudy = dvdy = 0;
+}
+
+
 BSDF* DifferentialGeometry::GetBSDF( const RayDifferential &ray, MemoryArena &arena ) const
 {
 	ComputeDifferentials(ray);
-	return Shape->GetBSDF(*this, Shape->mLocalToWorld, arena);
+	return Instance->GetBSDF(*this, Instance->mLocalToWorld, arena);
 }
 
 void DifferentialGeometry::ComputeDifferentials( const RayDifferential& ray ) const
@@ -71,7 +84,7 @@ fail:
 
 ColorRGB DifferentialGeometry::Le( const float3& wo ) const
 {
-	AreaLight* light = Shape->GetAreaLight();
+	AreaLight* light = Instance->GetAreaLight();
 	
 	 return light ? light->L(Point, Normal, wo) : ColorRGB::Black;
 }

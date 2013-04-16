@@ -47,10 +47,10 @@ public:
 public:
 	float44 mLocalToWorld, mWorldToLocal;
 
+	bool ReverseOrientation;
+
 protected:
 	
-	bool mReverseOrientation;
-
 	shared_ptr<Material> mMaterial;
 };
 

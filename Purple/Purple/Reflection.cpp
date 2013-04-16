@@ -11,18 +11,19 @@ using namespace Purple;
 // BxDF Utility Functions
 ColorRGB FrDiel(float cosi, float cost, const ColorRGB &etai, const ColorRGB &etat) 
 {
-		ColorRGB Rparl = ((etat * cosi) - (etai * cost)) /
+	ColorRGB Rparl = ((etat * cosi) - (etai * cost)) /
 			((etat * cosi) + (etai * cost));
-		ColorRGB Rperp = ((etai * cosi) - (etat * cost)) /
+	ColorRGB Rperp = ((etai * cosi) - (etat * cost)) /
 			((etai * cosi) + (etat * cost));
-		return (Rparl*Rparl + Rperp*Rperp) / 2.f;
+	return (Rparl*Rparl + Rperp*Rperp) / 2.f;
 }
 
 
-ColorRGB FrCond(float cosi, const ColorRGB &eta, const ColorRGB &k) {
+ColorRGB FrCond(float cosi, const ColorRGB &eta, const ColorRGB &k) 
+{
 	ColorRGB tmp = (eta*eta + k*k) * cosi*cosi;
-	ColorRGB Rparl2 = (tmp - (2.f * eta * cosi) + ColorRGB::White) /
-		(tmp + (2.f * eta * cosi) + ColorRGB::White);
+	ColorRGB Rparl2 = (tmp - (2.f * eta * cosi) + ColorRGB(1.0f)) /
+		(tmp + (2.f * eta * cosi) + ColorRGB(1.0f));
 	ColorRGB tmp_f = eta*eta + k*k;
 	ColorRGB Rperp2 =
 		(tmp_f - (2.f * eta * cosi) + ColorRGB(cosi*cosi)) /
@@ -60,6 +61,38 @@ ColorRGB BxDF::Sample( const float3& wo, float3* wi, float u1, float u2, float* 
 	return Eval(wo, *wi);
 }
 
+//----------------------------------------------------------------------------------------
+ColorRGB FresnelConductor::Evaluate( float cosi ) const
+{
+	 return FrCond(fabsf(cosi), eta, k);
+}
+
+ColorRGB FresnelDielectric::Evaluate( float cosi ) const
+{
+	// Compute Fresnel reflectance for dielectric
+	cosi = Clamp(cosi, -1.0f, 1.0f);
+
+	// Compute indices of refraction for dielectric
+	bool entering = cosi > 0.;
+	float ei = eta_i, et = eta_t;
+	if (!entering)
+		std::swap(ei, et);
+
+	// Compute _sint_ using Snell's law
+	float sint = ei/et * sqrtf(std::max(0.f, 1.f - cosi*cosi));
+	if (sint >= 1.0f) 
+	{
+		// Handle total internal reflection
+		return ColorRGB(1.0f);
+	}
+	else 
+	{
+		float cost = sqrtf(std::max(0.f, 1.f - sint*sint));
+		return FrDiel(fabsf(cosi), cost, ei, et);
+	}
+}
+
+//--------------------------------------------------------------------------------------------
 ColorRGB BxDF::Rho( const float3& wo, int32_t numSamples, const float* samples ) const
 {
 	ColorRGB r(0.0f, 0.0f, 0.0f);
@@ -98,41 +131,6 @@ float BxDF::Pdf( const float3& wo, const float3& wi ) const
 {
 	return CosineHemispherePdf(AbsCosTheta(wi));
 }
-
-ColorRGB SpecularRelection::Sample( const float3& wo, float3* wi, float u1, float u2, float* pdf ) const
-{
-	// Compute reflect vector
-	*wi = float3(-wo.X(), -wo.Y(), wo.Z());
-	*pdf = 1.0f;
-
-	return mFresnel->Evaluate(CosTheta(wo)) * mR / AbsCosTheta(*wi);
-}
-
-
-ColorRGB GlossySpecular::Eval( const float3& wo, const float3& wi ) const
-{
-	ColorRGB L;
-
-	// Compute reflect vector
-	float3 wr = float3(-wo.X(), -wo.Y(), wo.Z());
-	float alpha = Dot(wo, wr);
-
-	if (alpha > 0.0f)
-		L = mR * std::pow(alpha, mExponent);
-
-	return L;
-}
-
-float GlossySpecular::Pdf( const float3& wo, const float3& wi ) const
-{
-	return 0.0f;
-}
-
-ColorRGB GlossySpecular::Sample( const float3& wo, float3* wi, float u1, float u2, float* pdf ) const
-{
-	return ColorRGB::Black;
-}
-
 
 ColorRGB OrenNayar::Eval( const float3& wo, const float3& wi ) const
 {
@@ -411,7 +409,40 @@ int BSDF::NumComponents( uint32_t bsdfFlags ) const
 	return num;
 }
 
+ColorRGB SpecularReflection::Sample( const float3& wo, float3* wi, float u1, float u2, float* pdf ) const
+{
+	*wi = ReflectDirection(wo);
+	*pdf = 1.0f;
+	return mFresnel->Evaluate(CosTheta(wo)) * mR / AbsCosTheta(*wi);
+}
 
+ColorRGB SpecularTransmission::Sample( const float3& wo, float3* wi, float u1, float u2, float* pdf ) const
+{
+	bool entering = CosTheta(wo) > 0.;
+	float ei = eta_i, et = eta_t;
+	if (!entering)
+		std::swap(ei, et);
+
+	// Compute transmitted ray direction
+	float sini2 = SinTheta2(wo);
+	float eta = ei / et;
+	float sint2 = eta * eta * sini2;
+
+	// Handle total internal reflection for transmission
+	if (sint2 >= 1.0f) 
+		return ColorRGB::Black;
+
+	float cost = sqrtf(std::max(0.f, 1.f - sint2));
+	if (entering) 
+		cost = -cost;
+
+	float sintOverSini = eta;
+	*wi = float3(sintOverSini * -wo.X(), sintOverSini * -wo.Y(), cost);
+	*pdf = 1.0f;
+
+	ColorRGB F = mFresnel.Evaluate(CosTheta(wo));
+	return (ColorRGB(1.0f)-F) * mT / AbsCosTheta(*wi);
+}
 
 }
 

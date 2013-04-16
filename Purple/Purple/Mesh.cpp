@@ -191,7 +191,7 @@ public:
 
 		*dgShading = DifferentialGeometry(dg.Point, shadingTangent, shadingBinormal,
 			TransformNormal(dndu, obj2world), TransformNormal(dndv, obj2world),
-			dg.UV, dg.Shape);
+			dg.UV, dg.Instance);
 
 		dgShading->dudx = dg.dudx;  dgShading->dvdx = dg.dvdx;
 		dgShading->dudy = dg.dudy;  dgShading->dvdy = dg.dvdy;
@@ -235,6 +235,10 @@ public:
 
 		float3 p = b1 * p1 + b2 * p2 + (1.f - b1 - b2) * p3;
 		*n = Normalize(Cross(p2-p1, p3-p1));
+
+		if (parentMesh->ReverseOrientation)
+			*n *= -1.0f;
+
 		return p;
 	}
 
@@ -342,9 +346,6 @@ float3 Mesh::Sample( float u1, float u2, float u3,  float3* n ) const
 	int32_t index = mAreaDistrib->SampleDiscrete(u3, NULL);
 	float3 pt = mTriangles[index].Sample(this, u1, u2, n);
 
-	if (mReverseOrientation)
-		*n *= -1;
-
 	return pt;
 }
 
@@ -360,6 +361,7 @@ float3 Mesh::Sample( const float3& p, float u1, float u2, float u3,  float3* n )
 	DifferentialGeometry dg;
 	for (int32_t i = 0; i < mNumTriangles; ++i)
 		anyHit |= mTriangles[i].Intersect(this, r, &thit, &dg);
+
 	if (anyHit) *n = dg.Normal;
 	return r.Eval(thit);
 }

@@ -5,12 +5,26 @@
 
 namespace Purple {
 
-class Texture
+template <typename T> 
+class Texture 
 {
 public:
-	Texture(void);
-	~Texture(void);
+	// Texture Interface
+	virtual T Evaluate(const DifferentialGeometry &) const = 0;
+	virtual ~Texture() { }
 };
+
+template <typename T> 
+class ConstantTexture : public Texture<T>
+{
+public:
+	ConstantTexture(const T &v) { value = v; }
+	T Evaluate(const DifferentialGeometry &) const { return value;}
+
+private:
+	T value;
+};
+
 
 }
 

@@ -47,17 +47,17 @@ inline bool SameHemisphere(const float3& w, const float3& wp)
 	return w.Z() * wp.Z() > 0.f;
 }
 
+inline float3 ReflectDirection(const float3& w)
+{
+	return float3(-w.X(), -w.Y(), w.Z());
+}
+
 inline float3 SphericalDirection(float cosTheta, float sinTheta, float phi)
 {
 	return float3(sinTheta * cosf(phi), sinTheta * sinf(phi), cosTheta);
 }
 
-struct Fresnel
-{
-	virtual ~Fresnel() { };
-	virtual ColorRGB Evaluate(float cosi) const = 0;
-};
-
+//-------------------------------------------------------------------------------
 enum BSDFType
 {
 	BSDF_Reflection        = 1U << 0,
@@ -198,30 +198,94 @@ public:
 	const uint32_t BxDFType;
 };
 
+//------------------------------------------------------------------------
+struct Fresnel
+{
+	virtual ~Fresnel() { };
+	virtual ColorRGB Evaluate(float cosi) const = 0;
+};
+
+/**
+ * Calculates the unpolarized Fresnel reflection coefficient
+ * at a planar interface between two conductors.
+ */
+struct FresnelConductor : public Fresnel
+{
+public:
+	/**
+	 * Cosine of the angle between the normal and the incident ray
+	 */
+	ColorRGB Evaluate(float cosi) const;
+
+	/**
+	 * @param eta
+	 *     Relative refractive index
+	 * @param k
+	 *     Absorption coefficient
+	 */
+	FresnelConductor(const ColorRGB& feta, const ColorRGB& fk)
+		: eta(feta), k(fk) {}
+
+private:
+	ColorRGB eta, k;
+};
+
+/**
+ * Calculates the unpolarized Fresnel reflection coefficient
+ * at a planar interface between two dielectrics.
+ */
+struct FresnelDielectric : public Fresnel
+{
+public:
+	 /**
+	  * @param cosThetaI
+	  *		Cosine of the angle between the normal and the incident ray (may be negative)
+	  */
+	ColorRGB Evaluate(float cosi) const;
+
+	FresnelDielectric(float ei, float et) : eta_i(ei), eta_t(et) { }
+
+private:
+	float eta_i, eta_t;
+};
+
 /**
   * Perfect specular reflection
   */
-class SpecularRelection : public BxDF
+class SpecularReflection : public BxDF
 {
 public:
-	SpecularRelection(const ColorRGB& reflectance, Fresnel* fresnel)
-		: BxDF(BSDF_Reflection | BSDF_Specular), mR(reflectance), mFresnel(fresnel)
-	{
-
-	}
+	SpecularReflection(const ColorRGB& reflectance, Fresnel* fresnel)
+		: BxDF(BSDF_Reflection | BSDF_Specular), mR(reflectance), mFresnel(fresnel) {}
 
 	ColorRGB Eval(const float3& wo, const float3& wi) const  { return ColorRGB::Black; }
 
 	float Pdf(const float3& wo, const float3& wi) const { return 0.0f; }
 
-	/**
-	 * this computes wi: the direction of perfect mirror reflection
-	 */
 	ColorRGB Sample(const float3& wo, float3* wi, float u1, float u2, float* pdf) const;
 
 private:
 	ColorRGB mR;			// reflect color
 	Fresnel* mFresnel;	    
+};
+
+class SpecularTransmission : public BxDF
+{
+public:
+	SpecularTransmission(const ColorRGB& t, float ei, float et)
+		: BxDF(BSDF_Transmission | BSDF_Specular), mT(t), eta_i(et), eta_t(et), mFresnel(ei, et)
+	{ }
+
+	ColorRGB Eval(const float3& wo, const float3& wi) const  { return ColorRGB::Black; }
+
+	float Pdf(const float3& wo, const float3& wi) const { return 0.0f; }
+
+	ColorRGB Sample(const float3& wo, float3* wi, float u1, float u2, float* pdf) const;
+
+private:
+	ColorRGB mT;			// reflect color
+	FresnelDielectric mFresnel;	   
+	float eta_i, eta_t;
 };
 
 class Lambertian : public BxDF
@@ -240,25 +304,6 @@ private:
 	ColorRGB mR;			// reflect color
 };
 
-class GlossySpecular : public BxDF
-{
-public:
-	GlossySpecular(const ColorRGB& reflectance, float exp) 
-		: BxDF(BSDF_Reflection | BSDF_Glossy), mR(reflectance), mExponent(exp) { }
-
-	ColorRGB Eval(const float3& wo, const float3& wi) const;
-
-	float Pdf(const float3& wo, const float3& wi) const;
-
-	/**
-	 * this computes wi: the direction of perfect mirror reflection
-	 */
-	ColorRGB Sample(const float3& wo, float3* wi, float u1, float u2, float* pdf) const;
-
-private:
-	ColorRGB mR;			// reflect color
-	float mExponent;
-};
 
 class OrenNayar : public BxDF
 {

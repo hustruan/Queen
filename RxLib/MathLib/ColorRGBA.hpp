@@ -335,6 +335,26 @@ inline ColorRGBA Saturate(const ColorRGBA& color)
 }
 
 //---------------------------------------------------------------------------------------
+inline ColorRGB Saturate(const ColorRGB& color)
+{
+	ColorRGB retVal = color;
+
+	for (int i = 0; i < 3; i++)
+	{
+		if (retVal.Tuple[i] > 1.0f)
+		{
+			retVal.Tuple[i] = 1.0f;
+		}
+		else if (retVal.Tuple[i] < 0.0f)
+		{
+			retVal.Tuple[i] = 0.0f;
+		}
+	}
+
+	return retVal;
+}
+
+//---------------------------------------------------------------------------------------
 inline ColorRGB operator* (float fScalar, const ColorRGB& rhs)
 {
 	return ColorRGB(fScalar * rhs[0], fScalar * rhs[1], fScalar * rhs[2]);
