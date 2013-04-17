@@ -205,8 +205,7 @@ ColorRGB WhittedIntegrator::Li( const Scene* scene, const Renderer* renderer, co
 	if (ray.Depth + 1 < mMaxDepth) 
 	{
 		//// Trace rays for specular reflection and refraction
-		auto r = SpecularReflect(ray, bsdf, rng, isect, renderer, scene, sample, arena);
-		L += r;
+		L += SpecularReflect(ray, bsdf, rng, isect, renderer, scene, sample, arena);
 		//L += SpecularReflect(ray, bsdf, rng, isect, renderer, scene, sample, arena);
 		L += SpecularTransmit(ray, bsdf, rng, isect, renderer, scene, sample, arena);
 	}
@@ -279,19 +278,17 @@ ColorRGB DirectLightingIntegrator::Li( const Scene* scene, const Renderer* rende
 
 	if (scene->Lights.size() > 0) 
 	{
-		ColorRGB Ld(0.0f);
-
 		// Apply direct lighting strategy
 		switch (mLightStrategy) 
 		{
 		case LS_Sample_All_Uniform:
 			{
 				for (size_t i = 0; i < scene->Lights.size(); ++i) 
-				{
+				{	
 					Light* light = scene->Lights[i];
-
 					int nSamples = mLightSampleOffsets ? mLightSampleOffsets[i].nSamples : 1;
-
+				
+					ColorRGB Ld(0.0f);
 					for (int j = 0; j < nSamples; ++j) 
 					{
 						// Find light and BSDF sample values for direct lighting estimate
@@ -310,9 +307,10 @@ ColorRGB DirectLightingIntegrator::Li( const Scene* scene, const Renderer* rende
 						Ld += EstimateDirect(scene, renderer, arena, light, p, n, wo, 0.0f, bsdf, rng, lightSample, bsdfSample,
 							BSDFType(BSDF_All & ~BSDF_Specular));
 					}
-					L += Ld / nSamples;
+					L += Ld / float(nSamples);
 				}
-				break;
+			}
+			break;
 		case LS_Sample_One_Uniform:
 			{
 				// Randomly choose a single light to sample
@@ -339,21 +337,17 @@ ColorRGB DirectLightingIntegrator::Li( const Scene* scene, const Renderer* rende
 					bsdfSample = BSDFSample(rng);
 				}
 
-				Ld += nLights * EstimateDirect(scene, renderer, arena, light, p, n, wo, 0.0f, bsdf, rng, lightSample, bsdfSample,
+				L += nLights * EstimateDirect(scene, renderer, arena, light, p, n, wo, 0.0f, bsdf, rng, lightSample, bsdfSample,
 					BSDFType(BSDF_All & ~BSDF_Specular));
 			}
 			break;
-			}
 		}
-
-		L += Ld;
 	}
 
 	if (ray.Depth + 1 < mMaxDepth) 
 	{
 		//// Trace rays for specular reflection and refraction
-		auto r = SpecularReflect(ray, bsdf, rng, isect, renderer, scene, sample, arena);
-		L += r;
+		L += SpecularReflect(ray, bsdf, rng, isect, renderer, scene, sample, arena);
 		//L += SpecularReflect(ray, bsdf, rng, isect, renderer, scene, sample, arena);
 		L += SpecularTransmit(ray, bsdf, rng, isect, renderer, scene, sample, arena);
 	}

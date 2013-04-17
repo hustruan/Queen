@@ -28,8 +28,6 @@ BSDF* DiffuseMaterial::GetBSDF( const DifferentialGeometry &dgGeom, const Differ
 BSDF* PhongMaterial::GetBSDF( const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, MemoryArena &arena )
 {
 	BSDF *bsdf = BSDF_ALLOC(arena, BSDF)(dgShading, dgGeom.Normal);
-	
-
 	return bsdf;
 }
 
@@ -55,8 +53,6 @@ BSDF* GlassMaterial::GetBSDF( const DifferentialGeometry &dgGeom, const Differen
 	{
 		FresnelDielectric* fresnel = BSDF_ALLOC(arena, FresnelDielectric)(1.0f, ior);
 		bsdf->Add(BSDF_ALLOC(arena, SpecularReflection)(R, fresnel));
-
-		bsdf->Add(BSDF_ALLOC(arena, Lambertian)(R));
 	}
 
 	if (T != ColorRGB::Black)
@@ -68,8 +64,25 @@ BSDF* GlassMaterial::GetBSDF( const DifferentialGeometry &dgGeom, const Differen
 }
 
 //--------------------------------------------------------------------------------------------------------------
+MirrorMaterial::MirrorMaterial( const shared_ptr<Texture<ColorRGB>>& r )
+	: mKr(r)
+{
 
+}
 
+BSDF* MirrorMaterial::GetBSDF( const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, MemoryArena &arena )
+{
+	BSDF *bsdf = BSDF_ALLOC(arena, BSDF)(dgShading, dgGeom.Normal);
+
+	ColorRGB R = Saturate(mKr->Evaluate(dgShading));
+
+	if (R != ColorRGB::Black)
+	{
+		bsdf->Add(BSDF_ALLOC(arena, SpecularReflection)(R, BSDF_ALLOC(arena, FresnelNoOp)));
+	}
+
+	return bsdf;
+}
 
 }
 

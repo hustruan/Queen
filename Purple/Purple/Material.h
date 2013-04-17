@@ -39,6 +39,17 @@ private:
 	 shared_ptr<Texture<float>> mIndex;
 };
 
+class MirrorMaterial : public Material
+{
+public:
+	MirrorMaterial(const shared_ptr<Texture<ColorRGB> >& r);
+
+	BSDF* GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, MemoryArena &arena);
+
+private:
+	shared_ptr<Texture<ColorRGB>> mKr;
+};
+
 class PhongMaterial : public Material
 {
 public:

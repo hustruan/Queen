@@ -89,7 +89,7 @@ bool Sphere::Intersect( const Ray& r, float* tHit, DifferentialGeometry* diffGeo
 	float cosphi = phit.X() * invzradius;
 	float sinphi = phit.Y() * invzradius;
 
-	float3 dpdu(-mMaxPhi * phit.Y(), mMaxPhi * phit.X(), 0.0f);
+	/*float3 dpdu(-mMaxPhi * phit.Y(), mMaxPhi * phit.X(), 0.0f);
 	float3 dpdv = (mMaxTheta - mMinTheta) * float3(phit.Z() * cosphi, phit.Z() * sinphi, -mRadius * sinf(theta));
 
 	float3 d2Pduu = -mMaxPhi * mMaxPhi * float3(phit.X(), phit.Y(), 0.0f);
@@ -106,12 +106,12 @@ bool Sphere::Intersect( const Ray& r, float* tHit, DifferentialGeometry* diffGeo
 	const float invEGF2 = 1.f / (E*G - F*F);
 
 	float3 dndu((f*F - e*G) * invEGF2 * dpdu + (e*F - f*E) * invEGF2 * dpdv);
-	float3 dndv((g*F - f*G) * invEGF2 * dpdu + (f*F - g*E) * invEGF2 * dpdv);
+	float3 dndv((g*F - f*G) * invEGF2 * dpdu + (f*F - g*E) * invEGF2 * dpdv);*/
 
-	diffGeoHit->dpdu = TransformDirection(dpdu, mLocalToWorld);
+	/*diffGeoHit->dpdu = TransformDirection(dpdu, mLocalToWorld);
 	diffGeoHit->dpdv = TransformDirection(dpdv, mLocalToWorld);
 	diffGeoHit->dndu = TransformNormal(dndu, mLocalToWorld);
-	diffGeoHit->dndv = TransformNormal(dndv, mLocalToWorld);
+	diffGeoHit->dndv = TransformNormal(dndv, mLocalToWorld);*/
 	diffGeoHit->Normal = TransformNormal(N, mLocalToWorld);
 	diffGeoHit->Point = Transform(phit, mLocalToWorld);;
 	diffGeoHit->UV = float2(u, v);

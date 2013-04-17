@@ -61,6 +61,8 @@ protected:
 
 	static GLuint mTexture;
 
+	std::atomic<int> mFinishedTiles;
+
 };
 
 }

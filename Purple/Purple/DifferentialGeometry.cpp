@@ -10,7 +10,7 @@ namespace Purple {
 
 DifferentialGeometry::DifferentialGeometry( const float3 &P, const float3 &DPDU, const float3 &DPDV, const float3 &DNDU, const float3 &DNDV, const float2& uv, const Shape *sh ) : Point(P), dpdv(DPDV), dpdu(DPDU), dndv(DNDV), dndu(DNDU), UV(uv), Instance(sh)
 {
-	Normal = Normalize(Normalize(Cross(dpdu, dpdv)));
+	Normal = Normalize(Cross(dpdu, dpdv));
 
 	// Adjust normal based on orientation and handedness
 	if (Instance && Instance->ReverseOrientation)
@@ -22,7 +22,7 @@ DifferentialGeometry::DifferentialGeometry( const float3 &P, const float3 &DPDU,
 
 BSDF* DifferentialGeometry::GetBSDF( const RayDifferential &ray, MemoryArena &arena ) const
 {
-	ComputeDifferentials(ray);
+	//ComputeDifferentials(ray);
 	return Instance->GetBSDF(*this, Instance->mLocalToWorld, arena);
 }
 

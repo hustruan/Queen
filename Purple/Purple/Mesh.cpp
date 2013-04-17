@@ -68,7 +68,7 @@ public:
 			dpdv = (-du2 * dp1 + du1 * dp2) * invdet;
 		}
 
-		// Interpolate uv
+		//// Interpolate uv
 		float b0 = 1 - b1 - b2;
 		float2 tuv = b0*uvs[0] + b1*uvs[1] + b2*uvs[2];
 
@@ -118,7 +118,7 @@ public:
 		// Compute barycentric coordinates for point
 		float b[3];
 
-		// Initialize _A_ and _C_ matrices for barycentrics
+		// Initialize A and C matrices for barycentrics
 		float2 uvs[3];
 		GetUVs(parentMesh, uvs);
 
@@ -405,10 +405,8 @@ void Mesh::GetShadingGeometry( const float44& local2world, const DifferentialGeo
 		*dgShading = dg;
 		return;
 	}
-
-	*dgShading = dg;
 	
-	//mTriangles[dg.PrimIndex].GetShadingGeometry(this, local2world, dg, dgShading);
+	mTriangles[dg.PrimIndex].GetShadingGeometry(this, local2world, dg, dgShading);
 }
 
 }

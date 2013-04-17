@@ -45,7 +45,7 @@ inline float3 CosineSampleHemisphere(float u1, float u2)
 {
 	float3 retVal;
 	UniformSampleDisk(u1, u2, &retVal[0], &retVal[1]);
-	retVal[3] = sqrtf((std::max)(0.0f, 1.0f - retVal[0]*retVal[0] - retVal[1]*retVal[1]));
+	retVal[2] = sqrtf((std::max)(0.0f, 1.0f - retVal[0]*retVal[0] - retVal[1]*retVal[1]));
 	return retVal;
 }
 

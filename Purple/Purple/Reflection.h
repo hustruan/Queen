@@ -251,6 +251,12 @@ private:
 	float eta_i, eta_t;
 };
 
+class FresnelNoOp : public Fresnel
+{
+public:
+	ColorRGB Evaluate(float) const { return ColorRGB(1.0f); }
+};
+
 /**
   * Perfect specular reflection
   */

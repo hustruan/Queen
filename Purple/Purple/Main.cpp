@@ -40,12 +40,13 @@ public:
 		float44 light2World = CreateScaling(40.0f, 40.0f, 40.0f) * CreateTranslation(30.0f, 98.0f, 30.0f);
 		shared_ptr<Shape> areaLightShape = LoadMesh("../../Media/plane.md", light2World, true);	
 		
-		AreaLight* areaLight = new AreaLight(areaLightShape->mLocalToWorld, ColorRGB::White * 10.0f, areaLightShape, 20);
+		AreaLight* areaLight = new AreaLight(areaLightShape->mLocalToWorld, ColorRGB::White * 10.0f, areaLightShape, 10);
 		Lights.push_back(areaLight);
 
 		shared_ptr<Shape> areaLightShapeAdapter = std::make_shared<AreaLightShape>(areaLightShape, areaLight);
 		areaLightShapeAdapter->SetMaterial(std::make_shared<DiffuseMaterial>(whiteTexture));
 		mKDTree->AddShape(areaLightShapeAdapter);
+
 		
 		// Walls
 		float44 ceilTrans = CreateScaling(100.0f, 100.0f, 100.0f) * CreateTranslation(0.0f, 100.0f, 0.0f);
@@ -88,7 +89,7 @@ public:
 		mKDTree->AddShape(sphere1);
 
 		shared_ptr<Shape> sphere2 = std::make_shared<Sphere>(CreateTranslation(25.0f, 20.0f, 75.0f), false, 20.0f, -20.0f, 20.0f, Mathf::TWO_PI);
-		sphere2->SetMaterial(std::make_shared<DiffuseMaterial>(cTexture));
+		sphere2->SetMaterial(std::make_shared<MirrorMaterial>(whiteTexture));
 		mKDTree->AddShape(sphere2);
 
 		mKDTree->BuildTree();
@@ -142,7 +143,9 @@ void CreateScene()
 		new ImageFilm(512, 512, new GaussianFilter(4.0f, 4.0f, 1.0f)));
 
 	gSampler = new StratifiedSampler(0, 512, 0, 512, 1, 1);
+	//gSampler = new StratifiedSampler(0, 512, 0, 512, 2, 2);
 	gSurfaceIntegrator = new DirectLightingIntegrator();
+	//gSurfaceIntegrator = new WhittedIntegrator;
 }
 
 

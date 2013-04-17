@@ -10,6 +10,7 @@
 #include "Integrator.h"
 #include "MemoryArena.h"
 #include "threadpool.h"
+#include <chrono>
 
 #define TilesPackageSize 16
 
@@ -69,14 +70,23 @@ void SamplerRenderer::Render( const Scene *scene )
 	// Allocate and initialize _sample_
 	Sample* sample = new Sample(mMainSampler, mSurfaceIntegrator, scene);
 
+	mFinishedTiles = 0;
+
 	std::atomic<int> workingPackage = 0;
 	pool& tp = GlobalThreadPool();
+
+	auto start = std::chrono::system_clock::now();
+
 	for (size_t iCore = 0; iCore < tp.size(); ++iCore)
 	{
 		tp.schedule(std::bind(&SamplerRenderer::TileRender, this, scene, sample, std::ref(workingPackage), nTasks));
 		//std::bind(&SamplerRenderer::TileRender, this, scene, sample, std::ref(workingPackage), nTasks)();
 	}
 	tp.wait();
+
+	auto end = std::chrono::system_clock::now();
+	std::cout << "\n\nTotal: " << std::chrono::duration_cast<std::chrono::minutes>(end - start).count() <<" minutes\n"<< std::endl;
+	//printf("\n\nTotal: %f minutes", std::chrono::duration_cast<std::chrono::minutes>(elapsed).count());
 
 	mCamera->GetFilm()->WriteImage("test.pfm");
 
@@ -152,7 +162,10 @@ void SamplerRenderer::TileRender( const Scene* scene, const Sample* sample, std:
 			delete [] Ts;
 			delete [] isects;
 
-			printf("Tile %d finished\n", iTile);
+			mFinishedTiles++;
+			float percent = mFinishedTiles / float(numTiles);
+
+			printf("Tile: %d finished, total: %0.1f%%\n", iTile ,percent*100);
 
 		}
 
