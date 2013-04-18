@@ -37,7 +37,7 @@ public:
 		auto indexTexture = std::make_shared<ConstantTexture<float>>(1.5f);
 
 		// Area Light 
-		float44 light2World = CreateScaling(40.0f, 40.0f, 40.0f) * CreateTranslation(30.0f, 98.0f, 30.0f);
+		float44 light2World = CreateScaling(40.0f, 40.0f, 40.0f) * CreateTranslation(30.0f, 98.0f, 30.0f);	
 		shared_ptr<Shape> areaLightShape = LoadMesh("../../Media/plane.md", light2World, true);	
 		
 		AreaLight* areaLight = new AreaLight(areaLightShape->mLocalToWorld, ColorRGB::White * 10.0f, areaLightShape, 10);
@@ -46,38 +46,43 @@ public:
 		shared_ptr<Shape> areaLightShapeAdapter = std::make_shared<AreaLightShape>(areaLightShape, areaLight);
 		areaLightShapeAdapter->SetMaterial(std::make_shared<DiffuseMaterial>(whiteTexture));
 		mKDTree->AddShape(areaLightShapeAdapter);
-
 		
 		// Walls
-		float44 ceilTrans = CreateScaling(100.0f, 100.0f, 100.0f) * CreateTranslation(0.0f, 100.0f, 0.0f);
+		float44 ceilTrans = CreateScaling(200.0f, 200.0f, 200.0f) * CreateTranslation(0.0f, 100.0f, -100.0f);
 		shared_ptr<Shape> ceilWall = LoadMesh("../../Media/plane.md", ceilTrans, true);
 		ceilWall->SetMaterial(std::make_shared<DiffuseMaterial>(
-			std::make_shared<ConstantTexture<ColorRGB>>(ColorRGB(.75,.75,.75))));
+		std::make_shared<ConstantTexture<ColorRGB>>(ColorRGB::White)));
 		mKDTree->AddShape(ceilWall);
 
-		float44 floorTrans = CreateScaling(100.0f, 100.0f, 100.0f);
+		float44 floorTrans = CreateScaling(200.0f, 200.0f, 200.0f) * CreateTranslation(0.0f, 0.0f, -100.0f);
 		shared_ptr<Shape> floorWall = LoadMesh("../../Media/plane.md", floorTrans, false);
 		floorWall->SetMaterial(std::make_shared<DiffuseMaterial>(
-			std::make_shared<ConstantTexture<ColorRGB>>(ColorRGB(.75,.75,.75))));
+			std::make_shared<ConstantTexture<ColorRGB>>(ColorRGB::White)));
 		mKDTree->AddShape(floorWall);
 
-		float44 backTrans = CreateScaling(100.0f, 100.0f, 100.0f) * CreateRotationX(-Mathf::PI / 2) * CreateTranslation(0.0f, 0.0f, 100.0f);;
-		shared_ptr<Shape> backWall = LoadMesh("../../Media/plane.md", backTrans, false);
-		backWall->SetMaterial(std::make_shared<DiffuseMaterial>(
-			std::make_shared<ConstantTexture<ColorRGB>>(ColorRGB(.75,.75,.75))));
-	    mKDTree->AddShape(backWall);
-
-		float44 leftTrans = CreateScaling(100.0f, 100.0f, 100.0f) *  CreateRotationZ(Mathf::PI / 2);
+		float44 leftTrans = CreateScaling(200.0f, 200.0f, 200.0f) *  CreateRotationZ(Mathf::PI / 2) * CreateTranslation(0.0f, 0.0f, -100.0f);
 		shared_ptr<Shape> leftWall = LoadMesh("../../Media/plane.md", leftTrans, true);
 		leftWall->SetMaterial(std::make_shared<DiffuseMaterial>(
 			std::make_shared<ConstantTexture<ColorRGB>>(ColorRGB(.75,.25,.25))));
 		mKDTree->AddShape(leftWall);
 
-		float44 rightTrans = CreateScaling(100.0f, 100.0f, 100.0f) *  CreateRotationZ(Mathf::PI / 2)  * CreateTranslation(100.0f, 0.0f, 0.0f);;
+		float44 rightTrans = CreateScaling(200.0f, 200.0f, 200.0f) *  CreateRotationZ(Mathf::PI / 2)  * CreateTranslation(100.0f, 0.0f, -100.0f);
 		shared_ptr<Shape> rightWall = LoadMesh("../../Media/plane.md", rightTrans, false);
 		rightWall->SetMaterial(std::make_shared<DiffuseMaterial>(
 			std::make_shared<ConstantTexture<ColorRGB>>(ColorRGB(.25,.25,.75))));
 		mKDTree->AddShape(rightWall);
+
+		float44 backTrans = CreateScaling(100.0f, 100.0f, 100.0f) * CreateRotationX(-Mathf::PI / 2) * CreateTranslation(0.0f, 0.0f, 100.0f);;
+		shared_ptr<Shape> backWall = LoadMesh("../../Media/plane.md", backTrans, false);
+		backWall->SetMaterial(std::make_shared<DiffuseMaterial>(
+			std::make_shared<ConstantTexture<ColorRGB>>(ColorRGB(.75,.75,.75))));
+		mKDTree->AddShape(backWall);
+
+		float44 frontTrans = CreateScaling(100.0f, 100.0f, 100.0f) * CreateRotationX(-Mathf::PI / 2) * CreateTranslation(0.0f, 0.0f,  -100.0f);
+		shared_ptr<Shape> frontWall = LoadMesh("../../Media/plane.md", frontTrans, true);
+		frontWall->SetMaterial(std::make_shared<DiffuseMaterial>(
+			std::make_shared<ConstantTexture<ColorRGB>>(ColorRGB::White)));
+		mKDTree->AddShape(frontWall);
 
 		//// standford bunny
 		//shared_ptr<Shape> bunny = LoadMesh("../../Media/bunny.md", CreateScaling(300.0f, 300.0f, 300.0f) * CreateRotationY(Mathf::PI) * CreateTranslation(50.0f, 0.0f, 50.0f));
@@ -85,10 +90,13 @@ public:
 		//mKDTree->AddShape(bunny);
 
 		shared_ptr<Shape> sphere1 = std::make_shared<Sphere>(CreateTranslation(75.0f, 20.0f, 44.4f), false, 20.0f, -20.0f, 20.0f, Mathf::TWO_PI);
+		//shared_ptr<Shape> sphere1 = std::make_shared<Sphere>(CreateTranslation(75.0f, 20.0f, 44.4f), false, 20.0f);
 		sphere1->SetMaterial(std::make_shared<GlassMaterial>(whiteTexture, whiteTexture, indexTexture));
 		mKDTree->AddShape(sphere1);
 
 		shared_ptr<Shape> sphere2 = std::make_shared<Sphere>(CreateTranslation(25.0f, 20.0f, 75.0f), false, 20.0f, -20.0f, 20.0f, Mathf::TWO_PI);
+		//shared_ptr<Shape> sphere2 = std::make_shared<Sphere>(CreateTranslation(50.0f, 50.0f, 50.0f), false, 20.0f, -20.0f, 20.0f, Mathf::TWO_PI);
+		//shared_ptr<Shape> sphere2 = std::make_shared<Sphere>(CreateTranslation(25.0f, 20.0f, 75.0f), false, 20.0f);
 		sphere2->SetMaterial(std::make_shared<MirrorMaterial>(whiteTexture));
 		mKDTree->AddShape(sphere2);
 
@@ -145,6 +153,7 @@ void CreateScene()
 	gSampler = new StratifiedSampler(0, 512, 0, 512, 1, 1);
 	//gSampler = new StratifiedSampler(0, 512, 0, 512, 2, 2);
 	gSurfaceIntegrator = new DirectLightingIntegrator();
+	//gSurfaceIntegrator = new PathIntegrator;
 	//gSurfaceIntegrator = new WhittedIntegrator;
 }
 

@@ -354,6 +354,18 @@ inline ColorRGB Saturate(const ColorRGB& color)
 	return retVal;
 }
 
+inline float Luminance(const ColorRGB& c)
+{
+	 const float YWeight[3] = { 0.212671f, 0.715160f, 0.072169f };
+	 return YWeight[0] * c[0] + YWeight[1] * c[1] + YWeight[2] * c[2];
+}
+
+inline float Luminance(const ColorRGBA& c) 
+{
+	 const float YWeight[3] = { 0.212671f, 0.715160f, 0.072169f };
+	 return YWeight[0] * c[0] + YWeight[1] * c[1] + YWeight[2] * c[2];
+}
+
 //---------------------------------------------------------------------------------------
 inline ColorRGB operator* (float fScalar, const ColorRGB& rhs)
 {

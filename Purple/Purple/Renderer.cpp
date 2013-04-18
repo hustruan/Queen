@@ -54,7 +54,7 @@ ColorRGB SamplerRenderer::Li( const Scene *scene, const RayDifferential &ray, co
 
 ColorRGB SamplerRenderer::Transmittance( const Scene *scene, const RayDifferential &ray, const Sample *sample, Random &rng, MemoryArena &arena ) const
 {
-	return ColorRGB::Black;
+	return ColorRGB::White;
 }
 
 
@@ -64,9 +64,9 @@ void SamplerRenderer::Render( const Scene *scene )
 	Film* film = mCamera->GetFilm();
 	int nPixels = film->xResolution * film->yResolution;
 
-	/*int nTasks = (std::max)(int(32 * GetNumWorkThreads()), nPixels / (128*128));*/
-	int nTasks = nPixels / (32*32);
-		
+	int nTasks = (std::max)(int(32 * GetNumWorkThreads()), nPixels / (32*32));
+	//nTasks = nPixels / (32*32);
+
 	// Allocate and initialize _sample_
 	Sample* sample = new Sample(mMainSampler, mSurfaceIntegrator, scene);
 
@@ -130,7 +130,9 @@ void SamplerRenderer::TileRender( const Scene* scene, const Sample* sample, std:
 				// Generate camera rays and compute radiance along rays
 				for (int i = 0; i < sampleCount; ++i)
 				{
-					float rayWeight = mCamera->GenerateRayDifferential(samples[i].ImageSample, samples[i].LensSample, &rays[i]);
+					//float rayWeight = mCamera->GenerateRayDifferential(samples[i].ImageSample, samples[i].LensSample, &rays[i]);
+					
+					float rayWeight = mCamera->GenerateRay(samples[i].ImageSample, samples[i].LensSample, &rays[i]);
 					rays[i].ScaleDifferentials(1.f / sqrtf(float(sampler->SamplesPerPixel)));
 
 					// Evaluate radiance along camera ray

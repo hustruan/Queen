@@ -244,8 +244,15 @@ BSDF::BSDF( const DifferentialGeometry &dgs, const float3& ngeom, float e /*= 1.
 	: dgShading(dgs), mGeoNormal(ngeom), eta(e)
 {
 	mNormal = dgShading.Normal;
-	mBinormal = Normalize(dgShading.dpdu);
-	mTangent = Cross(mNormal, mBinormal);
+
+	mTangent = Normalize(dgShading.dpdu);
+	mBitangent = Cross(mNormal, mTangent);
+
+	//mBitangent = Normalize(dgShading.dpdu);
+	//mTangent = Cross(mBitangent, mNormal);
+
+	//mBitangent = Normalize(dgShading.dpdu);
+	//mTangent = Cross(mNormal, mBitangent);
 	mNumBxDFs = 0;
 }
 
@@ -255,7 +262,7 @@ ColorRGB BSDF::Eval( const float3& woW, const float3& wiW, BSDFType flags /*= BS
 
 	if (Dot(wiW, mGeoNormal) * Dot(woW, mGeoNormal) > 0) // ignore BTDFs
 		flags = BSDFType(flags & ~BSDF_Transmission);
-	else // ignore BRDFs
+	else                                                 // ignore BRDFs
 		flags = BSDFType(flags & ~BSDF_Reflection);
 
 	ColorRGB retVal = ColorRGB::Black;
@@ -300,7 +307,7 @@ ColorRGB BSDF::Sample( const float3& woW, float3* wiW, const BSDFSample& bsdfSam
 	float3 wi;
 	*pdf = 0.f;
 	retVal = bxdf->Sample(wo, &wi, bsdfSample.uDir[0], bsdfSample.uDir[1], pdf);
-
+	
 	if (*pdf == 0.f)
 	{
 		if(sampledType) *sampledType = BSDFType(0);
@@ -329,7 +336,7 @@ ColorRGB BSDF::Sample( const float3& woW, float3* wiW, const BSDFSample& bsdfSam
 		retVal = ColorRGB::Black;
 		if (Dot(*wiW, mGeoNormal) * Dot(woW, mGeoNormal) > 0) // ignore BTDFs
 			bsdfFlags = (bsdfFlags & ~BSDF_Transmission);
-		else // ignore BRDFs
+		else                                                  // ignore BRDFs
 			bsdfFlags = (bsdfFlags & ~BSDF_Reflection);
 
 		for (int i = 0; i < mNumBxDFs; ++i)

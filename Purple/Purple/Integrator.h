@@ -3,6 +3,8 @@
 
 #include "Prerequisites.h"
 #include "Ray.h"
+#include "Light.h"
+#include "Reflection.h"
 
 namespace Purple {
 
@@ -22,6 +24,14 @@ ColorRGB SpecularTransmit(const RayDifferential& ray, BSDF* bsdf, Random& rng, c
 ColorRGB EstimateDirect(const Scene* scene, const Renderer* renderer, MemoryArena& arena, const Light* light, const float3& p,
 						const float3& n, const float3& wo, float time, const BSDF* bsdf, Random& rng, const LightSample& lightSample,
 						const BSDFSample& bsdfSample, uint32_t bsdfflags);
+
+ColorRGB UniformSampleAllLights(const Scene* scene, const Renderer* renderer, MemoryArena& arena, const float3& p,
+								const float3& n, const float3& wo, float time, BSDF *bsdf, const Sample* sample, Random &rng,
+								const LightSampleOffsets *lightSampleOffset = NULL, const BSDFSampleOffsets *bsdfSampleOffset = NULL);
+
+ColorRGB UniformSampleOneLight(const Scene* scene, const Renderer* renderer, MemoryArena& arena, const float3& p, const float3& n,
+							   const float3& wo, float time, BSDF *bsdf, const Sample* sample, Random &rng, int lightNumOffset = -1,
+							   const LightSampleOffsets *lightSampleOffset = NULL, const BSDFSampleOffsets *bsdfSampleOffset = NULL);
 
 class Integrator
 {
@@ -54,13 +64,12 @@ class WhittedIntegrator : public SurfaceIntegrator
 public:
 	WhittedIntegrator(int32_t md = 5) : mMaxDepth(md) {}
 
-	virtual ColorRGB Li(const Scene* scene, const Renderer* renderer, const RayDifferential& ray, const DifferentialGeometry& isect,
+	ColorRGB Li(const Scene* scene, const Renderer* renderer, const RayDifferential& ray, const DifferentialGeometry& isect,
 		const Sample* sample, Random& rng, MemoryArena& arena) const;
 
 private:
 	int32_t mMaxDepth;
 };
-
 
 class DirectLightingIntegrator : public SurfaceIntegrator
 {
@@ -68,7 +77,7 @@ public:
 	DirectLightingIntegrator(LightStrategy ls = LS_Sample_All_Uniform, int32_t md = 5);
 	~DirectLightingIntegrator();
 
-	virtual ColorRGB Li(const Scene* scene, const Renderer* renderer, const RayDifferential& ray, const DifferentialGeometry& isect,
+	ColorRGB Li(const Scene* scene, const Renderer* renderer, const RayDifferential& ray, const DifferentialGeometry& isect,
 		const Sample* sample, Random& rng, MemoryArena& arena) const;
 
 	void RequestSamples(Sampler* sampler, Sample* sample, const Scene* scene);
@@ -79,6 +88,29 @@ private:
 	uint32_t mLightNumOffset;
 
 	LightStrategy mLightStrategy;
+	int32_t mMaxDepth;
+};
+
+class PathIntegrator : public SurfaceIntegrator
+{
+public:
+	PathIntegrator(int32_t md = 5);
+	~PathIntegrator();
+
+	ColorRGB Li(const Scene* scene, const Renderer* renderer, const RayDifferential& ray, const DifferentialGeometry& isect,
+		const Sample* sample, Random& rng, MemoryArena& arena) const;
+
+	void RequestSamples(Sampler* sampler, Sample* sample, const Scene* scene);
+
+private:
+
+    const static int SAMPLE_DEPTH = 3;
+
+	uint32_t mLightNumOffset[SAMPLE_DEPTH];
+	LightSampleOffsets mLightSampleOffsets[SAMPLE_DEPTH];
+	BSDFSampleOffsets mBSDFSampleOffsets[SAMPLE_DEPTH];
+	BSDFSampleOffsets mPathSampleOffsets[SAMPLE_DEPTH];
+	
 	int32_t mMaxDepth;
 };
 

@@ -89,33 +89,33 @@ bool Sphere::Intersect( const Ray& r, float* tHit, DifferentialGeometry* diffGeo
 	float cosphi = phit.X() * invzradius;
 	float sinphi = phit.Y() * invzradius;
 
-	/*float3 dpdu(-mMaxPhi * phit.Y(), mMaxPhi * phit.X(), 0.0f);
+	float3 dpdu(-mMaxPhi * phit.Y(), mMaxPhi * phit.X(), 0.0f);
 	float3 dpdv = (mMaxTheta - mMinTheta) * float3(phit.Z() * cosphi, phit.Z() * sinphi, -mRadius * sinf(theta));
 
-	float3 d2Pduu = -mMaxPhi * mMaxPhi * float3(phit.X(), phit.Y(), 0.0f);
-	float3 d2Pduv = (mMaxTheta - mMinTheta) * phit.Z() *mMaxPhi * float3(-sinphi, cosphi, 0.0f);
-	float3 d2Pdvv = -(mMaxTheta - mMinTheta) * (mMaxTheta - mMinTheta) * float3(phit.X(), phit.Y(), phit.Z());
+	//float3 d2Pduu = -mMaxPhi * mMaxPhi * float3(phit.X(), phit.Y(), 0.0f);
+	//float3 d2Pduv = (mMaxTheta - mMinTheta) * phit.Z() *mMaxPhi * float3(-sinphi, cosphi, 0.0f);
+	//float3 d2Pdvv = -(mMaxTheta - mMinTheta) * (mMaxTheta - mMinTheta) * float3(phit.X(), phit.Y(), phit.Z());
 
-	const float E = Dot(dpdu, dpdu);
-	const float F = Dot(dpdu, dpdv);
-	const float G = Dot(dpdv, dpdv);
-	const float e = Dot(N, d2Pduu);
-	const float f = Dot(N, d2Pduv);
-	const float g = Dot(N, d2Pdvv);
+	//const float E = Dot(dpdu, dpdu);
+	//const float F = Dot(dpdu, dpdv);
+	//const float G = Dot(dpdv, dpdv);
+	//const float e = Dot(N, d2Pduu);
+	//const float f = Dot(N, d2Pduv);
+	//const float g = Dot(N, d2Pdvv);
 
-	const float invEGF2 = 1.f / (E*G - F*F);
+	//const float invEGF2 = 1.f / (E*G - F*F);
 
-	float3 dndu((f*F - e*G) * invEGF2 * dpdu + (e*F - f*E) * invEGF2 * dpdv);
-	float3 dndv((g*F - f*G) * invEGF2 * dpdu + (f*F - g*E) * invEGF2 * dpdv);*/
+	//float3 dndu((f*F - e*G) * invEGF2 * dpdu + (e*F - f*E) * invEGF2 * dpdv);
+	//float3 dndv((g*F - f*G) * invEGF2 * dpdu + (f*F - g*E) * invEGF2 * dpdv);
 
-	/*diffGeoHit->dpdu = TransformDirection(dpdu, mLocalToWorld);
-	diffGeoHit->dpdv = TransformDirection(dpdv, mLocalToWorld);
-	diffGeoHit->dndu = TransformNormal(dndu, mLocalToWorld);
-	diffGeoHit->dndv = TransformNormal(dndv, mLocalToWorld);*/
-	diffGeoHit->Normal = TransformNormal(N, mLocalToWorld);
-	diffGeoHit->Point = Transform(phit, mLocalToWorld);;
-	diffGeoHit->UV = float2(u, v);
-	diffGeoHit->Instance = this;
+
+	*diffGeoHit = DifferentialGeometry(Transform(phit, mLocalToWorld), 
+		TransformDirection(dpdu, mLocalToWorld), TransformDirection(dpdv, mLocalToWorld),
+		float3(), float3(), float2(u, v), this);
+
+	//*diffGeoHit = DifferentialGeometry(Transform(phit, mLocalToWorld), 
+	//	TransformDirection(dpdu, mLocalToWorld), TransformDirection(dpdv, mLocalToWorld),
+	//	TransformNormal(dndu, mLocalToWorld), TransformNormal(dndv, mLocalToWorld), float2(u, v), this);
 
 	*tHit = thit;
 
@@ -242,6 +242,175 @@ bool Sphere::IntersectP(const Ray& r) const
 
 	return true;
 }
+
+//Sphere::Sphere( const float44& o2w, bool ro, float radius)
+//	: Shape(o2w, ro), mRadius(radius)
+//{
+//
+//}
+//
+//Sphere::~Sphere(void)
+//{
+//}
+//
+//BoundingBoxf Sphere::GetLocalBound() const
+//{
+//	return BoundingBoxf( float3(-mRadius, -mRadius, mRadius), float3(mRadius, mRadius, mRadius) );
+//}
+//
+//bool Sphere::Intersect( const Ray& r, float* tHit, DifferentialGeometry* diffGeoHit ) const
+//{
+//	// Transform ray into local frame
+//	Ray ray(r);
+//	ray.Origin = Transform(r.Origin, mWorldToLocal);
+//	ray.Direction = TransformDirection(r.Direction, mWorldToLocal);
+//
+//	float A = Dot(ray.Direction, ray.Direction);
+//	float B = 2.0f * Dot(ray.Origin, ray.Direction);
+//	float C = Dot(ray.Origin, ray.Origin) - mRadius*mRadius;
+//
+//	float t0, t1;
+//	if( !SoveQuadratic(A, B, C, &t0, &t1) )
+//		return false;
+//
+//	if (t0 > ray.tMax || t1 < ray.tMin)
+//		return false;
+//
+//	float thit = t0;
+//	if (thit < ray.tMin)
+//	{
+//		thit = t1;
+//		if (thit > ray.tMax )
+//			return false;
+//	}
+//
+//	// hit point in local space
+//	float3 phit = ray.Eval(thit);
+//	float3 N = Normalize(phit);
+//
+//	float phi = atan2f(phit.Y(), phit.X());
+//	if (phi < 0.0f)
+//		phi += 2.f * Mathf::PI;
+//
+//	// Find parametric representation of sphere hit
+//	float u = phi / Mathf::TWO_PI;
+//	float theta = acosf(Clamp(phit.Z() / mRadius, -1.0f, 1.0f));
+//	float v = theta / Mathf::PI;
+//
+//	// Compute sphere dpdu and dpdv
+//	float zradius = sqrtf(phit.X()*phit.X() + phit.Y()*phit.Y());
+//	float invzradius = 1.f / zradius;
+//	float cosphi = phit.X() * invzradius;
+//	float sinphi = phit.Y() * invzradius;
+//
+//	float3 dpdu(-Mathf::TWO_PI * phit.Y(), Mathf::TWO_PI * phit.X(), 0.0f);
+//	float3 dpdv = Mathf::PI * float3(phit.Z() * cosphi, phit.Z() * sinphi, -mRadius * sinf(theta));
+//	
+//	*diffGeoHit = DifferentialGeometry(Transform(phit, mLocalToWorld), 
+//		TransformDirection(dpdu, mLocalToWorld), TransformDirection(dpdv, mLocalToWorld),
+//		float3(), float3(), float2(u, v), this);
+//
+//	*tHit = thit;
+//
+//	return true;
+//}
+//
+//float Sphere::Area() const
+//{
+//	return Mathf::FOUR_PI * mRadius * mRadius;
+//}
+//
+//float3 Sphere::Sample( float u1, float u2, float u3,  float3* normal ) const
+//{
+//	float3 pt = float3(0, 0, 0) + mRadius * UniformSampleSphere(u1, u2);
+//	
+//	// normal 
+//	*normal = Normalize(TransformNormal(pt, mLocalToWorld));
+//	if (ReverseOrientation) 
+//		*normal *= -1.f;
+//
+//	return Transform(pt, mLocalToWorld);
+//}
+//
+//float3 Sphere::Sample( const float3& pt, float u1, float u2, float u3,  float3* normal ) const
+//{
+//	float3 centerW = Transform(float3(0, 0, 0), mLocalToWorld);
+//	
+//	float3 wc = Normalize(centerW - pt);
+//	float3 wcX, wcY;
+//	CoordinateSystem(wc, &wcX, &wcY); 
+//
+//	float distanceSquared = LengthSquared(pt - centerW);
+//
+//	// pt is inside in the sphere
+//	if (distanceSquared - mRadius*mRadius < 1e-4f)
+//		return Sample(u1, u2, u3, normal);
+//
+//	float sinThetaMax2 = mRadius*mRadius /distanceSquared;
+//	float cosThetaMax = sqrtf(std::max(0.0f, 1.f - sinThetaMax2));
+//
+//	Ray ray(pt, UniformSampleCone(u1, u2, cosThetaMax, wcX, wcY, wc), 1e-3f, Mathf::INFINITY);
+//	
+//	DifferentialGeometry dgSphere;
+//	float hit;
+//	if ( !Intersect(ray, &hit, &dgSphere) )
+//	{
+//		hit = Dot(centerW-pt, ray.Direction);
+//	}
+//
+//	float3 ps = ray.Eval(hit);
+//	*normal = Normalize(ps - centerW);
+//
+//	if (ReverseOrientation) 
+//		*normal *= -1.f;
+//
+//	return ps;
+//}
+//
+//float Sphere::Pdf( const float3& pt, const float3& wi ) const
+//{
+//	float3 centerW = Transform(float3(0, 0, 0), mLocalToWorld);
+//	float distanceSquared = LengthSquared(pt - centerW);
+//
+//	// pt is inside in the sphere
+//	if (distanceSquared - mRadius*mRadius < 1e-4f)
+//		return Shape::Pdf(pt, wi);
+//
+//	float sinThetaMax2 = mRadius*mRadius /distanceSquared;
+//	float cosThetaMax = sqrtf(std::max(0.0f, 1.f - sinThetaMax2));
+//
+//	//return Shape::Pdf(pt, wi);
+//	return UniformConePdf(cosThetaMax);
+//}
+//
+//bool Sphere::IntersectP(const Ray& r) const
+//{
+//	// Transform ray into local frame
+//	Ray ray(r);
+//	ray.Origin = Transform(r.Origin, mWorldToLocal);
+//	ray.Direction = TransformDirection(r.Direction, mWorldToLocal);
+//
+//	float A = Dot(ray.Direction, ray.Direction);
+//	float B = 2.0f * Dot(ray.Origin, ray.Direction);
+//	float C = Dot(ray.Origin, ray.Origin) - mRadius*mRadius;
+//
+//	float t0, t1;
+//	if( !SoveQuadratic(A, B, C, &t0, &t1) )
+//		return false;
+//
+//	if (t0 > ray.tMax || t1 < ray.tMin)
+//		return false;
+//
+//	float thit = t0;
+//	if (thit < ray.tMin)
+//	{
+//		thit = t1;
+//		if (thit > ray.tMax )
+//			return false;
+//	}
+//
+//	return true;
+//}
 
 //----------------------------------------------------------------------------------------------------------
 Cylinder::Cylinder( const float44& o2w, bool ro, float radius, float minZ, float mazZ, float maxPhi )

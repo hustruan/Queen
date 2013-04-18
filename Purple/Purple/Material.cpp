@@ -51,8 +51,8 @@ BSDF* GlassMaterial::GetBSDF( const DifferentialGeometry &dgGeom, const Differen
 
 	if (R != ColorRGB::Black)
 	{
-		FresnelDielectric* fresnel = BSDF_ALLOC(arena, FresnelDielectric)(1.0f, ior);
-		bsdf->Add(BSDF_ALLOC(arena, SpecularReflection)(R, fresnel));
+	FresnelDielectric* fresnel = BSDF_ALLOC(arena, FresnelDielectric)(1.0f, ior);
+	bsdf->Add(BSDF_ALLOC(arena, SpecularReflection)(R, fresnel));
 	}
 
 	if (T != ColorRGB::Black)

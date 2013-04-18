@@ -55,11 +55,12 @@ float PerspectiveCamera::GenerateRay( const float2& rasterSample, const float2& 
 	float3 ptRaster(rasterSample.X(), rasterSample.Y(), 0.0f);
 	float3 ptCamera = TransformCoord(ptRaster, mRasterToCamera);
 
+	ray->tMin = 0.0f;
+	ray->tMax = Mathf::INFINITY;
+
 	ray->Origin = Transform(float3(0,0,0), mCameraToWorld);
 	ray->Direction = Normalize(TransformDirection(ptCamera, mCameraToWorld));
-	ray->tMin = 0.0f;
-	ray->tMax = std::numeric_limits<float>::infinity();
-
+	
 	return 1.0f;
 }
 

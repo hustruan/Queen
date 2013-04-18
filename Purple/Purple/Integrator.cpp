@@ -1,7 +1,5 @@
 #include "Integrator.h"
-#include "Reflection.h"
 #include "Scene.h"
-#include "Light.h"
 #include "Sampler.h"
 #include "Renderer.h"
 #include "Shape.h"
@@ -82,7 +80,7 @@ ColorRGB EstimateDirect( const Scene* scene, const Renderer* renderer, MemoryAre
 
 ColorRGB SpecularReflect( const RayDifferential& ray, BSDF* bsdf, Random& rng, const DifferentialGeometry& isect, const Renderer* renderer, const Scene* scene, const Sample* sample, MemoryArena& arena )
 {
-	float3 wi, wo = ray.Direction;
+	float3 wi, wo = -ray.Direction;
 
 	const float3& p = bsdf->dgShading.Point;
 	const float3& n = bsdf->dgShading.Normal;
@@ -94,21 +92,22 @@ ColorRGB SpecularReflect( const RayDifferential& ray, BSDF* bsdf, Random& rng, c
 	if (f != ColorRGB::Black && AbsDot(n, wi) != 0.0f && pdf > 0.0f)
 	{
 		RayDifferential rd(p, wi, ray, 1e-4f, Mathf::INFINITY);
-		if (ray.hasDifferentials)
-		{
-			rd.hasDifferentials = true;
-			rd.rxOrigin = p + isect.dpdx;
-			rd.ryOrigin = p + isect.dpdy;
 
-			// Compute differential reflected directions
-			float3 dndx = bsdf->dgShading.dndu * bsdf->dgShading.dudx + bsdf->dgShading.dndv * bsdf->dgShading.dvdx;
-			float3 dndy = bsdf->dgShading.dndu * bsdf->dgShading.dudy + bsdf->dgShading.dndv * bsdf->dgShading.dvdy;
-			float3 dwodx = -ray.rxDirection - wo, dwody = -ray.ryDirection - wo;
-			float dDNdx = Dot(dwodx, n) + Dot(wo, dndx);
-			float dDNdy = Dot(dwody, n) + Dot(wo, dndy);
-			rd.rxDirection = wi - dwodx + 2.0f * float3(Dot(wo, n) * dndx + dDNdx * n);
-			rd.ryDirection = wi - dwody + 2.0f * float3(Dot(wo, n) * dndy + dDNdy * n);
-		}
+		//if (ray.hasDifferentials)
+		//{
+		//	rd.hasDifferentials = true;
+		//	rd.rxOrigin = p + isect.dpdx;
+		//	rd.ryOrigin = p + isect.dpdy;
+
+		//	// Compute differential reflected directions
+		//	float3 dndx = bsdf->dgShading.dndu * bsdf->dgShading.dudx + bsdf->dgShading.dndv * bsdf->dgShading.dvdx;
+		//	float3 dndy = bsdf->dgShading.dndu * bsdf->dgShading.dudy + bsdf->dgShading.dndv * bsdf->dgShading.dvdy;
+		//	float3 dwodx = -ray.rxDirection - wo, dwody = -ray.ryDirection - wo;
+		//	float dDNdx = Dot(dwodx, n) + Dot(wo, dndx);
+		//	float dDNdy = Dot(dwody, n) + Dot(wo, dndy);
+		//	rd.rxDirection = wi - dwodx + 2.0f * float3(Dot(wo, n) * dndx + dDNdx * n);
+		//	rd.ryDirection = wi - dwody + 2.0f * float3(Dot(wo, n) * dndy + dDNdy * n);
+		//}
 
 		ColorRGB Li = renderer->Li(scene, rd, sample, rng, arena);
 		L = f * Li * AbsDot(wi, n) / pdf;
@@ -119,7 +118,7 @@ ColorRGB SpecularReflect( const RayDifferential& ray, BSDF* bsdf, Random& rng, c
 
 ColorRGB SpecularTransmit( const RayDifferential& ray, BSDF* bsdf, Random& rng, const DifferentialGeometry& isect, const Renderer* renderer, const Scene* scene, const Sample* sample, MemoryArena& arena )
 {
-	float3 wi, wo = ray.Direction;
+	float3 wi, wo = -ray.Direction;
 
 	const float3& p = bsdf->dgShading.Point;
 	const float3& n = bsdf->dgShading.Normal;
@@ -163,6 +162,71 @@ ColorRGB SpecularTransmit( const RayDifferential& ray, BSDF* bsdf, Random& rng, 
 	return L;
 }
 
+ColorRGB UniformSampleOneLight( const Scene* scene, const Renderer* renderer, MemoryArena& arena, const float3& p, const float3& n, const float3& wo, float time, BSDF *bsdf, const Sample* sample, Random &rng, int lightNumOffset /*= -1*/, const LightSampleOffsets *lightSampleOffset /*= NULL*/, const BSDFSampleOffsets *bsdfSampleOffset /*= NULL*/ )
+{
+	int nLights = scene->Lights.size();
+	int sampleLight;
+
+	if (lightNumOffset != -1)
+	{
+		sampleLight = std::min( nLights - 1, Floor2Int(nLights * sample->OneD[lightNumOffset][0]));
+	}
+	else
+	{
+		sampleLight = std::min( nLights - 1, Floor2Int(nLights * rng.RandomFloat()));
+	}
+
+	Light *light = scene->Lights[sampleLight];
+
+	LightSample lightSample;
+	BSDFSample bsdfSample;
+	if (lightSampleOffset != NULL && bsdfSampleOffset != NULL)
+	{
+		lightSample = LightSample(sample, lightSampleOffset[0], 0);
+		bsdfSample = BSDFSample(sample, bsdfSampleOffset[0], 0);
+	}
+	else 
+	{
+		lightSample = LightSample(rng);
+		bsdfSample = BSDFSample(rng);
+	}
+
+	return nLights * EstimateDirect(scene, renderer, arena, light, p, n, wo, 0.0f, bsdf, rng, lightSample, bsdfSample,
+		BSDFType(BSDF_All & ~BSDF_Specular));
+}
+
+ColorRGB UniformSampleAllLights( const Scene* scene, const Renderer* renderer, MemoryArena& arena, const float3& p, const float3& n, const float3& wo, float time, BSDF *bsdf, const Sample* sample, Random &rng, const LightSampleOffsets *lightSampleOffset /*= NULL*/, const BSDFSampleOffsets *bsdfSampleOffset /*= NULL*/ )
+{
+	ColorRGB L(0.0f);
+
+	for (size_t i = 0; i < scene->Lights.size(); ++i) 
+	{	
+		Light* light = scene->Lights[i];
+		int nSamples = lightSampleOffset ? lightSampleOffset[i].nSamples : 1;
+
+		ColorRGB Ld(0.0f);
+		for (int j = 0; j < nSamples; ++j) 
+		{
+			// Find light and BSDF sample values for direct lighting estimate
+			LightSample lightSample;
+			BSDFSample bsdfSample;
+			if (lightSampleOffset != NULL && bsdfSampleOffset != NULL)
+			{
+				lightSample = LightSample(sample, lightSampleOffset[i], j);
+				bsdfSample = BSDFSample(sample, bsdfSampleOffset[i], j);
+			}
+			else 
+			{
+				lightSample = LightSample(rng);
+				bsdfSample = BSDFSample(rng);
+			}
+			Ld += EstimateDirect(scene, renderer, arena, light, p, n, wo, 0.0f, bsdf, rng, lightSample, bsdfSample,
+				BSDFType(BSDF_All & ~BSDF_Specular));
+		}
+		L += Ld / float(nSamples);
+	}
+	return L;
+}
 
 ColorRGB WhittedIntegrator::Li( const Scene* scene, const Renderer* renderer, const RayDifferential& ray, const DifferentialGeometry& isect, const Sample* sample, Random& rng, MemoryArena& arena ) const
 {
@@ -194,9 +258,10 @@ ColorRGB WhittedIntegrator::Li( const Scene* scene, const Renderer* renderer, co
 			continue;
 		
 		ColorRGB f = bsdf->Eval(wo, wi);
-		auto cos = fabsf(Dot(wi, n));
-		auto c = f * Li * fabsf(Dot(wi, n));
-		auto b = visibility.Unoccluded(scene);
+
+		//auto cos = fabsf(Dot(wi, n));
+		//auto c = f * Li * fabsf(Dot(wi, n));
+		//auto b = visibility.Unoccluded(scene);
 
 		if (f != ColorRGB::Black && visibility.Unoccluded(scene))
 			L += f * Li * fabsf(Dot(wi, n)) / pdf;
@@ -206,7 +271,6 @@ ColorRGB WhittedIntegrator::Li( const Scene* scene, const Renderer* renderer, co
 	{
 		//// Trace rays for specular reflection and refraction
 		L += SpecularReflect(ray, bsdf, rng, isect, renderer, scene, sample, arena);
-		//L += SpecularReflect(ray, bsdf, rng, isect, renderer, scene, sample, arena);
 		L += SpecularTransmit(ray, bsdf, rng, isect, renderer, scene, sample, arena);
 	}
 	return L;
@@ -283,62 +347,14 @@ ColorRGB DirectLightingIntegrator::Li( const Scene* scene, const Renderer* rende
 		{
 		case LS_Sample_All_Uniform:
 			{
-				for (size_t i = 0; i < scene->Lights.size(); ++i) 
-				{	
-					Light* light = scene->Lights[i];
-					int nSamples = mLightSampleOffsets ? mLightSampleOffsets[i].nSamples : 1;
-				
-					ColorRGB Ld(0.0f);
-					for (int j = 0; j < nSamples; ++j) 
-					{
-						// Find light and BSDF sample values for direct lighting estimate
-						LightSample lightSample;
-						BSDFSample bsdfSample;
-						if (mLightSampleOffsets != NULL && mBSDFSampleOffsets != NULL)
-						{
-							lightSample = LightSample(sample, mLightSampleOffsets[i], j);
-							bsdfSample = BSDFSample(sample, mBSDFSampleOffsets[i], j);
-						}
-						else 
-						{
-							lightSample = LightSample(rng);
-							bsdfSample = BSDFSample(rng);
-						}
-						Ld += EstimateDirect(scene, renderer, arena, light, p, n, wo, 0.0f, bsdf, rng, lightSample, bsdfSample,
-							BSDFType(BSDF_All & ~BSDF_Specular));
-					}
-					L += Ld / float(nSamples);
-				}
+				L += UniformSampleAllLights(scene, renderer, arena, p, n, wo, 0.0f, bsdf,
+					sample, rng, mLightSampleOffsets, mBSDFSampleOffsets);
 			}
 			break;
 		case LS_Sample_One_Uniform:
 			{
-				// Randomly choose a single light to sample
-				size_t nLights = scene->Lights.size();
-				size_t lightNum;			 
-				if (mLightNumOffset != -1)
-					lightNum = Floor2Int(sample->OneD[mLightNumOffset][0] * nLights);
-				else
-					lightNum = Floor2Int(rng.RandomFloat() * nLights);
-
-				lightNum = std::min(lightNum, nLights-1);
-				Light *light = scene->Lights[lightNum];
-
-				LightSample lightSample;
-				BSDFSample bsdfSample;
-				if (mLightSampleOffsets != NULL && mBSDFSampleOffsets != NULL)
-				{
-					lightSample = LightSample(sample, mLightSampleOffsets[0], 0);
-					bsdfSample = BSDFSample(sample, mBSDFSampleOffsets[0], 0);
-				}
-				else 
-				{
-					lightSample = LightSample(rng);
-					bsdfSample = BSDFSample(rng);
-				}
-
-				L += nLights * EstimateDirect(scene, renderer, arena, light, p, n, wo, 0.0f, bsdf, rng, lightSample, bsdfSample,
-					BSDFType(BSDF_All & ~BSDF_Specular));
+				L += UniformSampleOneLight(scene, renderer, arena, p, n, wo, 0.0f, bsdf,
+					sample, rng, mLightNumOffset, mLightSampleOffsets, mBSDFSampleOffsets);
 			}
 			break;
 		}
@@ -351,6 +367,113 @@ ColorRGB DirectLightingIntegrator::Li( const Scene* scene, const Renderer* rende
 		//L += SpecularReflect(ray, bsdf, rng, isect, renderer, scene, sample, arena);
 		L += SpecularTransmit(ray, bsdf, rng, isect, renderer, scene, sample, arena);
 	}
+	return L;
+}
+
+//------------------------------------------------------------------------------------------
+PathIntegrator::PathIntegrator( int32_t md /*= 5*/ )
+	: mMaxDepth(md)
+{
+
+}
+
+PathIntegrator::~PathIntegrator()
+{
+
+}
+
+void PathIntegrator::RequestSamples( Sampler* sampler, Sample* sample, const Scene* scene )
+{
+	for (int i = 0; i < SAMPLE_DEPTH; ++i )
+	{
+		mLightNumOffset[i] = sample->Add1D(1);
+
+		mLightSampleOffsets[i] = LightSampleOffsets(1, sample);
+		mBSDFSampleOffsets[i] = BSDFSampleOffsets(1, sample);
+		mPathSampleOffsets[i] = BSDFSampleOffsets(1, sample);
+	}
+}
+
+ColorRGB PathIntegrator::Li( const Scene* scene, const Renderer* renderer, const RayDifferential& r, const DifferentialGeometry& isect, const Sample* sample, Random& rng, MemoryArena& arena ) const
+{
+	ColorRGB pathThroughput = ColorRGB::White, L = ColorRGB::Black;
+	
+	bool specularBounce = false;
+
+	DifferentialGeometry localIsect;
+	const DifferentialGeometry* isectp = &isect;
+
+	RayDifferential ray(r);
+
+	for (int bounces = 0; ; ++bounces)
+	{
+		if (bounces == 0 || specularBounce)
+		{
+			L += pathThroughput * isectp->Le(-ray.Direction);
+		}
+
+		BSDF* bsdf = isectp->GetBSDF(ray, arena);
+		const float3& p = bsdf->dgShading.Point;
+		const float3& n = bsdf->dgShading.Normal;
+		const float3& wo = -ray.Direction;
+		 
+		if (bounces < SAMPLE_DEPTH)
+		{
+			L += pathThroughput * UniformSampleOneLight(scene, renderer, arena, p, n, wo, 0.0f, bsdf, sample, 
+				rng, mLightNumOffset[bounces], &mLightSampleOffsets[bounces], &mBSDFSampleOffsets[bounces]);
+		}
+		else
+		{
+			L += pathThroughput * UniformSampleOneLight(scene, renderer, arena, p, n, wo, 0.0f, bsdf, sample, rng);
+		}
+
+		BSDFSample outgoingBSDFSample;
+		if (bounces < SAMPLE_DEPTH)
+			outgoingBSDFSample = BSDFSample(sample, mPathSampleOffsets[bounces], 0);
+		else
+			outgoingBSDFSample = BSDFSample(rng);
+
+		float3 wi;
+		float pdf;
+		uint32_t sampledBSDFflags;
+
+		ColorRGB f = bsdf->Sample(wo, &wi, outgoingBSDFSample, &pdf, BSDF_All, &sampledBSDFflags);
+		
+		if (f == ColorRGB::Black || pdf == 0.)
+			break;
+
+		specularBounce = (sampledBSDFflags & BSDF_Specular) != 0;
+		pathThroughput *= f * AbsDot(wi, n) / pdf;
+		ray = RayDifferential(p, wi, ray, 1e-3f);
+
+		// Possibly terminate the path
+		if (bounces > 3)
+		{
+			float continueProbability = std::min(0.5f, Luminance(pathThroughput));
+			
+			if (rng.RandomFloat() > continueProbability)
+				break;
+
+			// Russian roulette weight
+			pathThroughput *= 1.0f / continueProbability;  
+		}
+
+		if (bounces == mMaxDepth)
+			break;
+
+		// Find next vertex of path
+		if (!scene->Intersect(ray, &localIsect))
+		{
+			if (specularBounce)
+				for (uint32_t i = 0; i < scene->Lights.size(); ++i)
+					L += pathThroughput * scene->Lights[i]->Le(ray);
+			break;
+		}
+
+		//pathThroughput *= renderer->Transmittance(scene, ray, NULL, rng, arena);
+		isectp = &localIsect;
+	}
+
 	return L;
 }
 
