@@ -193,10 +193,6 @@ private:
 	std::vector<Distribution1D*> mConditionalV;
 };
 
-
-
-
-
 }
 
 #endif // MentoCarlo_h__

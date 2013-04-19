@@ -5,6 +5,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Purple", "Purple\Purple.vcx
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MeshExporter", "MeshExporter\MeshExporter.vcxproj", "{01C59604-E2EC-4390-9996-F99990E1CC70}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MathLib", "..\RxLib\MathLib\MathLib.vcxproj", "{DFBA7BDF-55D3-492C-ACD6-28D81DB0BC99}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -19,6 +21,10 @@ Global
 		{01C59604-E2EC-4390-9996-F99990E1CC70}.Debug|Win32.Build.0 = Debug|Win32
 		{01C59604-E2EC-4390-9996-F99990E1CC70}.Release|Win32.ActiveCfg = Release|Win32
 		{01C59604-E2EC-4390-9996-F99990E1CC70}.Release|Win32.Build.0 = Release|Win32
+		{DFBA7BDF-55D3-492C-ACD6-28D81DB0BC99}.Debug|Win32.ActiveCfg = Debug|Win32
+		{DFBA7BDF-55D3-492C-ACD6-28D81DB0BC99}.Debug|Win32.Build.0 = Debug|Win32
+		{DFBA7BDF-55D3-492C-ACD6-28D81DB0BC99}.Release|Win32.ActiveCfg = Release|Win32
+		{DFBA7BDF-55D3-492C-ACD6-28D81DB0BC99}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

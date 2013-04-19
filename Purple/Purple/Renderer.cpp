@@ -65,7 +65,7 @@ void SamplerRenderer::Render( const Scene *scene )
 	int nPixels = film->xResolution * film->yResolution;
 
 	int nTasks = (std::max)(int(32 * GetNumWorkThreads()), nPixels / (32*32));
-	//nTasks = nPixels / (32*32);
+	//int nTasks = nPixels / (128*128);
 
 	// Allocate and initialize _sample_
 	Sample* sample = new Sample(mMainSampler, mSurfaceIntegrator, scene);
@@ -75,7 +75,7 @@ void SamplerRenderer::Render( const Scene *scene )
 	std::atomic<int> workingPackage = 0;
 	pool& tp = GlobalThreadPool();
 
-	auto start = std::chrono::system_clock::now();
+	auto start = clock();
 
 	for (size_t iCore = 0; iCore < tp.size(); ++iCore)
 	{
@@ -84,9 +84,39 @@ void SamplerRenderer::Render( const Scene *scene )
 	}
 	tp.wait();
 
-	auto end = std::chrono::system_clock::now();
-	std::cout << "\n\nTotal: " << std::chrono::duration_cast<std::chrono::minutes>(end - start).count() <<" minutes\n"<< std::endl;
-	//printf("\n\nTotal: %f minutes", std::chrono::duration_cast<std::chrono::minutes>(elapsed).count());
+	auto end = clock();
+	auto total = (double)(end - start) / CLOCKS_PER_SEC;
+
+	std::cout << "\n\nMeasured from Renderer\n";
+	std::cout << "Total: " << total / 60.0 <<" minutes\n";
+
+#ifdef DEBUG
+
+	auto isect =  (double)(scene->mTime) / CLOCKS_PER_SEC;
+	auto isectP = (double)(scene->mTimeP) / CLOCKS_PER_SEC;
+
+
+	auto isectTotal =  (double)(scene->mKDTree->mTimeTotal) / CLOCKS_PER_SEC;
+	auto isectM = (double)(scene->mKDTree->mTimeM) / CLOCKS_PER_SEC;
+	auto isectS = (double)(scene->mKDTree->mTimeS) / CLOCKS_PER_SEC;
+	auto isectB = (double)(scene->mKDTree->mTimeB) / CLOCKS_PER_SEC;
+	auto isectTr = (double)(scene->mKDTree->mTimeTotal - scene->mKDTree->mTimeTrav - scene->mKDTree->mTimeB ) / CLOCKS_PER_SEC;
+	auto find = (double)(scene->mKDTree->mTimeF - scene->mKDTree->mTimeFP) / CLOCKS_PER_SEC;
+
+
+	std::cout << "\nMeasured from Scene\n";
+	std::cout << "Intersect: " <<isect << " seconds  " << 100.0 *  (double)isect / double(total) << "%\n";
+	std::cout << "IntersectP: " <<isectP << " seconds  " << 100.0 * (double)isectP / double(total) << "%\n";
+
+	std::cout << "\nMeasured from KdTree\n";
+	std::cout << "Intersect Total: " <<isectTotal << " seconds  " << 100.0 *  (double)isectTotal / double(total) << "%\n";
+	std::cout << "Intersect Mesh: " <<isectM << " seconds  " << 100.0 * (double)isectM / double(total) << "%\n";
+	std::cout << "Intersect Sphere: " <<isectS << " seconds  " << 100.0 *  (double)isectS / double(total)  << "%\n";
+	std::cout << "Intersect Box: " <<isectB << " seconds  " << 100.0 *  (double)isectB / double(total)  << "%\n";
+	std::cout << "Intersect Travel: " <<isectTr << " seconds  " << 100.0 *  (double)isectTr / double(total)  << "%\n";
+	std::cout << "Intersect Find Shape: " << find << " seconds  " << 100.0 *  find / double(total)  << "%\n";
+
+#endif 
 
 	mCamera->GetFilm()->WriteImage("test.pfm");
 

@@ -22,15 +22,17 @@ public:
 	
 	virtual void LoadScene() { }
 
-
-
 public:
 	vector<Light*> Lights;
+
+	mutable clock_t mTime, mTimeP;
+
+	KDTree* mKDTree;
 
 protected:
 
 	BoundingBoxf mWorldBound;
-	KDTree* mKDTree;
+	
 	vector<shared_ptr<Shape> > mShapes;
 };
 

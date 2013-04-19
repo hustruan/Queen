@@ -106,9 +106,11 @@ struct BoundEdge
 
 //-----------------------------------------------------------------------------------------
 KDTree::KDTree( float icost /*= 80.0f*/, float tcost /*= 1.0f*/, float ebonus /*= 0.5f*/, int maxp /*= 1*/, int maxDepth /*= -1*/ )
-	: mIntersectCost(icost), mTraversalCost(tcost), mEmptySpaceBonus(ebonus), mMaxPrimitive(maxp), mMaxDepth(mMaxDepth), mNodes(NULL)
+	: mIntersectCost(icost), mTraversalCost(tcost), mEmptySpaceBonus(ebonus), mMaxPrimitive(maxp), mMaxDepth(maxDepth), mNodes(NULL)
 {
 	mShapeMap.push_back(0);
+	
+    mTimeS = mTimeM = mTimeB = mTimeTotal = mTimeTrav = mTimeF = mTimeFP = 0;
 }
 
 KDTree::~KDTree()
@@ -149,8 +151,12 @@ void KDTree::BuildTree()
 
 	// Compute max depth 
 	mNextFreeNode = mNumAllocedNodes = 0;
+
+	printf("%d, %d", (mMaxDepth+1), primCount);
 	if (mMaxDepth <= 0)
+	{
 		mMaxDepth = (int32_t) (8 + 1.3f * (int32_t)RxLib::log2(float(primCount)));
+	}
 
 	// Compute bounds for kd-tree construction
 	uint32_t* primNums = new uint32_t[primCount];
@@ -332,6 +338,28 @@ BoundingBoxf KDTree::GetBound( uint32_t idx ) const
 
 uint32_t KDTree::FindShape( uint32_t& idx ) const
 {
+	FUNCTION_CALL_TIME(guard, mTimeF);
+
+	/*size_t first = 0, count = mShapeMap.size();
+
+	while(count > 0)
+	{
+	size_t step = count / 2, mid = first + step;
+	if (mShapeMap[mid] < idx + 1)
+	{
+	first = mid + 1;
+	count -= step + 1;
+	}
+	else
+	count = step;
+	}
+
+	--first;
+
+	idx -= mShapeMap[first];
+
+	return first;*/
+
 	auto it = std::lower_bound(mShapeMap.begin(), mShapeMap.end(), idx+1) - 1;
 
 	// Compute triangle index in shape. 
@@ -350,11 +378,18 @@ struct KDToDo
 bool KDTree::Intersect( const Ray& ray, DifferentialGeometry* diffGeoHit ) const
 {
 	float tmin, tmax;
-	if (!BoxRayIntersect(mBound, ray, &tmin, &tmax))
-	{
-		return false;
-	}
 
+	FUNCTION_CALL_TIME(guardTotal, mTimeTotal);
+
+	{
+		FUNCTION_CALL_TIME(guardB, mTimeB);
+
+		if (!BoxRayIntersect(mBound, ray, &tmin, &tmax))
+		{
+			return false;
+		}
+	}
+	
 	// Prepare to traverse kd-tree for ray
 	float3 invDir(1.f/ray.Direction.X(), 1.f/ray.Direction.Y(), 1.f/ray.Direction.Z());
 
@@ -409,6 +444,8 @@ bool KDTree::Intersect( const Ray& ray, DifferentialGeometry* diffGeoHit ) const
 		}
 		else
 		{
+			FUNCTION_CALL_TIME(guardLeaf, mTimeTrav);
+
 			uint32_t nPrimitives = node->Primitives();
 			
 			if (nPrimitives == 1)
@@ -552,16 +589,21 @@ bool KDTree::Intersect( uint32_t primIdx, const Ray& ray, DifferentialGeometry* 
 	float thit;
 	if (mesh)
 	{
+		FUNCTION_CALL_TIME(guard, mTimeM);
+
 		if (mesh->Intersect(primIdx, ray, &thit, diffGeoHit))
 		{
 			// A litte hack, because of area light shape
 			diffGeoHit->Instance = mShapes[shapeIdx].get();
 			ray.tMax = thit;
 			return true;
-		}			
+		}	
+				
 	}
 	else
 	{
+		FUNCTION_CALL_TIME(guard, mTimeS);
+
 		if( mShapes[shapeIdx]->Intersect(ray, &thit, diffGeoHit) )
 		{
 			ray.tMax = thit;
@@ -574,7 +616,14 @@ bool KDTree::Intersect( uint32_t primIdx, const Ray& ray, DifferentialGeometry* 
 
 bool KDTree::IntersectP( uint32_t primIdx, const Ray& ray ) const
 {
-	uint32_t shapeIdx = FindShape(primIdx);
+	//uint32_t shapeIdx = FindShape(primIdx);
+
+	uint32_t shapeIdx;
+
+	{
+		FUNCTION_CALL_TIME(guard,mTimeFP);
+		shapeIdx = FindShape(primIdx);
+	}
 
 	const Mesh* mesh = mShapes[shapeIdx]->GetTriangleMesh();
 

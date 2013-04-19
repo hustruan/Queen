@@ -15,6 +15,7 @@
 #include <cassert>
 #include <algorithm>
 #include <exception>
+#include <chrono>
 
 using std::vector;
 using std::array;
@@ -43,6 +44,36 @@ inline float AbsDot(const float3& a, const float3 b)
 	return fabsf(RxLib::Dot(a, b));
 }
 
+#ifdef DEBUG
+
+struct TimeGuard
+{
+	TimeGuard(clock_t& d)
+		: D(d)
+	{
+		Start = clock();
+	}
+
+	~TimeGuard()
+	{
+		D +=  clock() - Start;
+	}
+
+	clock_t& D;
+
+	clock_t Start;
+};
+
+#define FUNCTION_CALL_TIME(name, time)  TimeGuard name(time)
+
+#else
+
+#define FUNCTION_CALL_TIME(name, time)
+
+#endif
+
+
+
 namespace Purple {
 
 class Shape;
@@ -68,8 +99,5 @@ struct LightSample;
 struct BSDFSample;
 
 }
-
-
-
 
 #endif // Prerequisites_h__

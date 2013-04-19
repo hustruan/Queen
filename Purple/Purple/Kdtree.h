@@ -4,6 +4,7 @@
 #include "Prerequisites.h"
 #include "MemoryArena.h"
 #include "Ray.h"
+#include <chrono>
 
 namespace Purple {
 
@@ -53,6 +54,11 @@ protected:
 	
 	void BuildInternal(int32_t nodeNum, const BoundingBoxf& nodeBounds, const vector<BoundingBoxf>& allPrimBounds, uint32_t* primNums,
 		int32_t nPrimitives, int32_t depth, BoundEdge* edges[3], uint32_t* prims0, uint32_t* prims1, int32_t badRefines = 0);
+
+public:
+	mutable clock_t mTimeS, mTimeM, mTimeB;
+
+	mutable clock_t mTimeTotal, mTimeTrav, mTimeF, mTimeFP;
 
 protected:
 

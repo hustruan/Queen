@@ -81,7 +81,7 @@ public:
 		float44 frontTrans = CreateScaling(100.0f, 100.0f, 100.0f) * CreateRotationX(-Mathf::PI / 2) * CreateTranslation(0.0f, 0.0f,  -100.0f);
 		shared_ptr<Shape> frontWall = LoadMesh("../../Media/plane.md", frontTrans, true);
 		frontWall->SetMaterial(std::make_shared<DiffuseMaterial>(
-			std::make_shared<ConstantTexture<ColorRGB>>(ColorRGB::White)));
+			std::make_shared<ConstantTexture<ColorRGB>>(ColorRGB::Black)));
 		mKDTree->AddShape(frontWall);
 
 		//// standford bunny
@@ -91,7 +91,8 @@ public:
 
 		shared_ptr<Shape> sphere1 = std::make_shared<Sphere>(CreateTranslation(75.0f, 20.0f, 44.4f), false, 20.0f, -20.0f, 20.0f, Mathf::TWO_PI);
 		//shared_ptr<Shape> sphere1 = std::make_shared<Sphere>(CreateTranslation(75.0f, 20.0f, 44.4f), false, 20.0f);
-		sphere1->SetMaterial(std::make_shared<GlassMaterial>(whiteTexture, whiteTexture, indexTexture));
+		sphere1->SetMaterial(std::make_shared<DiffuseMaterial>(whiteTexture));
+		//sphere1->SetMaterial(std::make_shared<GlassMaterial>(whiteTexture, whiteTexture, indexTexture));
 		mKDTree->AddShape(sphere1);
 
 		shared_ptr<Shape> sphere2 = std::make_shared<Sphere>(CreateTranslation(25.0f, 20.0f, 75.0f), false, 20.0f, -20.0f, 20.0f, Mathf::TWO_PI);
@@ -150,10 +151,10 @@ void CreateScene()
 	gCamera = new PerspectiveCamera(camTrans, ToRadian(60.0f), 0, 1,
 		new ImageFilm(512, 512, new GaussianFilter(4.0f, 4.0f, 1.0f)));
 
-	gSampler = new StratifiedSampler(0, 512, 0, 512, 1, 1);
-	//gSampler = new StratifiedSampler(0, 512, 0, 512, 2, 2);
+	//gSampler = new StratifiedSampler(0, 512, 0, 512, 1, 1);
+	gSampler = new StratifiedSampler(0, 512, 0, 512, 2, 2);
 	gSurfaceIntegrator = new DirectLightingIntegrator();
-	//gSurfaceIntegrator = new PathIntegrator;
+	//gSurfaceIntegrator = new PathIntegrator(100);
 	//gSurfaceIntegrator = new WhittedIntegrator;
 }
 
@@ -165,6 +166,8 @@ int main()
 	gRenderer = new SamplerRenderer(gSampler, gCamera, gSurfaceIntegrator);
 	gRenderer->Render(gScene);
 	delete gScene;
+
+	getchar();
 
 	return 0;
 }
