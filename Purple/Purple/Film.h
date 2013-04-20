@@ -6,39 +6,25 @@
 
 namespace Purple {
 
+using RxLib::int2;
+
 class Filter;
 
 class Film 
 {
 public:
-	Film(int xRes, int yRes);
-
-	virtual ~Film();
-
-	virtual void AddSample(const Sample& sample, const ColorRGB& L) = 0;
-
-	virtual void WriteImage(const char* filename) = 0;
-
-	const int xResolution, yResolution;
-};
-
-
-class ImageFilm : public Film
-{
-public:
-	ImageFilm(int xRes, int yRes, Filter* filter);
-	~ImageFilm();
+	Film(int xRes, int yRes, Filter* filter);
+	~Film();
 
 	void AddSample(const Sample& sample, const ColorRGB& L);
-
 	void WriteImage(const char* filename);
 
-	//void RefreshColor(Sampler* tileSampler);
+	const int xResolution, yResolution;
 
 private:
+
 	Filter* mFilter;
 	float* mFilterTable;
-	int xPixelStart, yPixelStart, xPixelCount, yPixelCount;
 
 	struct Pixel 
 	{
@@ -54,11 +40,52 @@ private:
 	};
 
 	RxLib::BlockedArray<Pixel, 2>* pixels;
-
-
-	//std::vector<float> mColorBuffer;
 };
 
+class FilmBlock 
+{
+public:
+	FilmBlock(const int2& size, Filter* filter);
+	~FilmBlock();
+
+	inline void SetOffset(const int2& offset) { mOffset = offset; }
+	inline const int2& GetOffset() const      { return mOffset; }
+
+	inline void SetSize(const int2& size)   { mSize = size; }
+	inline const int2& GetSize() const      { return mSize; }
+
+	/// Return the border region used by the reconstruction filter
+	inline int getBorderSize() const { return mBorderSize; }
+
+	void AddSample(const Sample& sample, const ColorRGB& L);
+	void AddBlock(const FilmBlock& block);
+
+	/// Accumulate another image block into this one
+	void put(const FilmBlock* block);
+
+private:
+	int2 mSize;
+	int2 mOffset;
+	int mBorderSize;
+
+	/// Reconstructor filer
+	float mLookupFactor;
+	float mFilterRadius;
+	float* mFilterTable;
+	float* mWeightsX;
+	float* mWeightsY;
+
+	struct Pixel 
+	{
+		Pixel() : Color(0.0f, 0.0f, 0.0f), WeightSum(0.0f) { }
+		Pixel& operator += (const Pixel& rhs) { Color += rhs.Color; WeightSum += rhs.WeightSum; }
+
+		ColorRGB Color;
+		float WeightSum;
+	};
+
+	RxLib::BlockedArray<Pixel, 2>* mPixels;
+};
 
 }
 

@@ -7,9 +7,15 @@ namespace Purple {
 
 using namespace RxLib;
 
-Camera::Camera( const float44& cam2world, float shutterOpen, float shutterClose, Film* film ) : mCameraToWorld(cam2world), mShutterOpen(shutterOpen), mShutterClose(shutterClose), mFilm(film)
+Camera::Camera( const float44& cam2world, float shutterOpen, float shutterClose, Film* film ) 
+	: mCameraToWorld(cam2world), mShutterOpen(shutterOpen), mShutterClose(shutterClose), mFilm(film)
 {
 
+}
+
+Camera::~Camera( void )
+{
+	delete mFilm;
 }
 
 //-----------------------------------------------------------------------------------------------------------------------

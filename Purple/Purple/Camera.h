@@ -11,7 +11,7 @@ class Camera
 public:
 	Camera(const float44& cam2world, float shutterOpen, float shutterClose, Film* film);
 
-	virtual ~Camera(void) { }
+	virtual ~Camera(void);
 
 	Film* GetFilm() const { return mFilm; }
 

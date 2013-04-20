@@ -28,6 +28,7 @@ ColorRGB EstimateDirect( const Scene* scene, const Renderer* renderer, MemoryAre
 		if (f != ColorRGB::Black && visibility.Unoccluded(scene))
 		{
 			// Add light's contribution to reflected radiance
+
 			//Li *= visibility.Transmittance(scene, renderer, NULL, rng, arena);
 			if (light->DeltaLight())
 				Ld += f * Li * (AbsDot(wi, n) / lightPdf);
@@ -70,7 +71,7 @@ ColorRGB EstimateDirect( const Scene* scene, const Renderer* renderer, MemoryAre
 
 			if (Li != ColorRGB::Black) 
 			{
-				Li *= renderer->Transmittance(scene, ray, NULL, rng, arena);
+				//Li *= renderer->Transmittance(scene, ray, NULL, rng, arena);
 				Ld += f * Li * AbsDot(wi, n) * weight / bsdfPdf;
 			}
 		}

@@ -7,7 +7,6 @@
 
 namespace Purple {
 
-
 class Scene
 {
 public:
@@ -23,7 +22,7 @@ public:
 	virtual void LoadScene() { }
 
 public:
-	vector<Light*> Lights;
+	vector<Light*> Lights;	
 
 	mutable clock_t mTime, mTimeP;
 

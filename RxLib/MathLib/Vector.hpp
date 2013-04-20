@@ -466,6 +466,8 @@ typedef Vector<float, 2> float2;
 typedef Vector<float,3> float3;
 typedef Vector<float,4> float4;
 
+typedef Vector<int, 2> int2;
+
 
 } // Namespace RcEngine
 #endif

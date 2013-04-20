@@ -21,7 +21,6 @@ Sampler* gSampler;
 Scene* gScene;
 SamplerRenderer* gRenderer;
 SurfaceIntegrator* gSurfaceIntegrator;
-Film* gFilm;
 
 class TestScene1 : public Scene
 {
@@ -91,8 +90,8 @@ public:
 
 		shared_ptr<Shape> sphere1 = std::make_shared<Sphere>(CreateTranslation(75.0f, 20.0f, 44.4f), false, 20.0f, -20.0f, 20.0f, Mathf::TWO_PI);
 		//shared_ptr<Shape> sphere1 = std::make_shared<Sphere>(CreateTranslation(75.0f, 20.0f, 44.4f), false, 20.0f);
-		sphere1->SetMaterial(std::make_shared<DiffuseMaterial>(whiteTexture));
-		//sphere1->SetMaterial(std::make_shared<GlassMaterial>(whiteTexture, whiteTexture, indexTexture));
+		//sphere1->SetMaterial(std::make_shared<DiffuseMaterial>(whiteTexture));
+		sphere1->SetMaterial(std::make_shared<GlassMaterial>(whiteTexture, whiteTexture, indexTexture));
 		mKDTree->AddShape(sphere1);
 
 		shared_ptr<Shape> sphere2 = std::make_shared<Sphere>(CreateTranslation(25.0f, 20.0f, 75.0f), false, 20.0f, -20.0f, 20.0f, Mathf::TWO_PI);
@@ -146,26 +145,34 @@ void CreateScene()
 	float3 lookAt = float3(50, 50, 1);
 	float3 up = float3(0.0f, 1.0f, 0.0f);
 	float44 camTrans = MatrixInverse(CreateLookAtMatrixLH(cameraPos, lookAt, up));
-	//float44 camTrans = float44::Identity();
 
 	gCamera = new PerspectiveCamera(camTrans, ToRadian(60.0f), 0, 1,
-		new ImageFilm(512, 512, new GaussianFilter(4.0f, 4.0f, 1.0f)));
+		new Film(512, 512, new GaussianFilter(4.0f, 4.0f, 1.0f)));
 
-	//gSampler = new StratifiedSampler(0, 512, 0, 512, 1, 1);
-	gSampler = new StratifiedSampler(0, 512, 0, 512, 2, 2);
-	gSurfaceIntegrator = new DirectLightingIntegrator();
-	//gSurfaceIntegrator = new PathIntegrator(100);
+	gSampler = new StratifiedSampler(0, 512, 0, 512, 1, 1);
+	//gSampler = new StratifiedSampler(0, 512, 0, 512, 16, 16);
+	//gSurfaceIntegrator = new DirectLightingIntegrator();
+	gSurfaceIntegrator = new PathIntegrator(100);
 	//gSurfaceIntegrator = new WhittedIntegrator;
 }
 
 
-int main()
+int main(int argc, char** argv)
 {	
     CreateScene();
 
 	gRenderer = new SamplerRenderer(gSampler, gCamera, gSurfaceIntegrator);
-	gRenderer->Render(gScene);
+
+	if (gRenderer->InitPreviewWindow(gCamera->GetFilm(), argc, argv))
+	{
+		gRenderer->Render(gScene);
+	}
+	
 	delete gScene;
+	delete gCamera;
+	delete gSampler;
+	delete gSurfaceIntegrator;
+	delete gRenderer;
 
 	getchar();
 

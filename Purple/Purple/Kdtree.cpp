@@ -152,7 +152,6 @@ void KDTree::BuildTree()
 	// Compute max depth 
 	mNextFreeNode = mNumAllocedNodes = 0;
 
-	printf("%d, %d", (mMaxDepth+1), primCount);
 	if (mMaxDepth <= 0)
 	{
 		mMaxDepth = (int32_t) (8 + 1.3f * (int32_t)RxLib::log2(float(primCount)));
@@ -187,6 +186,7 @@ void KDTree::BuildTree()
 	delete[] prims0;
 	delete[] prims1;
 
+	printf("KDTree Built....\n\n");
 	//PrintKDTree();
 }
 
