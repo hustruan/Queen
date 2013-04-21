@@ -135,9 +135,6 @@
     <ClInclude Include="MemoryArena.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="threadpool.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="DifferentialGeometry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -154,6 +151,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="pfm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="threadpool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

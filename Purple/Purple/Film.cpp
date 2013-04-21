@@ -10,138 +10,68 @@ namespace Purple {
 
 using namespace RxLib;
 
-//-------------------------------------------------------------------------------
-Film::Film( int xRes, int yRes, Filter* filter )
-	: xResolution(xRes), yResolution(yRes), mFilter(filter)
-{
-	// Allocate film image storage
-	pixels = new BlockedArray<Pixel, 2>(xResolution, yResolution);
 
-	mFilterTable = new float[FILTER_TABLE_SIZE * FILTER_TABLE_SIZE];
-	float *ftp = mFilterTable;
-	for (int y = 0; y < FILTER_TABLE_SIZE; ++y)
-	{
-		float fy = ((float)y + 0.5f) * filter->yWidth / FILTER_TABLE_SIZE;
-		for (int x = 0; x < FILTER_TABLE_SIZE; ++x) 
-		{
-			float fx = ((float)x + 0.5f) * filter->xWidth / FILTER_TABLE_SIZE;
-			*ftp++ = filter->Evaluate(fx, fy);
-		}
-	}
+Film::Film( const int2& size, Filter* filter )
+	: mSize(size), mFilter(filter)
+{
+	mMainBlock = new FilmBlock(size, filter);
 }
 
 Film::~Film()
 {
 	delete mFilter;
+	delete mMainBlock;
 }
 
-void Film::AddSample( const Sample& sample, const ColorRGB& L )
+void Film::AddBlock( const FilmBlock& block )
 {
-	// Compute sample's raster extent
-	float dimageX = sample.ImageSample.X() - 0.5f;
-	float dimageY = sample.ImageSample.Y() - 0.5f;
-	int x0 = Ceil2Int (dimageX - mFilter->xWidth);
-	int x1 = Floor2Int(dimageX + mFilter->xWidth);
-	int y0 = Ceil2Int (dimageY - mFilter->yWidth);
-	int y1 = Floor2Int(dimageY + mFilter->yWidth);
-	
-	x0 = std::max(x0, 0);
-	x1 = std::min(x1, xResolution - 1);
-	y0 = std::max(y0, 0);
-	y1 = std::min(y1, yResolution - 1);
+	mMainBlock->AddBlock(block);
+}
 
-	if ((x1-x0) < 0 || (y1-y0) < 0)
-	{
-		return;
-	}
-
-	// Loop over filter support and add sample to pixel arrays
-
-	// Precompute x and y filter table offsets
-	int* ifx = (int* )_alloca(sizeof(int) * (x1 - x0 + 1) ); 
-	for (int x = x0; x <= x1; ++x) 
-	{
-		float fx = fabsf((x - dimageX) * mFilter->invXWidth * FILTER_TABLE_SIZE);
-		ifx[x-x0] = std::min(Floor2Int(fx), FILTER_TABLE_SIZE-1);
-	}
-
-	int *ify = (int* )_alloca(sizeof(int) * (y1 - y0 + 1) ); 
-	for (int y = y0; y <= y1; ++y) 
-	{
-		float fy = fabsf((y - dimageY) * mFilter->invYWidth * FILTER_TABLE_SIZE);
-		ify[y-y0] = std::min(Floor2Int(fy), FILTER_TABLE_SIZE-1);
-	}
-
-
-	bool syncNeeded = (mFilter->xWidth > 0.5f || mFilter->yWidth > 0.5f);
-	for (int y = y0; y <= y1; ++y)
-	{
-		for (int x = x0; x <= x1; ++x)
-		{
-			// Evaluate filter value at(x,y) pixel
-			int offset = ify[y-y0]*FILTER_TABLE_SIZE + ifx[x-x0];
-			float filterWt = mFilterTable[offset];
-	
-			//// Update pixel values with filtered sample contribution
-			Pixel& pixel = (*pixels)(x, y);
-			
-			pixel.Lrgb[0] += filterWt * L[0];
-			pixel.Lrgb[1] += filterWt * L[1];
-			pixel.Lrgb[2] += filterWt * L[2];
-			pixel.weightSum += filterWt;
-
-			//if (!syncNeeded) 
-			//{
-			//	pixel.Lrgb[0] += filterWt * L[0];
-			//	pixel.Lrgb[1] += filterWt * L[1];
-			//	pixel.Lrgb[2] += filterWt * L[2];
-			//	pixel.weightSum += filterWt;
-			//}
-			//else
-			//{
-			//	// Safely update _Lxyz_ and _weightSum_ even with concurrency
-			//	AtomicAdd(&pixel.Lrgb[0], filterWt * L[0]);
-			//	AtomicAdd(&pixel.Lrgb[1], filterWt * L[1]);
-			//	AtomicAdd(&pixel.Lrgb[2], filterWt * L[2]);
-			//	AtomicAdd(&pixel.weightSum, filterWt);
-			//}
-		}
-	}
+void Film::Clear()
+{
+	mMainBlock->Clear();
 }
 
 void Film::WriteImage( const char* filename )
 {
-	int nPix = xResolution * yResolution;
+	const int2& size = mMainBlock->GetSize();
+
+	int nPix = size.Y() * size.X();
 	float *rgb = new float[3*nPix];
 
-	for (int y = 0; y < yResolution; ++y)
+	for (int y = 0; y < size.Y(); ++y)
 	{
-		for (int x = 0; x < xResolution; ++x)
+		for (int x = 0; x < size.X(); ++x)
 		{
-			float* src = (*pixels)(x, y).Lrgb;
+			int filmY = y + mMainBlock->getBorderSize();
+			int filmX = x + mMainBlock->getBorderSize();
 
-			int tmp = 3*((yResolution - y - 1) * xResolution + x);
+			const ColorRGB& L = (*(mMainBlock->mPixels))(filmX, filmY).L;
+			float weightSum = (*(mMainBlock->mPixels))(filmX, filmY).WeightSum;
 
-			rgb[tmp  ] = std::max(0.f, src[0]);
-			rgb[tmp+1] = std::max(0.f, src[1]);
-			rgb[tmp+2] = std::max(0.f, src[2]);
+			int tmp = 3 * ((size.Y() - y - 1) * size.X() + x);
 
-			float weightSum = (*pixels)(x, y).weightSum;
+			rgb[tmp  ] = std::max(0.f, L[0]);
+			rgb[tmp+1] = std::max(0.f, L[1]);
+			rgb[tmp+2] = std::max(0.f, L[2]);
+	
 			if (weightSum != 0.f) 
 			{
 				float invWt = 1.f / weightSum;
-				rgb[tmp  ] = std::max(0.0f, rgb[tmp  ] * invWt);
-				rgb[tmp+1] = std::max(0.0f, rgb[tmp+1] * invWt);
-				rgb[tmp+2] = std::max(0.0f, rgb[tmp+2] * invWt);
+				rgb[tmp  ] *= invWt;
+				rgb[tmp+1] *= invWt;
+				rgb[tmp+2] *= invWt;
 			}
 		}
 	}
 
-	WritePfm(filename, xResolution, yResolution, 3, rgb);
+	WritePfm(filename, size.X(), size.Y(), 3, rgb);
 
 	delete[] rgb;
 }
 
+//-----------------------------------------------------------------------------
 FilmBlock::FilmBlock( const int2& size, Filter* filter )
 	: mSize(size), mOffset(0, 0), mFilterRadius(filter->Radius)
 {
@@ -153,6 +83,7 @@ FilmBlock::FilmBlock( const int2& size, Filter* filter )
 	{
 		float pos = ((float)i + 0.5f) * mFilterRadius / FILTER_TABLE_SIZE;
 		mFilterTable[i] = filter->Eval(pos);
+		//printf("%f\n", mFilterTable[i]);
 	}
 	mFilterTable[FILTER_TABLE_SIZE] = 0.0f;
 	mLookupFactor = FILTER_TABLE_SIZE / mFilterRadius;
@@ -161,6 +92,7 @@ FilmBlock::FilmBlock( const int2& size, Filter* filter )
 	mWeightsY = new float[(int) std::ceil(2*mFilterRadius) + 1];
 
 	mPixels = new BlockedArray<Pixel, 2>(mSize.X() + 2*mBorderSize, mSize.Y() + 2*mBorderSize);
+
 }
 
 FilmBlock::~FilmBlock()
@@ -179,8 +111,8 @@ void FilmBlock::AddSample( const Sample& sample, const ColorRGB& L )
 	
 	int x0 = std::max(0, Ceil2Int (dimageX - mFilterRadius));
 	int y0 = std::max(0, Ceil2Int (dimageY - mFilterRadius));
-	int x1 = std::min(mSize.X() - 1, Floor2Int(dimageX + mFilterRadius));
-	int y1 = std::min(mSize.Y() - 1, Floor2Int(dimageY + mFilterRadius));
+	int x1 = std::min(mSize.X() + 2*mBorderSize - 1, Floor2Int(dimageX + mFilterRadius));
+	int y1 = std::min(mSize.Y() + 2*mBorderSize - 1, Floor2Int(dimageY + mFilterRadius));
 
 	for (int x = x0, idx = 0; x<= x1; ++x)
 		mWeightsX[idx++] = mFilterTable[int(fabsf(x-dimageX) * mLookupFactor)];
@@ -195,7 +127,7 @@ void FilmBlock::AddSample( const Sample& sample, const ColorRGB& L )
 			weight = mWeightsX[xr] * mWeightsY[yr];
 
 			Pixel& pixel = (*mPixels)(x, y);		
-			pixel.Color += L * weight;
+			pixel.L += L * weight;
 			pixel.WeightSum += weight;
 		}
 	}
@@ -214,5 +146,125 @@ void FilmBlock::AddBlock( const FilmBlock& block )
 		}
 	}
 }
+
+void FilmBlock::Clear()
+{
+	int32_t xSize = mPixels->uSize();
+	int32_t ySize = mPixels->vSize();
+
+	for (int32_t y= 0; y < ySize; ++y)
+	{
+		for (int32_t x = 0; x < xSize; ++x)
+		{
+			(*mPixels)(x, y) = Pixel();
+		}
+	}
+}
+
+inline float ToSRGB(float value)
+{
+	if (value < 0.0031308f)
+		return 12.92f * value;
+
+	return 1.055f * powf(value, 0.41666f) - 0.055f;
+}
+
+void FilmBlock::FillBuffer( ColorRGB* buffer ) const
+{
+	for (int y = 0; y < mSize.Y(); ++y)
+	{
+		for (int x = 0; x < mSize.X(); ++x)
+		{
+			int filmY = y + mBorderSize;
+			int filmX = x + mBorderSize;
+
+			const ColorRGB& L = (*mPixels)(filmX, filmY).L;
+			float weightSum = (*mPixels)(filmX, filmY).WeightSum;
+
+			int tmp =(/*(mSize.Y() - y - 1)*/ y * mSize.X() + x); 
+
+			buffer[tmp] = L;
+
+			if (weightSum != 0.f) 
+			{
+				float invWt = 1.f / weightSum;
+				buffer[tmp] *= invWt;
+			}
+
+			buffer[tmp] =  ColorRGB(ToSRGB(buffer[tmp].R), ToSRGB(buffer[tmp].G), ToSRGB(buffer[tmp].B));
+		}
+	}
+}
+
+//---------------------------------------------------------------------------------------------------------
+BlockGenerator::BlockGenerator( const int2& size, int blockSize ) : mSize(size), mBockSize(blockSize)
+{
+	mNumBlocks = int2(
+		(int)std::ceil(size.X() / (float) blockSize),
+		(int)std::ceil(size.Y() / (float) blockSize));
+
+	mBlocksLeft = mNumBlocks.X() * mNumBlocks.Y();
+
+	mDirection = Right;
+
+	mBlock = mNumBlocks / 2;
+
+	mStepsLeft = 1;
+	mNumSteps = 1;
+
+	mStartTime = clock();
+}
+
+bool BlockGenerator::Next( FilmBlock& block )
+{
+	mMutex.lock();
+
+	if (mBlocksLeft == 0)
+	{
+		mMutex.unlock();
+		return false;
+	}
+
+	int2 pos = mBlock * mBockSize;
+	block.SetOffset(pos);
+
+	int2 left = mSize - pos;
+	block.SetSize(int2(std::min(left.X(), mBockSize), std::min(left.Y(), mBockSize)));
+
+	if (--mBlocksLeft == 0)
+	{
+		double elapsed = (double)(clock() - mStartTime) / CLOCKS_PER_SEC / 60.0;
+		std::cout << "Rendering finished (took " << elapsed << " minutes)\n";
+		mMutex.unlock();
+		return true;
+	}
+
+	do 
+	{
+		switch (mDirection) 
+		{
+		case Right: ++mBlock.X(); break;
+		case Down:  ++mBlock.Y(); break;
+		case Left:  --mBlock.X(); break;
+		case Up:    --mBlock.Y(); break;
+		}
+
+		if (--mStepsLeft == 0)
+		{
+			mDirection = (mDirection + 1) % 4;
+			if (mDirection == Left || mDirection == Right) 
+				++mNumSteps;
+			mStepsLeft = mNumSteps;
+		}
+
+	} while (mBlock.X() < 0 || mBlock.Y() < 0 ||
+		mBlock.X() >= mNumBlocks.X() || mBlock.Y() >= mNumBlocks.Y());
+
+	printf("Total: %f%%\n", (1.0f - float(mBlocksLeft) / (mNumBlocks.X() * mNumBlocks.Y())) * 100);
+
+	mMutex.unlock();
+	return true;
+}
+
 
 }

@@ -27,6 +27,7 @@ public:
 		Random &rng, MemoryArena &arena) const = 0;
 };
 
+class BlockGenerator;
 
 class SamplerRenderer : public Renderer
 {
@@ -44,26 +45,33 @@ public:
 
 	void Render(const Scene *scene);
 
+	inline Camera* GetCamera() const { return mCamera; }
+
 
 public:
 	static void DrawScreen();
 	static void ResizeWindow(int w, int h);
-	static void Refresh();
+	static void Refresh(int timer);
+	static void Close();
 
 private:
-	void TileRender(const Scene* scene, const Sample* sample, std::atomic<int32_t>& workingPackage, int32_t numTiles);
-	void PutTile(Sampler* sampler, Film* film);
+	void BlockRender(const Scene* scene, const Sample* sample, Film* film, BlockGenerator& bng);
+
+public:
+	static SamplerRenderer* msRenderer;
+	
+	static SamplerRenderer& Instance() { return *msRenderer; }
 
 protected:
 	Camera* mCamera;	
 	Sampler* mMainSampler;
+	
 	SurfaceIntegrator* mSurfaceIntegrator;
 
 	static std::mutex mMutex;
 
 	static GLuint mTexture;
-
-	std::atomic<int> mFinishedTiles;
+	static std::vector<ColorRGB> mColorBuffer;
 };
 
 }

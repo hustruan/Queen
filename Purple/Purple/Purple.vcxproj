@@ -76,6 +76,7 @@
       <AdditionalIncludeDirectories>../../RxLib/CoreLib;../../RxLib/MathLib;../../3rdParty/boost;../../3rdParty/threadpool;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FloatingPointModel>Fast</FloatingPointModel>
       <BufferSecurityCheck>false</BufferSecurityCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -112,8 +113,8 @@
     <ClInclude Include="Shape.h" />
     <ClInclude Include="SimpleShape.h" />
     <ClInclude Include="Texture.h" />
-    <ClInclude Include="threadpool.h" />
     <ClInclude Include="Renderer.h" />
+    <ClInclude Include="threadpool.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />

@@ -49,19 +49,21 @@ public:
 	Sampler(int32_t xStart, int32_t xEnd, int32_t yStart, int32_t yEnd, int32_t samplerPerPixel);
 	virtual ~Sampler(void);
 
+	virtual Sampler* Clone(int32_t xStart, int32_t xEnd, int32_t yStart, int32_t yEnd) const = 0;
+
 	// Return the number of configured pixel samples 
 	virtual uint32_t GetSampleCount() const = 0;
 
 	virtual uint32_t GetMoreSamples(Sample* samples, Random& rng) = 0;
+
+	virtual int32_t RoundSize(int32_t size) const = 0;
 
 	/**
 	 * Divide image into tiles and multi-thread can get a sampler to execute.
 	 * @param count, total number of subsamplers
 	 * @param num, subsampler index
 	 */
-	virtual Sampler* GetSubSampler(int32_t num, int32_t count) = 0;
-
-	virtual int32_t RoundSize(int32_t size) const = 0;
+	//virtual Sampler* GetSubSampler(int32_t num, int32_t count) = 0;
 
 protected:
 
@@ -87,13 +89,15 @@ public:
 	StratifiedSampler(int32_t xStart, int32_t xEnd, int32_t yStart, int32_t yEnd, int32_t xNumSamples, int32_t yNunSamples);
 	~StratifiedSampler();
 
+	Sampler* Clone(int32_t xStart, int32_t xEnd, int32_t yStart, int32_t yEnd) const;
+
 	uint32_t GetSampleCount() const { return mPixelSamplesX * mPixelSamplesY; }
-	
-	Sampler* GetSubSampler(int32_t num, int32_t count);
 
 	uint32_t GetMoreSamples(Sample* samples, Random& rng);
 
 	int32_t RoundSize(int32_t size) const { return size; }
+
+	//Sampler* GetSubSampler(int32_t num, int32_t count);
 
 private:
 

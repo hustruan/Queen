@@ -54,15 +54,20 @@ StratifiedSampler::~StratifiedSampler()
 	delete mSamplesBuffer;
 }
 
-Sampler* StratifiedSampler::GetSubSampler( int32_t num, int32_t count )
-{
-	int32_t x0, x1, y0, y1;
-	ComputeSubWindow(num, count, &x0, &x1, &y0, &y1);
-	
-	if(x0 == x1 || y0 == y1)
-		return nullptr;
+//Sampler* StratifiedSampler::GetSubSampler( int32_t num, int32_t count )
+//{
+//	int32_t x0, x1, y0, y1;
+//	ComputeSubWindow(num, count, &x0, &x1, &y0, &y1);
+//	
+//	if(x0 == x1 || y0 == y1)
+//		return nullptr;
+//
+//	return new StratifiedSampler(x0, x1, y0, y1, mPixelSamplesX, mPixelSamplesY);
+//}
 
-	return new StratifiedSampler(x0, x1, y0, y1, mPixelSamplesX, mPixelSamplesY);
+Sampler* StratifiedSampler::Clone( int32_t xStart, int32_t xEnd, int32_t yStart, int32_t yEnd ) const
+{
+	return new StratifiedSampler(xStart, xEnd, yStart, yEnd, mPixelSamplesX, mPixelSamplesY);
 }
 
 uint32_t StratifiedSampler::GetMoreSamples( Sample* samples, Random& rng )

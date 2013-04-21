@@ -16,6 +16,8 @@
 #include <algorithm>
 #include <exception>
 #include <chrono>
+#include <thread>
+#include <mutex>
 
 using std::vector;
 using std::array;

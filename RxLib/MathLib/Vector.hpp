@@ -119,13 +119,12 @@ public:
 		return result;
 	}
 
-	inline Vector operator/ (Real fScalar) const
+	inline Vector operator/ (Real scalar) const
 	{
 		Vector<Real, Size> result;
 
-		Real fInvScalar = ((Real)1.0)/fScalar;
 		for(int i = 0; i < Size; i++)
-			result[i] = mTuple[i] * fInvScalar;
+			result[i] = mTuple[i] / scalar;
 
 		return result;
 	}
@@ -154,19 +153,17 @@ public:
 		return *this;
 	}
 
-	inline Vector& operator*= (Real fScalar)
+	inline Vector& operator*= (Real scalar)
 	{
 		for(int i = 0; i < Size; i++)
-			mTuple[i]  *= fScalar;
+			mTuple[i]  *= scalar;
 		return *this;
 	}
 
-	inline Vector& operator/= (Real fScalar)
+	inline Vector& operator/= (Real scalar)
 	{
-		Real fInvScalar = ((Real)1.0)/fScalar;
-
 		for(int i = 0; i < Size; i++)
-			mTuple[i]  *= fInvScalar;
+			mTuple[i]  /= scalar;
 
 		return *this;
 	}

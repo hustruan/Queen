@@ -22,29 +22,14 @@ Camera::~Camera( void )
 PerspectiveCamera::PerspectiveCamera( const float44& cam2world, float fov, float shutterOpen, float shutterClose, Film* film )
 	: Camera(cam2world, shutterOpen, shutterClose, film)
 {
-	float width = (float)film->xResolution;
-	float height = (float)film->yResolution;
+	float width = (float)film->GetSize().X();
+	float height = (float)film->GetSize().Y();
 
 	// Compute perspective transform
 	float aspect = float(width) / float(height);
 	float44 perspective = CreatePerspectiveFovLH(fov, aspect, 1e-4f, 1e4f);
 
 	mRasterToCamera = MatrixInverse(perspective * CreateTranslation(1.0f, -1.0f, 0.0f) * CreateScaling(0.5f * width, -0.5f * height, 1.0f));
-
-	//float3 right = float3(1, 0, 0);
-	//float3 up = float3(0, 1, 0);
-	//float3 front = float3(0, 0, 1);
-	//float fovScale = tanf(ToRadian(60.0f / 2)) * 2;
-
-	//float x = 256.0f;
-	//float y = 128.0f;
-
-	//float3 r = right * ((x / Width - 0.5) * fovScale);
-	//float3 u = up * ((1.0f - y / height - 0.5) * fovScale);
-	//float3 dir = Normalize(front + r + u);
-
-	//float3 ptRaster(x, y, 0.0f);
-	//float3 ptCamera = Normalize(TransformCoord(ptRaster, mRasterToCamera));
 
 	dxCamera = TransformCoord(float3(1, 0, 0), mRasterToCamera) - TransformCoord(float3(0, 0, 0), mRasterToCamera);
 	dyCamera = TransformCoord(float3(0, 1, 0), mRasterToCamera) - TransformCoord(float3(0, 0, 0), mRasterToCamera);
