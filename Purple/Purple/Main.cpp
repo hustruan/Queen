@@ -149,7 +149,7 @@ void CreateScene()
 	gCamera = new PerspectiveCamera(camTrans, ToRadian(60.0f), 0, 1,
 		new Film(int2(512, 512), new GaussianFilter(4.0f, 1.0f)));
 
-	gSampler = new StratifiedSampler(0, 512, 0, 512, 2, 2);
+	gSampler = new StratifiedSampler(0, 512, 0, 512, 16, 16);
 	//gSurfaceIntegrator = new DirectLightingIntegrator();
 	gSurfaceIntegrator = new PathIntegrator(100);
 	//gSurfaceIntegrator = new WhittedIntegrator;

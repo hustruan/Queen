@@ -119,6 +119,8 @@ void SamplerRenderer::BlockRender( const Scene* scene, const Sample* sample, Fil
 	ColorRGB* Ts = new ColorRGB[maxSamples];
 	DifferentialGeometry* isects = new DifferentialGeometry[maxSamples];
 
+	MemoryArena arena;
+
 	while (bng.Next(block))
 	{
 		// Clear its contents 
@@ -128,7 +130,6 @@ void SamplerRenderer::BlockRender( const Scene* scene, const Sample* sample, Fil
 		int2 size  = block.GetSize();
 
 		// Declare local variables used for rendering loop
-		MemoryArena arena;
 		Random rng(offset.Y()*FILM_BLOCK_SIZE + offset.X());
 
 		// Create sampler for this block
@@ -162,11 +163,11 @@ void SamplerRenderer::BlockRender( const Scene* scene, const Sample* sample, Fil
 			// Add sample to film
 			for (int i = 0; i < sampleCount; ++i)
 				block.AddSample(samples[i], Ls[i]);
+
+			arena.FreeAll();
 		}
 
 		delete sampler;
-
-		arena.FreeAll();
 
 		/* The image block has been processed. Now add it to the "big"
 			block that represents the entire image */
