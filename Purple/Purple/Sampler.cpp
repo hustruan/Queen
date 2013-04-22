@@ -16,29 +16,10 @@ Sampler::Sampler( int32_t xStart, int32_t xEnd, int32_t yStart, int32_t yEnd, in
 
 }
 
-
 Sampler::~Sampler(void)
 {
 }
 
-void Sampler::ComputeSubWindow( int32_t num, int32_t count, int32_t* newXStart, int32_t* newXEnd, int32_t* newYStart, int32_t* newYEnd )
-{
-	int32_t width = PixelEndX - PixelStartX, height = PixelEndY - PixelStartY;
-	int32_t nx = count, ny = 1;
-	while ((nx & 0x1) == 0 && 2 * width * ny < height * nx) {
-		nx >>= 1;
-		ny <<= 1;
-	}
-	assert(nx * ny == count);
-
-	int32_t iX = num % nx, iY = num / nx;
-
-	*newXStart = Floor2Int(float(width) * Clamp(float(iX) / float(nx), 0.0f, 1.0f) );
-	*newXEnd = Floor2Int(float(width) * Clamp(float(iX+1) / float(nx), 0.0f, 1.0f) );
-
-	*newYStart = Floor2Int(float(height) * Clamp(float(iY) / float(ny), 0.0f, 1.0f) );
-	*newYEnd = Floor2Int(float(height) * Clamp(float(iY+1) / float(ny), 0.0f, 1.0f) );
-}
 
 StratifiedSampler::StratifiedSampler( int32_t xStart, int32_t xEnd, int32_t yStart, int32_t yEnd, int32_t xNumSamples, int32_t yNumSamples )
 	: Sampler(xStart, xEnd, yStart, yEnd, xNumSamples * yNumSamples), mPixelSamplesX(xNumSamples), mPixelSamplesY(yNumSamples)
@@ -51,19 +32,8 @@ StratifiedSampler::StratifiedSampler( int32_t xStart, int32_t xEnd, int32_t ySta
 
 StratifiedSampler::~StratifiedSampler()
 {
-	delete mSamplesBuffer;
+	delete[] mSamplesBuffer;
 }
-
-//Sampler* StratifiedSampler::GetSubSampler( int32_t num, int32_t count )
-//{
-//	int32_t x0, x1, y0, y1;
-//	ComputeSubWindow(num, count, &x0, &x1, &y0, &y1);
-//	
-//	if(x0 == x1 || y0 == y1)
-//		return nullptr;
-//
-//	return new StratifiedSampler(x0, x1, y0, y1, mPixelSamplesX, mPixelSamplesY);
-//}
 
 Sampler* StratifiedSampler::Clone( int32_t xStart, int32_t xEnd, int32_t yStart, int32_t yEnd ) const
 {

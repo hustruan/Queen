@@ -5,7 +5,6 @@
 
 namespace Purple {
 
-
 struct Sample
 {
 	float2 ImageSample;
@@ -58,25 +57,9 @@ public:
 
 	virtual int32_t RoundSize(int32_t size) const = 0;
 
-	/**
-	 * Divide image into tiles and multi-thread can get a sampler to execute.
-	 * @param count, total number of subsamplers
-	 * @param num, subsampler index
-	 */
-	//virtual Sampler* GetSubSampler(int32_t num, int32_t count) = 0;
-
-protected:
-
-	/**
-	 * An utility function for divide window into rectangle tiles.
-	 */
-	void ComputeSubWindow(int32_t num, int32_t count, int32_t* newXStart, int32_t* newXEnd, int32_t* newYStart, int32_t* newYEnd);
-
-
 public:
 	const int32_t SamplesPerPixel;
 	int32_t PixelStartX, PixelStartY, PixelEndX, PixelEndY;
-
 };
 
 
@@ -96,8 +79,6 @@ public:
 	uint32_t GetMoreSamples(Sample* samples, Random& rng);
 
 	int32_t RoundSize(int32_t size) const { return size; }
-
-	//Sampler* GetSubSampler(int32_t num, int32_t count);
 
 private:
 

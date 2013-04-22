@@ -124,7 +124,7 @@ void ConcentricSampleDisk( float u1, float u2, float *dx, float *dy )
 	float sx = 2 * u1 - 1;
 	float sy = 2 * u2 - 1;
 
-	// Map square to $(r,\theta)$
+	// Map square to (r,\theta)
 
 	// Handle degeneracy at the origin
 	if (sx == 0.0 && sy == 0.0) {

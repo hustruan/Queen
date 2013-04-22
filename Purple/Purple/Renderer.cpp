@@ -10,6 +10,8 @@
 #include "Integrator.h"
 #include "MemoryArena.h"
 #include "threadpool.h"
+#include <sstream>
+#include <iomanip>
 
 #define FILM_BLOCK_SIZE 64
 
@@ -274,8 +276,17 @@ void SamplerRenderer::Refresh( int timer )
 
 void SamplerRenderer::Close()
 {
+	auto now = std::chrono::system_clock::now();
+	std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+
+	auto spp = Instance().mMainSampler->GetSampleCount();
+
+	std::stringstream sss;
+	sss <<  std::put_time(std::localtime(&now_c), "%m-%d-%H-%M-%S ")  <<
+		Instance().mSurfaceIntegrator->GetIntegratorName() << "-" << spp << "spp.pfm";
+
 	GlobalThreadPool().wait();
-	Instance().GetCamera()->GetFilm()->WriteImage("test.pfm");
+	Instance().GetCamera()->GetFilm()->WriteImage(sss.str().c_str());
 }
 
 }

@@ -47,6 +47,8 @@ public:
 	 * @brief Integrator may need samples to integral light or BRDF, use this method to init samples
 	 */
 	virtual void RequestSamples(Sampler* sampler, Sample* sample, const Scene* scene) {}
+
+	virtual std::string GetIntegratorName() const = 0;
 };
 
 class SurfaceIntegrator : public Integrator
@@ -67,6 +69,8 @@ public:
 	ColorRGB Li(const Scene* scene, const Renderer* renderer, const RayDifferential& ray, const DifferentialGeometry& isect,
 		const Sample* sample, Random& rng, MemoryArena& arena) const;
 
+	std::string GetIntegratorName() const { return std::string("Whitted"); }
+
 private:
 	int32_t mMaxDepth;
 };
@@ -81,6 +85,8 @@ public:
 		const Sample* sample, Random& rng, MemoryArena& arena) const;
 
 	void RequestSamples(Sampler* sampler, Sample* sample, const Scene* scene);
+
+	std::string GetIntegratorName() const { return std::string("Direct Lighting"); }
 
 private:
 	LightSampleOffsets* mLightSampleOffsets;
@@ -101,6 +107,8 @@ public:
 		const Sample* sample, Random& rng, MemoryArena& arena) const;
 
 	void RequestSamples(Sampler* sampler, Sample* sample, const Scene* scene);
+
+	std::string GetIntegratorName() const { return std::string("Path Tracing"); }
 
 private:
 

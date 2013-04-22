@@ -30,7 +30,7 @@ inline float3 UniformSampleSphere(float u1, float u2)
 
 inline float UniformSpherePdf()
 {
-	return 1.0f / (4.0f * RxLib::Mathf::PI);
+	return RxLib::Mathf::INV_FOUR_PI;
 }
 
 inline void UniformSampleDisk(float u1, float u2, float* x, float* y)
@@ -41,11 +41,14 @@ inline void UniformSampleDisk(float u1, float u2, float* x, float* y)
 	*y = r * sinf(theta);
 }
 
+void ConcentricSampleDisk(float u1, float u2, float *dx, float *dy);
+
 inline float3 CosineSampleHemisphere(float u1, float u2)
 {
 	float3 retVal;
-	UniformSampleDisk(u1, u2, &retVal[0], &retVal[1]);
-	retVal[2] = sqrtf((std::max)(0.0f, 1.0f - retVal[0]*retVal[0] - retVal[1]*retVal[1]));
+	//UniformSampleDisk(u1, u2, &retVal[0], &retVal[1]);
+	ConcentricSampleDisk(u1, u2, &retVal[0], &retVal[1]);
+	retVal.Z() = sqrtf(std::max(0.0f, 1.0f - retVal.X()*retVal.X() - retVal.Y()*retVal.Y()));
 	return retVal;
 }
 
@@ -75,8 +78,6 @@ inline float UniformConePdf(float cosThetaMax)
 	return 1.0f / (2.f * RxLib::Mathf::PI * (1.0f - cosThetaMax));
 }
 
-void ConcentricSampleDisk(float u1, float u2, float *dx, float *dy);
-
 inline void UniformSampleTriangle(float u1, float u2, float* u, float* v)
 {
 	float su1 = sqrtf(u1);	
@@ -100,7 +101,7 @@ void StratifiedSample2D(float* samples, int32_t xNumSamples, int32_t yNumSamples
 void LatinHypercube(float* samples, int32_t numSamples, int32_t dim, Random& rng);
 
 /**
- * Shuffle 
+ * Random Shuffle 
  */
 template<typename T>
 void Shuffle(T* samples, int32_t numSamples, int32_t dims, Random& rng)
@@ -112,7 +113,6 @@ void Shuffle(T* samples, int32_t numSamples, int32_t dims, Random& rng)
 			std::swap(samples[dims*i + j], samples[dims*other + j]);
 	}
 }
-
 
 /**
  * This data structure can be used to transform uniformly distributed
@@ -129,27 +129,35 @@ struct Distribution1D
 
 	float SampleContinuous(float u, float *pdf, int* off = nullptr) const
 	{
-		float* upPtr = std::upper_bound(cdf, cdf+Count+1, u);
-		int offset = std::max(0, std::distance(cdf, upPtr) - 1);	
+		// Find surrounding CDF segments and offset
+		float *ptr = std::upper_bound(cdf, cdf+Count+1, u);
+		int offset = std::max((ptrdiff_t)0, ptr-cdf-1);
 		if (off) *off = offset;
-	
-		float t = (u - cdf[offset]) / (cdf[offset+1] - cdf[offset]);
 
-		if(pdf)
-			*pdf = pdf[offset] / Integral;
+		assert(offset < Count);
+		assert(u >= cdf[offset] && u < cdf[offset+1]);
 
-		return (offset + t) / float(Count);
+		// Compute offset along CDF segment
+		float du = (u - cdf[offset]) / (cdf[offset+1] - cdf[offset]);
+		assert(!isnan(du));
+
+		// Compute PDF for sampled offset
+		if (pdf) *pdf = pdf[offset] / Integral;
+
+		return (offset + du) / Count;
 	}
 
 	int SampleDiscrete(float u, float* pdf ) const 
 	{
-		float* upPtr = std::upper_bound(cdf, cdf+Count+1, u);
-		int offset = std::max(0, std::distance(cdf, upPtr) - 1);	
+		float *ptr = std::upper_bound(cdf, cdf+Count+1, u);
+		int offset = std::max((ptrdiff_t)0, ptr-cdf-1);
 
 		assert(offset < Count);
 		assert(u >= cdf[offset] && u < cdf[offset+1]);
 		
-		if (pdf) *pdf = pdf[offset] / (Integral * Count);
+		if (pdf) 
+			*pdf = pdf[offset] / (Integral * Count);
+		
 		return offset;
 	}
 

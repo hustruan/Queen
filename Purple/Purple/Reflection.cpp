@@ -129,7 +129,8 @@ ColorRGB BxDF::Rho( int32_t numSamples, const float* samples1, const float* samp
 
 float BxDF::Pdf( const float3& wo, const float3& wi ) const
 {
-	return CosineHemispherePdf(AbsCosTheta(wi));
+	return SameHemisphere(wo, wi) ? CosineHemispherePdf(AbsCosTheta(wi)) : 0.f;
+	//return CosineHemispherePdf(AbsCosTheta(wi));
 }
 
 ColorRGB OrenNayar::Eval( const float3& wo, const float3& wi ) const

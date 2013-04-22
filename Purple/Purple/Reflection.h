@@ -20,7 +20,7 @@ inline float AbsCosTheta(const float3& w)
 
 inline float SinTheta2(const float3& w) 
 {
-	return (std::max)(0.0f, 1.0f - w.Z() * w.Z());
+	return std::max(0.f, 1.f - CosTheta(w)*CosTheta(w));
 }
 
 inline float SinTheta(const float3& w) 
@@ -129,19 +129,13 @@ public:
 
 	ColorRGB Rho(const float3& wo, Random& rng, BSDFType flags = BSDF_All, int sqrtSamples = 6) const;
 
-
 	float3 WorldToLocal(const float3& v) const
 	{
 		return float3(Dot(v, mTangent), Dot(v, mBitangent), Dot(v, mNormal));
-		//return float3(Dot(v, mBitangent), Dot(v, mTangent), Dot(v, mNormal));
 	}
 
 	float3 LocalToWorld(const float3& v) const
 	{
-		/*return float3(mBitangent.X() * v.X() + mTangent.X() * v.Y() + mNormal.X() * v.Z(),
-		mBitangent.Y() * v.X() + mTangent.Y() * v.Y() + mNormal.Y() * v.Z(),
-		mBitangent.Z() * v.X() + mTangent.Z() * v.Y() + mNormal.Z() * v.Z());*/
-
 		return float3(mTangent.X() * v.X() + mBitangent.X() * v.Y() + mNormal.X() * v.Z(),
 			          mTangent.Y() * v.X() + mBitangent.Y() * v.Y() + mNormal.Y() * v.Z(),
 			          mTangent.Z() * v.X() + mBitangent.Z() * v.Y() + mNormal.Z() * v.Z());
