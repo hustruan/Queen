@@ -82,6 +82,7 @@
     <ClCompile Include="pfm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MipMap.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Ray.h">
@@ -156,5 +157,6 @@
     <ClInclude Include="threadpool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MipMap.h" />
   </ItemGroup>
 </Project>

@@ -2,6 +2,7 @@
 #define Texture_h__
 
 #include "Prerequisites.h"
+#include "MipMap.h"
 
 namespace Purple {
 
@@ -24,6 +25,47 @@ public:
 private:
 	T value;
 };
+
+enum TextureAddressMode
+{
+	TAM_Wrap = 0,
+	TAM_Mirror,
+	TAM_Clamp,	
+	TAM_Count,
+};
+
+class RGBImageTexture : public Texture<ColorRGB>
+{
+public:
+	RGBImageTexture(const std::string& filename, TextureAddressMode warpU, TextureAddressMode warpV,
+		MIPFilterType mipFilter = MFT_ENearest,  float gamma = 0.0f, float maxAniso = 1.0f);
+
+	ColorRGB Evaluate(const DifferentialGeometry &) const;
+
+public:
+	static void ClearCache();
+
+private:
+	static TMipMap<ColorRGB>* CreateOrReuseMipMap(const std::string& filename);
+
+private:
+	TMipMap<ColorRGB>* mMipMap;
+
+	MIPFilterType m_filterType;
+	TextureAddressMode mAddressU;
+	TextureAddressMode mAddressV;
+
+	float2 mUVOffset;
+	float2 mUVScale;
+
+	float mGamma, mMaxAnisotropy;	
+
+private:
+
+	static std::map< std::string, TMipMap<ColorRGB>* > msTextures;
+};
+
+
 
 
 }

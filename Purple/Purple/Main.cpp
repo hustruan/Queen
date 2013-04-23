@@ -36,6 +36,8 @@ public:
 		auto cTexture = std::make_shared<ConstantTexture<ColorRGB>>(ColorRGB(0.4f, 0.8f, 0.1f));
 		auto indexTexture = std::make_shared<ConstantTexture<float>>(1.5f);
 
+		auto colorTex = std::make_shared<ImageTexture<ColorRGB>>("test", TAM_Clamp, TAM_Clamp);
+
 		// Area Light 
 		float44 light2World = CreateScaling(40.0f, 40.0f, 40.0f) * CreateTranslation(30.0f, 98.0f, 30.0f);	
 		shared_ptr<Shape> areaLightShape = LoadMesh("../../Media/plane.md", light2World, true);	
