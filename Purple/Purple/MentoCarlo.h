@@ -49,6 +49,14 @@ inline float3 CosineSampleHemisphere(float u1, float u2)
 	//UniformSampleDisk(u1, u2, &retVal[0], &retVal[1]);
 	ConcentricSampleDisk(u1, u2, &retVal[0], &retVal[1]);
 	retVal.Z() = sqrtf(std::max(0.0f, 1.0f - retVal.X()*retVal.X() - retVal.Y()*retVal.Y()));
+
+	///* Guard against numerical imprecisions */
+	//if (retVal.Z() == 0.0f)
+	//{
+	//	printf("Z===0\n");
+	//	retVal.Z() = 1e-10f;
+	//}
+
 	return retVal;
 }
 
@@ -80,9 +88,9 @@ inline float UniformConePdf(float cosThetaMax)
 
 inline void UniformSampleTriangle(float u1, float u2, float* u, float* v)
 {
-	float su1 = sqrtf(u1);	
-	*u = 1.0f - su1;
-	*v = u2 * su1;
+	float tmp = sqrtf(u1);	
+	*u = 1.0f - tmp;
+	*v = u2 * tmp;
 }
 
 inline float PowerHeuristic(int nf, float fPdf, int ng, float gPdf)

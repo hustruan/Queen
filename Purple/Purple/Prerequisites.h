@@ -18,15 +18,16 @@
 #include <chrono>
 #include <thread>
 #include <mutex>
+#include <cmath>
 
 using std::vector;
 using std::array;
 using std::shared_ptr;
 using std::make_shared;
 
-#define isnan _isnan
-#define isinf(f) (!_finite((f)))
+#define RXLIB_WINDOWS
 
+#include <Math.hpp>
 #include <Vector.hpp>
 #include <ColorRGBA.hpp>
 #include <Matrix.hpp>

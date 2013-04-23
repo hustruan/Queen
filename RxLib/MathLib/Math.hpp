@@ -11,6 +11,8 @@
 #define ALIGNED_16  __declspec(align(16))
 #define ALIGNED_4   __declspec(align(4))
 
+#define isnan(f) _isnan(f)
+#define isinf(f) (!_finite((f)))
 
 namespace RxLib {
 

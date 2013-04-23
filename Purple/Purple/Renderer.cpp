@@ -42,8 +42,10 @@ ColorRGB SamplerRenderer::Li( const Scene *scene, const RayDifferential &ray, co
 	// Allocate local variables for _isect_ and _T_ if needed
 	ColorRGB localT;
 	if (!T) T = &localT;
+	
 	DifferentialGeometry localIsect;
 	if (!isect) isect = &localIsect;
+	
 	ColorRGB Li = ColorRGB::Black;
 	if (scene->Intersect(ray, isect))
 	{
@@ -226,6 +228,7 @@ bool SamplerRenderer::InitPreviewWindow( Film* film, int argc, char** argv)
 
 	glutInitDisplayMode( GLUT_RGB | GLUT_DOUBLE);
 	glutInitWindowSize(width, height);
+	glutInitWindowPosition(600, 100);
 	glutCreateWindow("Ray Tracer");
 
 	glewInit();

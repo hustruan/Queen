@@ -229,12 +229,14 @@ public:
 		float b1, b2;
 		UniformSampleTriangle(u1, u2, &b1, &b2);
 		
-		const float3& p1 = parentMesh->mPositions[mIdx[0]];
-		const float3& p2 = parentMesh->mPositions[mIdx[1]];
-		const float3& p3 = parentMesh->mPositions[mIdx[2]];
+		const float3& p0 = parentMesh->mPositions[mIdx[0]];
+		const float3& p1 = parentMesh->mPositions[mIdx[1]];
+		const float3& p2 = parentMesh->mPositions[mIdx[2]];
 
-		float3 p = b1 * p1 + b2 * p2 + (1.f - b1 - b2) * p3;
-		*n = Normalize(Cross(p2-p1, p3-p1));
+		float3 sideA = p1 - p0, sideB = p2 - p0;
+
+		float3 p = p0 + (sideA * b1) + (sideB * b2);
+		*n = Normalize(Cross(sideA, sideB));
 
 		if (parentMesh->ReverseOrientation)
 			*n *= -1.0f;
@@ -342,8 +344,13 @@ float Mesh::Area() const
 
 float3 Mesh::Sample( float u1, float u2, float u3,  float3* n ) const
 {
-	// use u2 to sample triangle index
+	if (mSurfaceArea < 0)
+		const_cast<Mesh*>(this)->PrepareSampleDistribution();  // remove const restrict
+
+	// use u3 to sample triangle index
 	int32_t index = mAreaDistrib->SampleDiscrete(u3, NULL);
+
+	// sample triangle
 	float3 pt = mTriangles[index].Sample(this, u1, u2, n);
 
 	return pt;

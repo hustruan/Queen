@@ -1,6 +1,8 @@
 #ifndef ColorRGBA_h__
 #define ColorRGBA_h__
 
+#include "Math.hpp"
+
 namespace RxLib {
 
 class ColorRGB 
@@ -34,15 +36,20 @@ public:
 		Tuple[2] = tuple[2];
 	}
 
+	inline bool HasNaNs() const
+	{
+		return isnan(Tuple[0]) && isnan(Tuple[1]) && isnan(Tuple[2]);
+	}
+
 	// member access
-	const float* operator() (void) const			{ return Tuple; }
-	float* operator() (void)						{ return Tuple; }
-	float operator[] (size_t i) const				{ return Tuple[i]; }
-	float& operator[] (size_t i)					{ return Tuple[i]; }
+	inline const float* operator() (void) const			{ return Tuple; }
+	inline float* operator() (void)						{ return Tuple; }
+	inline float operator[] (size_t i) const				{ return Tuple[i]; }
+	inline float& operator[] (size_t i)					{ return Tuple[i]; }
 
 
 	// comparison
-	bool operator==(const ColorRGB& rkC) const
+	inline bool operator==(const ColorRGB& rkC) const
 	{
 		return
 			Tuple[0] == rkC.Tuple[0] &&
@@ -50,7 +57,7 @@ public:
 			Tuple[2] == rkC.Tuple[2];
 	}
 
-	bool operator!=(const ColorRGB& rkC) const
+	inline bool operator!=(const ColorRGB& rkC) const
 	{
 		return
 			Tuple[0] != rkC.Tuple[0] ||
@@ -59,7 +66,7 @@ public:
 	}
 
 	// arithmetic operations
-	ColorRGB operator+ (const ColorRGB& rkC) const
+	inline ColorRGB operator+ (const ColorRGB& rkC) const
 	{
 		return ColorRGB(
 			Tuple[0] + rkC.Tuple[0],
@@ -67,7 +74,7 @@ public:
 			Tuple[2] + rkC.Tuple[2]);
 	}
 
-	ColorRGB operator- (const ColorRGB& rkC) const
+	inline ColorRGB operator- (const ColorRGB& rkC) const
 	{
 		return ColorRGB(
 			Tuple[0] - rkC.Tuple[0],
@@ -75,7 +82,7 @@ public:
 			Tuple[2] - rkC.Tuple[2]);
 	}
 
-	ColorRGB operator* (const ColorRGB& rkC) const
+	inline ColorRGB operator* (const ColorRGB& rkC) const
 	{
 		return ColorRGB(
 			Tuple[0]*rkC.Tuple[0],
@@ -83,7 +90,7 @@ public:
 			Tuple[2]*rkC.Tuple[2]);
 	}
 
-	ColorRGB operator/ (const ColorRGB& rkC) const
+	inline ColorRGB operator/ (const ColorRGB& rkC) const
 	{
 		return ColorRGB(
 			Tuple[0]/rkC.Tuple[0],
@@ -91,7 +98,7 @@ public:
 			Tuple[2]/rkC.Tuple[2]);
 	}
 
-	ColorRGB operator* (float fScalar) const
+	inline ColorRGB operator* (float fScalar) const
 	{
 		return ColorRGB(
 			fScalar*Tuple[0],
@@ -99,7 +106,7 @@ public:
 			fScalar*Tuple[2]);
 	}
 
-	ColorRGB operator/ (float fScalar) const
+	inline ColorRGB operator/ (float fScalar) const
 	{
 		float invScalar = 1.0f / fScalar;
 		return ColorRGB(
@@ -109,7 +116,7 @@ public:
 	}
 
 	// arithmetic updates
-	ColorRGB& operator+= (const ColorRGB& rkC)
+	inline ColorRGB& operator+= (const ColorRGB& rkC)
 	{
 		Tuple[0] += rkC.Tuple[0];
 		Tuple[1] += rkC.Tuple[1];
@@ -117,7 +124,7 @@ public:
 		return *this;
 	}
 
-	ColorRGB& operator-= (const ColorRGB& rkC)
+	inline ColorRGB& operator-= (const ColorRGB& rkC)
 	{
 		Tuple[0] -= rkC.Tuple[0];
 		Tuple[1] -= rkC.Tuple[1];
@@ -125,7 +132,7 @@ public:
 		return *this;
 	}
 
-	ColorRGB& operator*= (const ColorRGB& rkC)
+	inline ColorRGB& operator*= (const ColorRGB& rkC)
 	{
 		Tuple[0] *= rkC.Tuple[0];
 		Tuple[1] *= rkC.Tuple[1];
@@ -133,7 +140,7 @@ public:
 		return *this;
 	}
 
-	ColorRGB& operator*= (float fScalar)
+	inline ColorRGB& operator*= (float fScalar)
 	{
 		Tuple[0] *= fScalar;
 		Tuple[1] *= fScalar;
@@ -186,15 +193,20 @@ public:
 		Tuple[3] = tuple[3];
 	}
 
+	inline bool HasNaNs() const
+	{
+		return isnan(Tuple[0]) && isnan(Tuple[1]) && isnan(Tuple[2]);
+	}
+
 	// member access
-	const float* operator() (void) const			{ return Tuple; }
-	float* operator() (void)						{ return Tuple; }
-	float operator[] (size_t i) const				{ return Tuple[i]; }
-	float& operator[] (size_t i)					{ return Tuple[i]; }
+	inline const float* operator() (void) const			{ return Tuple; }
+	inline float* operator() (void)						{ return Tuple; }
+	inline float operator[] (size_t i) const				{ return Tuple[i]; }
+	inline float& operator[] (size_t i)					{ return Tuple[i]; }
 
 
 	// comparison
-	bool operator==(const ColorRGBA& rkC) const
+	inline bool operator==(const ColorRGBA& rkC) const
 	{
 		return
 			Tuple[0] == rkC.Tuple[0] &&
@@ -203,7 +215,7 @@ public:
 			Tuple[3] == rkC.Tuple[3];
 	}
 
-	bool operator!=(const ColorRGBA& rkC) const
+	inline bool operator!=(const ColorRGBA& rkC) const
 	{
 		return
 			Tuple[0] != rkC.Tuple[0] ||
@@ -213,7 +225,7 @@ public:
 	}
 
 	// arithmetic operations
-	ColorRGBA operator+ (const ColorRGBA& rkC) const
+	inline ColorRGBA operator+ (const ColorRGBA& rkC) const
 	{
 		return ColorRGBA(
 			Tuple[0] + rkC.Tuple[0],
@@ -222,7 +234,7 @@ public:
 			Tuple[3] + rkC.Tuple[3]);
 	}
 
-	ColorRGBA operator- (const ColorRGBA& rkC) const
+	inline ColorRGBA operator- (const ColorRGBA& rkC) const
 	{
 		return ColorRGBA(
 			Tuple[0] - rkC.Tuple[0],
@@ -231,7 +243,7 @@ public:
 			Tuple[3] - rkC.Tuple[3]);
 	}
 
-	ColorRGBA operator* (const ColorRGBA& rkC) const
+	inline ColorRGBA operator* (const ColorRGBA& rkC) const
 	{
 		return ColorRGBA(
 			Tuple[0]*rkC.Tuple[0],
@@ -240,7 +252,7 @@ public:
 			Tuple[3]*rkC.Tuple[3]);
 	}
 
-	ColorRGBA operator* (float fScalar) const
+	inline ColorRGBA operator* (float fScalar) const
 	{
 		return ColorRGBA(
 			fScalar*Tuple[0],
@@ -249,7 +261,7 @@ public:
 			fScalar*Tuple[3]);
 	}
 
-	ColorRGBA operator/ (float fScalar) const
+	inline ColorRGBA operator/ (float fScalar) const
 	{
 		return ColorRGBA(
 			fScalar/Tuple[0],
@@ -259,7 +271,7 @@ public:
 	}
 
 	// arithmetic updates
-	ColorRGBA& operator+= (const ColorRGBA& rkC)
+	inline ColorRGBA& operator+= (const ColorRGBA& rkC)
 	{
 		Tuple[0] += rkC.Tuple[0];
 		Tuple[1] += rkC.Tuple[1];
@@ -268,7 +280,7 @@ public:
 		return *this;
 	}
 
-	ColorRGBA& operator-= (const ColorRGBA& rkC)
+	inline ColorRGBA& operator-= (const ColorRGBA& rkC)
 	{
 		Tuple[0] -= rkC.Tuple[0];
 		Tuple[1] -= rkC.Tuple[1];
@@ -277,7 +289,7 @@ public:
 		return *this;
 	}
 
-	ColorRGBA& operator*= (const ColorRGBA& rkC)
+	inline ColorRGBA& operator*= (const ColorRGBA& rkC)
 	{
 		Tuple[0] *= rkC.Tuple[0];
 		Tuple[1] *= rkC.Tuple[1];
@@ -286,7 +298,7 @@ public:
 		return *this;
 	}
 
-	ColorRGBA& operator*= (float fScalar)
+	inline ColorRGBA& operator*= (float fScalar)
 	{
 		Tuple[0] *= fScalar;
 		Tuple[1] *= fScalar;

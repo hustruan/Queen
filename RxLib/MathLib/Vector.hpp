@@ -68,6 +68,14 @@ public:
 		return *this;
 	}
 
+	inline bool HasNaNs() const
+	{
+		bool anyHit = false;
+		for(int i = 0; i < Size && !anyHit; i++)
+			anyHit |= isnan(mTuple[i]);
+		return anyHit;
+	}
+
 	// coordinate access
 	inline const Real* operator() (void)const			{ return mTuple; }
 	inline Real* operator() (void)						{ return mTuple; }

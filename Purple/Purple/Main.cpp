@@ -30,6 +30,7 @@ public:
 	{
 		auto redTexture = std::make_shared<ConstantTexture<ColorRGB>>(ColorRGB::Red);
 		auto greenTexture = std::make_shared<ConstantTexture<ColorRGB>>(ColorRGB::Green);
+		auto blackTexture = std::make_shared<ConstantTexture<ColorRGB>>(ColorRGB::Black);
 		auto blueTexture = std::make_shared<ConstantTexture<ColorRGB>>(ColorRGB::Blue);
 		auto whiteTexture = std::make_shared<ConstantTexture<ColorRGB>>(ColorRGB::White);
 		auto cTexture = std::make_shared<ConstantTexture<ColorRGB>>(ColorRGB(0.4f, 0.8f, 0.1f));
@@ -39,11 +40,11 @@ public:
 		float44 light2World = CreateScaling(40.0f, 40.0f, 40.0f) * CreateTranslation(30.0f, 98.0f, 30.0f);	
 		shared_ptr<Shape> areaLightShape = LoadMesh("../../Media/plane.md", light2World, true);	
 		
-		AreaLight* areaLight = new AreaLight(areaLightShape->mLocalToWorld, ColorRGB::White * 10.0f, areaLightShape, 10);
+		AreaLight* areaLight = new AreaLight(areaLightShape->mLocalToWorld, ColorRGB::White * 10.0f, areaLightShape, 100);
 		Lights.push_back(areaLight);
 
 		shared_ptr<Shape> areaLightShapeAdapter = std::make_shared<AreaLightShape>(areaLightShape, areaLight);
-		areaLightShapeAdapter->SetMaterial(std::make_shared<DiffuseMaterial>(whiteTexture));
+		areaLightShapeAdapter->SetMaterial(std::make_shared<DiffuseMaterial>(blackTexture));
 		mKDTree->AddShape(areaLightShapeAdapter);
 		
 		// Walls
@@ -79,22 +80,21 @@ public:
 
 		float44 frontTrans = CreateScaling(100.0f, 100.0f, 100.0f) * CreateRotationX(-Mathf::PI / 2) * CreateTranslation(0.0f, 0.0f,  -100.0f);
 		shared_ptr<Shape> frontWall = LoadMesh("../../Media/plane.md", frontTrans, true);
-		frontWall->SetMaterial(std::make_shared<DiffuseMaterial>(
-			std::make_shared<ConstantTexture<ColorRGB>>(ColorRGB::Black)));
+		frontWall->SetMaterial(std::make_shared<DiffuseMaterial>(blackTexture));
 		mKDTree->AddShape(frontWall);
 
-		//// standford bunny
-		shared_ptr<Shape> bunny = LoadMesh("../../Media/bunny.md", CreateScaling(400.0f, 400.0f, 400.0f) * 
-			CreateRotationY(Mathf::PI) * CreateTranslation(42.0f, 0.0f, 50.0f));
-		//bunny->SetMaterial(std::make_shared<DiffuseMaterial>(cTexture));
-		bunny->SetMaterial(std::make_shared<GlassMaterial>(whiteTexture, whiteTexture, indexTexture));
-		mKDTree->AddShape(bunny);
+		////// standford bunny
+		//shared_ptr<Shape> bunny = LoadMesh("../../Media/bunny.md", CreateScaling(400.0f, 400.0f, 400.0f) * 
+		//	CreateRotationY(Mathf::PI) * CreateTranslation(42.0f, 0.0f, 50.0f));
+		////bunny->SetMaterial(std::make_shared<DiffuseMaterial>(cTexture));
+		//bunny->SetMaterial(std::make_shared<GlassMaterial>(whiteTexture, whiteTexture, indexTexture));
+		//mKDTree->AddShape(bunny);
 
-		//shared_ptr<Shape> sphere1 = std::make_shared<Sphere>(CreateTranslation(75.0f, 20.0f, 44.4f), false, 20.0f, -20.0f, 20.0f, Mathf::TWO_PI);
-		////shared_ptr<Shape> sphere1 = std::make_shared<Sphere>(CreateTranslation(75.0f, 20.0f, 44.4f), false, 20.0f);
-		////sphere1->SetMaterial(std::make_shared<DiffuseMaterial>(whiteTexture));
-		//sphere1->SetMaterial(std::make_shared<GlassMaterial>(whiteTexture, whiteTexture, indexTexture));
-		//mKDTree->AddShape(sphere1);
+		shared_ptr<Shape> sphere1 = std::make_shared<Sphere>(CreateTranslation(75.0f, 20.0f, 44.4f), false, 20.0f, -20.0f, 20.0f, Mathf::TWO_PI);
+		//shared_ptr<Shape> sphere1 = std::make_shared<Sphere>(CreateTranslation(75.0f, 20.0f, 44.4f), false, 20.0f);
+		//sphere1->SetMaterial(std::make_shared<DiffuseMaterial>(whiteTexture));
+		sphere1->SetMaterial(std::make_shared<GlassMaterial>(whiteTexture, whiteTexture, indexTexture));
+		mKDTree->AddShape(sphere1);
 
 		//shared_ptr<Shape> sphere2 = std::make_shared<Sphere>(CreateTranslation(25.0f, 20.0f, 75.0f), false, 20.0f, -20.0f, 20.0f, Mathf::TWO_PI);
 		////shared_ptr<Shape> sphere2 = std::make_shared<Sphere>(CreateTranslation(50.0f, 50.0f, 50.0f), false, 20.0f, -20.0f, 20.0f, Mathf::TWO_PI);
@@ -148,10 +148,16 @@ void CreateScene()
 	float3 up = float3(0.0f, 1.0f, 0.0f);
 	float44 camTrans = MatrixInverse(CreateLookAtMatrixLH(cameraPos, lookAt, up));
 
-	gCamera = new PerspectiveCamera(camTrans, ToRadian(60.0f), 0, 1,
-		new Film(int2(512, 512), new GaussianFilter(4.0f, 1.0f)));
+	const int width = 512;
+	const int height = 512;
 
-	gSampler = new StratifiedSampler(0, 512, 0, 512, 4, 4);
+	_ASSERTE(height);
+
+
+	gCamera = new PerspectiveCamera(camTrans, ToRadian(60.0f), 0, 1,
+		new Film(int2(width, height), new GaussianFilter(4.0f, 1.0f)));
+
+	gSampler = new StratifiedSampler(0, width, 0, height, 8, 8);
 	//gSurfaceIntegrator = new DirectLightingIntegrator();
 	gSurfaceIntegrator = new PathIntegrator(100);
 	//gSurfaceIntegrator = new WhittedIntegrator;

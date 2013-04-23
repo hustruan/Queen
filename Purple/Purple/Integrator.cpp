@@ -414,6 +414,7 @@ ColorRGB PathIntegrator::Li( const Scene* scene, const Renderer* renderer, const
 		}
 
 		BSDF* bsdf = isectp->GetBSDF(ray, arena);
+		
 		const float3& p = bsdf->dgShading.Point;
 		const float3& n = bsdf->dgShading.Normal;
 		const float3& wo = -ray.Direction;
@@ -440,8 +441,10 @@ ColorRGB PathIntegrator::Li( const Scene* scene, const Renderer* renderer, const
 
 		ColorRGB f = bsdf->Sample(wo, &wi, outgoingBSDFSample, &pdf, BSDF_All, &sampledBSDFflags);
 		
-		if (f == ColorRGB::Black || pdf == 0.)
+		if (f == ColorRGB::Black || pdf == 0.0f)
+		{
 			break;
+		}
 
 		specularBounce = (sampledBSDFflags & BSDF_Specular) != 0;
 		pathThroughput *= f * AbsDot(wi, n) / pdf;
@@ -465,6 +468,7 @@ ColorRGB PathIntegrator::Li( const Scene* scene, const Renderer* renderer, const
 		// Find next vertex of path
 		if (!scene->Intersect(ray, &localIsect))
 		{
+			// Account for environment light
 			if (specularBounce)
 				for (uint32_t i = 0; i < scene->Lights.size(); ++i)
 					L += pathThroughput * scene->Lights[i]->Le(ray);
