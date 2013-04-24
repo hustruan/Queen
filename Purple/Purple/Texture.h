@@ -26,21 +26,13 @@ private:
 	T value;
 };
 
-enum TextureAddressMode
-{
-	TAM_Wrap = 0,
-	TAM_Mirror,
-	TAM_Clamp,	
-	TAM_Count,
-};
-
 class RGBImageTexture : public Texture<ColorRGB>
 {
 public:
 	RGBImageTexture(const std::string& filename, TextureAddressMode warpU, TextureAddressMode warpV,
-		MIPFilterType mipFilter = MFT_ENearest,  float gamma = 0.0f, float maxAniso = 1.0f);
+		MIPFilterType mipFilter = MFT_Nearest,  float gamma = 0.0f, float maxAniso = 1.0f);
 
-	ColorRGB Evaluate(const DifferentialGeometry &) const;
+	ColorRGB Evaluate(const DifferentialGeometry& dg) const;
 
 public:
 	static void ClearCache();

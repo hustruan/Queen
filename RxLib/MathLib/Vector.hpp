@@ -70,10 +70,10 @@ public:
 
 	inline bool HasNaNs() const
 	{
-		bool anyHit = false;
-		for(int i = 0; i < Size && !anyHit; i++)
-			anyHit |= isnan(mTuple[i]);
-		return anyHit;
+		int anyNaN = 0;
+		for(int i = 0; i < Size && !anyNaN; i++)
+			anyNaN = isnan(mTuple[i]);
+		return anyNaN != 0;
 	}
 
 	// coordinate access

@@ -36,7 +36,7 @@ public:
 		auto cTexture = std::make_shared<ConstantTexture<ColorRGB>>(ColorRGB(0.4f, 0.8f, 0.1f));
 		auto indexTexture = std::make_shared<ConstantTexture<float>>(1.5f);
 
-		auto colorTex = std::make_shared<ImageTexture<ColorRGB>>("test", TAM_Clamp, TAM_Clamp);
+		auto wallTexture = std::make_shared<RGBImageTexture>("../../Media/wall.dds", TAM_Clamp, TAM_Clamp);
 
 		// Area Light 
 		float44 light2World = CreateScaling(40.0f, 40.0f, 40.0f) * CreateTranslation(30.0f, 98.0f, 30.0f);	
@@ -76,8 +76,8 @@ public:
 
 		float44 backTrans = CreateScaling(100.0f, 100.0f, 100.0f) * CreateRotationX(-Mathf::PI / 2) * CreateTranslation(0.0f, 0.0f, 100.0f);;
 		shared_ptr<Shape> backWall = LoadMesh("../../Media/plane.md", backTrans, false);
-		backWall->SetMaterial(std::make_shared<DiffuseMaterial>(
-			std::make_shared<ConstantTexture<ColorRGB>>(ColorRGB(.75,.75,.75))));
+		backWall->SetMaterial(std::make_shared<DiffuseMaterial>(wallTexture
+			/*std::make_shared<ConstantTexture<ColorRGB>>(ColorRGB(.75,.75,.75))*/));
 		mKDTree->AddShape(backWall);
 
 		float44 frontTrans = CreateScaling(100.0f, 100.0f, 100.0f) * CreateRotationX(-Mathf::PI / 2) * CreateTranslation(0.0f, 0.0f,  -100.0f);
