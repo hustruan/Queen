@@ -36,7 +36,8 @@ public:
 		auto cTexture = std::make_shared<ConstantTexture<ColorRGB>>(ColorRGB(0.4f, 0.8f, 0.1f));
 		auto indexTexture = std::make_shared<ConstantTexture<float>>(1.5f);
 
-		auto wallTexture = std::make_shared<RGBImageTexture>("../../Media/wall.dds", TAM_Clamp, TAM_Clamp);
+		//auto f = RGBImageTexture("../../Media/wall.dds", TAM_Clamp, TAM_Clamp);
+		auto wallTexture = std::make_shared<RGBImageTexture>("../../Media/wall.img", TAM_Clamp, TAM_Clamp);
 
 		// Area Light 
 		float44 light2World = CreateScaling(40.0f, 40.0f, 40.0f) * CreateTranslation(30.0f, 98.0f, 30.0f);	
@@ -98,11 +99,11 @@ public:
 		sphere1->SetMaterial(std::make_shared<GlassMaterial>(whiteTexture, whiteTexture, indexTexture));
 		mKDTree->AddShape(sphere1);
 
-		//shared_ptr<Shape> sphere2 = std::make_shared<Sphere>(CreateTranslation(25.0f, 20.0f, 75.0f), false, 20.0f, -20.0f, 20.0f, Mathf::TWO_PI);
-		////shared_ptr<Shape> sphere2 = std::make_shared<Sphere>(CreateTranslation(50.0f, 50.0f, 50.0f), false, 20.0f, -20.0f, 20.0f, Mathf::TWO_PI);
-		////shared_ptr<Shape> sphere2 = std::make_shared<Sphere>(CreateTranslation(25.0f, 20.0f, 75.0f), false, 20.0f);
-		//sphere2->SetMaterial(std::make_shared<MirrorMaterial>(whiteTexture));
-		//mKDTree->AddShape(sphere2);
+		shared_ptr<Shape> sphere2 = std::make_shared<Sphere>(CreateTranslation(25.0f, 20.0f, 75.0f), false, 20.0f, -20.0f, 20.0f, Mathf::TWO_PI);
+		//shared_ptr<Shape> sphere2 = std::make_shared<Sphere>(CreateTranslation(50.0f, 50.0f, 50.0f), false, 20.0f, -20.0f, 20.0f, Mathf::TWO_PI);
+		//shared_ptr<Shape> sphere2 = std::make_shared<Sphere>(CreateTranslation(25.0f, 20.0f, 75.0f), false, 20.0f);
+		sphere2->SetMaterial(std::make_shared<MirrorMaterial>(whiteTexture));
+		mKDTree->AddShape(sphere2);
 
 		mKDTree->BuildTree();
 	}
@@ -135,6 +136,8 @@ private:
 			fread_s(tangets, sizeof(float3)*numVertices, sizeof(float), numVertices*3, pFile);
 		}
 
+		fclose(pFile);
+
 		return std::make_shared<Mesh>(world, ro, nunIndices/3, numVertices, indices, positions, normals, tangets, texcoords);
 	}
 };
@@ -153,13 +156,10 @@ void CreateScene()
 	const int width = 512;
 	const int height = 512;
 
-	_ASSERTE(height);
-
-
 	gCamera = new PerspectiveCamera(camTrans, ToRadian(60.0f), 0, 1,
 		new Film(int2(width, height), new GaussianFilter(4.0f, 1.0f)));
 
-	gSampler = new StratifiedSampler(0, width, 0, height, 8, 8);
+	gSampler = new StratifiedSampler(0, width, 0, height, 4, 4);
 	//gSurfaceIntegrator = new DirectLightingIntegrator();
 	gSurfaceIntegrator = new PathIntegrator(100);
 	//gSurfaceIntegrator = new WhittedIntegrator;

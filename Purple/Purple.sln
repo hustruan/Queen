@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MathLib", "..\RxLib\MathLib
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CoreLib", "..\RxLib\CoreLib\CoreLib.vcxproj", "{F63EBE70-225E-439F-A050-AF46BD2EF1FA}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ImageExporter", "ImageExporter\ImageExporter.vcxproj", "{1CA70AF0-E7FB-4D2C-AE01-D239D572729F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -31,6 +33,10 @@ Global
 		{F63EBE70-225E-439F-A050-AF46BD2EF1FA}.Debug|Win32.Build.0 = Debug|Win32
 		{F63EBE70-225E-439F-A050-AF46BD2EF1FA}.Release|Win32.ActiveCfg = Release|Win32
 		{F63EBE70-225E-439F-A050-AF46BD2EF1FA}.Release|Win32.Build.0 = Release|Win32
+		{1CA70AF0-E7FB-4D2C-AE01-D239D572729F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{1CA70AF0-E7FB-4D2C-AE01-D239D572729F}.Debug|Win32.Build.0 = Debug|Win32
+		{1CA70AF0-E7FB-4D2C-AE01-D239D572729F}.Release|Win32.ActiveCfg = Release|Win32
+		{1CA70AF0-E7FB-4D2C-AE01-D239D572729F}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

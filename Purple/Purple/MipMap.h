@@ -53,10 +53,12 @@ public:
 
 	inline T Eval(const SampleState& sampleState, const float2& uv, const float2& d0, const float2& d1) const
 	{
-		if (sampleState.Filter == MFT_Nearest)
+		//if (sampleState.Filter == MFT_Nearest)
 			return EvalBox(sampleState, 0, uv);
 
-		return T();
+		// eval first 
+		// todo add mipmap
+		//return EvalBilinear(sampleState, 0, uv);
 	}
 
 

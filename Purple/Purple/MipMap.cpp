@@ -127,6 +127,7 @@ T TMipMap<T>::Texel( const SampleState& sampleState, int level, int x, int y ) c
 		}
 	}
 
+	auto c = mPyramid[level][y*levelWidth+x];
 	return mPyramid[level][y*levelWidth+x];
 }
 

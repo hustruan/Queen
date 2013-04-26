@@ -43,9 +43,7 @@ private:
 private:
 	TMipMap<ColorRGB>* mMipMap;
 
-	MIPFilterType m_filterType;
-	TextureAddressMode mAddressU;
-	TextureAddressMode mAddressV;
+	SampleState mSampleState;
 
 	float2 mUVOffset;
 	float2 mUVScale;
