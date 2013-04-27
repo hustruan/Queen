@@ -540,3 +540,292 @@ BoundingSphere<Real> FromBox( const BoundingBox<Real>& box )
 
 	return BoundingSphere<Real>(center, radius);
 }
+
+//---------------------------------------------------------------------------------------
+template<typename Real>
+Matrix4<Real> 
+CreateTransformMatrix( const Vector<Real, 3>& sacle, const Quaternion<Real>& rotation, const Vector<Real, 3>& translation )
+{
+	// Ordering:
+	//    1. Scale
+	//    2. Rotate
+	//    3. Translate
+
+	Matrix4<Real> result = QuaternionToRotationMatrix(rotation);
+
+	result.M11 *= sacle.X(); result.M12 *= sacle.X(); result.M13 *= sacle.X();
+	result.M21 *= sacle.Y(); result.M22 *= sacle.Y(); result.M23 *= sacle.Y();
+	result.M31 *= sacle.Z(); result.M32 *= sacle.Z(); result.M33 *= sacle.Z();
+
+	result.M41 = translation.X();
+	result.M42 = translation.Y();
+	result.M43 = translation.Z();
+
+	return result;
+}
+
+//----------------------------------------------------------------------------------------------------
+template <typename Real>
+inline Quaternion<Real> 
+QuaternionFromRotationMatrix(const Matrix4<Real>& mat)
+{
+	Quaternion<Real> ret;
+	
+	Real trace = mat.M11 + mat.M22 + mat.M33;
+
+	Real S;
+
+	if (trace > 0) { 
+		 S = sqrt(trace+(Real)1) * 2; // S=4*qw 
+		ret.W() = (Real)0.25 * S;
+		ret.X() = (mat.M23 - mat.M32) / S;
+		ret.Y() = (mat.M31 - mat.M13) / S; 
+		ret.Z() = (mat.M12 - mat.M21) / S; 
+	} else if ((mat.M11 > mat.M22)&(mat.M11 > mat.M33)) { 
+		 S = sqrt((Real)1.0 + mat.M11 - mat.M22 - mat.M33) * 2; // S=4*qx 
+		ret.W() = (mat.M23 - mat.M32) / S;
+		ret.X() = (Real)0.25 * S;
+		ret.Y() = (mat.M21 + mat.M12) / S; 
+		ret.Z() = (mat.M13 + mat.M31) / S; 
+	} else if (mat.M22 > mat.M33) { 
+		 S = sqrt((Real)1 + mat.M22 - mat.M11 - mat.M33) * 2; // S=4*qy
+		ret.W() = (mat.M31 - mat.M13) / S;
+		ret.X() = (mat.M12 + mat.M21) / S; 
+		ret.Y() = (Real)0.25 * S;
+		ret.Z() = (mat.M23 + mat.M32) / S; 
+	} else { 
+		 S = sqrt((Real)1 + mat.M33 - mat.M11 - mat.M22) * 2; // S=4*qz
+		ret.W() = (mat.M12 - mat.M21) / S;
+		ret.X() = (mat.M31 + mat.M13) / S;
+		ret.Y() = (mat.M32 + mat.M23) / S;
+		ret.Z() = (Real)0.25 * S;
+	}
+
+	/*Real s;
+	if (trace > (Real)0)
+	{
+		s = sqrt((trace + (Real)1));
+		ret.W() =s * (Real)0.5;
+		s = (Real)0.5 / s;
+		ret.X() = (mat.M23 - mat.M32) * s;
+		ret.Y() = (mat.M31 - mat.M13) * s;
+		ret.Z() = (mat.M12 - mat.M21) * s;
+	}
+	else
+	{
+		if ((mat.M22 > mat.M11) && (mat.M33 <= mat.M22))
+		{
+			s = sqrt((mat.M22 - (mat.M33 + mat.M11)) + (Real)1);
+			ret.Y() = s * (Real)0.5;
+			s = (Real)0.5 / s;
+			ret.W() = (mat.M31 - mat.M13) * s;
+			ret.Z() = (mat.M32 + mat.M23) * s;
+			ret.X() = (mat.M12 + mat.M21) * s;
+		}
+		else
+		{
+			if (((mat.M22 <= mat.M11) && (mat.M33 > mat.M11)) || (mat.M33 > mat.M22))
+			{
+				s = sqrt((mat.M33 - (mat.M11 + mat.M22)) + 1);
+				ret.Z() =s * (Real)0.5;
+				s = (Real)0.5 / s;
+				ret.W() = (mat.M12 - mat.M21) * s;
+				ret.X() = (mat.M13 + mat.M31) * s;
+				ret.Y() = (mat.M23 + mat.M32) * s;
+			}
+			else
+			{
+				s = sqrt((mat.M11 - (mat.M22 + mat.M33)) + 1);
+				ret.X() = s * (Real)0.5;
+				s = (Real)0.5 / s;
+				ret.W() = (mat.M23 - mat.M32) * s;
+				ret.Y() = (mat.M21 + mat.M12) * s;
+				ret.Z() = (mat.M31 + mat.M13) * s;
+			}
+		}
+	}*/
+	return ret;
+}
+
+//----------------------------------------------------------------------------------------------------
+template <typename Real>
+inline Matrix4<Real>
+QuaternionToRotationMatrix(const Quaternion<Real>& rot)
+{
+	Real norm = (rot.W() * rot.W()) + (rot.X() * rot.X()) + (rot.Y() * rot.Y()) + (rot.Z() * rot.Z());
+	Real s = (Real)0;
+	//We must ensure the quaternion is normalized first. We also use 2 / norm to save mults later
+	if(norm == (Real)1.0) {
+		s = (Real)2;
+	} else if(norm > 0.0f) {
+		s = (Real)2 / norm;
+	}
+
+	//Compute xs/ys/zs since we use them 2-4 times, saves 6 mults
+	float xs = rot.X() * s;
+	float ys = rot.Y() * s;
+	float zs = rot.Z() * s;
+
+	float xx = rot.X() * xs;
+	float xy = rot.X() * ys;
+	float xz = rot.X() * zs;
+	float xw = rot.W() * xs;
+
+	float yy = rot.Y() * ys;
+	float yz = rot.Y() * zs;
+	float yw = rot.W() * ys;
+
+	float zz = rot.Z() * zs;
+	float zw = rot.W() * zs;
+
+	return Matrix4<Real>(
+		1-yy-zz,  xy+zw,   xz-yw,   (Real)0,
+		xy-zw,    1-xx-zz, yz+xw,   (Real)0,
+		xz+yw,    yz-xw,   1-xx-yy, (Real)0,
+	    (Real)0,  (Real)0, (Real)0, (Real)1);
+}
+
+//----------------------------------------------------------------------------------------------------
+template <typename Real>
+inline Quaternion<Real> 
+QuaternionFromRotationAxis(const Vector<Real, 3>& axis, Real angle)
+{
+	// assert:  axis[] is unit length
+	//
+	// The quaternion representing the rotation is
+	//   q = cos(A/2)+sin(A/2)*(x*i+y*j+z*k)
+
+	Real halfAngle = ((Real)0.5)*angle;
+	Real sn = sin(halfAngle); 
+	return Quaternion<Real>(cos(halfAngle), sn*axis[0], sn*axis[1], sn*axis[2]);
+}
+
+//----------------------------------------------------------------------------------------------------
+template <typename Real>
+inline void
+QuaternionToAxisAngle(const Quaternion<Real>& quat, Vector<Real, 3>& axis, Real& angle)
+{
+	Real squareLength = quat[0]*quat[0] + quat[1]*quat[1] + quat[2]*quat[2] + quat[3]*quat[3];
+	
+	if (squareLength > (Real)(1e-06))
+	{
+		angle = ((Real)2.0)*acos(quat[0]);
+		Real invLength = ((Real)1.0) / sqrt(squareLength);
+		axis[0] = quat[1]*invLength;
+		axis[1] = quat[2]*invLength;
+		axis[2] = quat[3]*invLength;
+	}
+	else
+	{
+		// angle is 0 (mod 2*pi), so any axis will do
+		angle = (Real)0.0;
+		axis[0] = (Real)1.0;
+		axis[1] = (Real)0.0;
+		axis[2] = (Real)0.0;
+	}
+
+}
+
+//----------------------------------------------------------------------------------------------------
+template <typename Real>
+inline Quaternion<Real> 
+QuaternionFromRotationYawPitchRoll(Real yaw, Real pitch, Real roll)
+{
+	const Real sinPitch(sin(pitch*((Real)0.5)));
+	const Real cosPitch(cos(pitch*((Real)0.5)));
+	const Real sinYaw(sin(yaw*((Real)0.5)));
+	const Real cosYaw(cos(yaw*((Real)0.5)));
+	const Real sinRoll(sin(roll*((Real)0.5)));
+	const Real cosRoll(cos(roll*((Real)0.5)));
+	const Real cosPitchCosYaw(cosPitch*cosYaw);
+	const Real sinPitchSinYaw(sinPitch*sinYaw);
+
+	return Quaternion<Real>(
+		cosRoll * cosPitchCosYaw     + sinRoll * sinPitchSinYaw,
+		cosRoll * sinPitch * cosYaw + sinRoll * cosPitch * sinYaw,
+		cosRoll * cosPitch * sinYaw - sinRoll * sinPitch * cosYaw,
+		sinRoll * cosPitchCosYaw     - cosRoll * sinPitchSinYaw);	
+}
+
+//----------------------------------------------------------------------------------------------------
+template <typename Real>
+inline void 
+QuaternionToRotationYawPitchRoll(Real& yaw, Real& pitch, Real& roll, const Quaternion<Real>& quat)
+{
+	RotationMatrixToYawPitchRoll(yaw, pitch, roll, QuaternionToRotationMatrix(quat));
+	//Real sqx = quat.X()*quat.X();
+	//Real sqy = quat.Y()*quat.Y();
+	//Real sqz = quat.Z()*quat.Z();
+	//Real sqw = quat.W()*quat.W();
+	//Real unit = sqx + sqy + sqz + sqw; // if normalised is one, otherwise is correction factor
+	//
+	//// sinPitch 
+	//Real test = Real(-2.0) * ( quat.Y() * quat.Z() - quat.X() * quat.W() );
+
+	//if(test >  Real(0.999) * unit)
+	//{
+	//	// singularity at north pole
+	//	yaw = atan2(quat.W()*quat.Y()-quat.X()*quat.Z(), Real(0.5)-quat.Y()*quat.Y()-quat.Z()*quat.Z());
+	//	pitch = Real(PI/2);
+	//	roll = 0;
+	//}
+	//else if(test <  Real(-0.999) * unit)
+	//{
+	//	// singularity at south pole
+	//	yaw = -2 * atan2(quat.Z(), quat.W());
+	//	pitch = -Real(PI/2);
+	//	roll = 0;
+	//}
+	//else
+	//{
+	//	yaw = atan2((quat.Y() * quat.W() + quat.X() * quat.Z()), -sqx - sqy + sqz + sqw);
+	//	pitch = asin(test / unit);
+	//	roll = atan2((quat.Z() * quat.W() + quat.X() * quat.Y()), -sqx + sqy - sqz + sqw);
+	//}
+	//	
+
+	//if (sinPitch <= Real(-0.999))
+	//{
+	//	// 检查万向硕的情况，正在向上看
+	//	pitch = Real(-PI/2);
+	//	roll = 0;
+	//	yaw = atan2(-mat.M13, mat.M11);
+	//}
+	//else if( sinPitch >= Real(0.999))
+	//{
+	//	// 检查万向硕的情况，正在向下看
+	//	pitch = Real(PI/2);
+	//	roll = 0;
+	//	yaw = atan2(-mat.M13, mat.M11);
+	//}
+	//else
+	//{
+	//	pitch = asin(sinPitch);
+	//	yaw = atan2(mat.M31, mat.M33);
+	//	roll = atan2(mat.M12, mat.M22);
+
+	//}
+		
+	//	(quat.X() * quat.W() + quat.Y() * quat.Z();
+
+	//if(test >  Real(0.499) * unit)
+	//{
+	//	// singularity at north pole
+	//	yaw = 2 * atan2(quat.Z(), quat.W());
+	//	pitch = PI / 2;
+	//	roll = 0;
+	//}
+	//else if(test <  Real(-0.499) * unit)
+	//{
+	//	// singularity at south pole
+	//	yaw = -2 * atan2(quat.Z(), quat.W());
+	//	pitch = -PI / 2;
+	//	roll = 0;
+	//}
+	//else
+	//{
+	//	yaw = atan2(2 * (quat.Y() * quat.W() - quat.X() * quat.Z()), -sqx - sqy + sqz + sqw);
+	//	pitch = asin(2 * test / unit);
+	//	roll = atan2(2 * (quat.Z() * quat.W() - quat.X() * quat.Y()), -sqx + sqy - sqz + sqw);
+	//}
+}

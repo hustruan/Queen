@@ -99,5 +99,30 @@ BSDF* MirrorMaterial::GetBSDF( const DifferentialGeometry &dgGeom, const Differe
 	return bsdf;
 }
 
+
+PlasticMaterial::PlasticMaterial( const shared_ptr<Texture<ColorRGB> >& kd, const shared_ptr<Texture<ColorRGB> >& ks, const shared_ptr<Texture<float> >& rough )
+	: mKd(kd), mKs(ks), mRoughness(rough)
+{
+
+}
+
+BSDF* PlasticMaterial::GetBSDF( const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, MemoryArena &arena )
+{
+	BSDF *bsdf = BSDF_ALLOC(arena, BSDF)(dgShading, dgGeom.Normal);
+
+	ColorRGB kd = Saturate(mKd->Evaluate(dgShading));
+	ColorRGB ks = Saturate(mKs->Evaluate(dgShading));
+	float rough = mRoughness->Evaluate(dgShading);
+
+	BxDF *diff = BSDF_ALLOC(arena, Lambertian)(kd);
+	Fresnel *fresnel = BSDF_ALLOC(arena, FresnelDielectric)(1.5f, 1.0f);
+
+	BxDF *spec = BSDF_ALLOC(arena, TorranceSparrow)(ks, fresnel, BSDF_ALLOC(arena, Blinn)(1.f / rough));
+	bsdf->Add(diff);
+	bsdf->Add(spec);
+
+	return bsdf;
+}
+
 }
 

@@ -37,6 +37,8 @@ public:
 		auto cTexture = std::make_shared<ConstantTexture<ColorRGB>>(ColorRGB(0.4f, 0.8f, 0.1f));
 		auto indexTexture = std::make_shared<ConstantTexture<float>>(1.5f);
 
+		auto testTexture = std::make_shared<ConstantTexture<ColorRGB>>(ColorRGB(72.0f / 255, 88.0f / 255, 108.f / 255));
+
 		//auto f = RGBImageTexture("../../Media/wall.dds", TAM_Clamp, TAM_Clamp);
 		auto wallTexture = std::make_shared<RGBImageTexture>("../../Media/wall.img", TAM_Clamp, TAM_Clamp);
 
@@ -44,7 +46,7 @@ public:
 		float44 light2World = CreateScaling(40.0f, 40.0f, 40.0f) * CreateTranslation(30.0f, 98.0f, 30.0f);	
 		shared_ptr<Shape> areaLightShape = LoadMesh("../../Media/plane.md", light2World, true);	
 		
-		AreaLight* areaLight = new AreaLight(areaLightShape->mLocalToWorld, ColorRGB::White * 10.0f, areaLightShape, 100);
+		AreaLight* areaLight = new AreaLight(areaLightShape->mLocalToWorld, ColorRGB::White * 10.0f, areaLightShape, 10);
 		Lights.push_back(areaLight);
 
 		shared_ptr<Shape> areaLightShapeAdapter = std::make_shared<AreaLightShape>(areaLightShape, areaLight);
@@ -95,20 +97,23 @@ public:
 		//mKDTree->AddShape(bunny);
 
 		shared_ptr<Shape> sphere1 = std::make_shared<Sphere>(CreateTranslation(75.0f, 20.0f, 44.4f), false, 20.0f, -20.0f, 20.0f, Mathf::TWO_PI);
-		//shared_ptr<Shape> sphere1 = std::make_shared<Sphere>(CreateTranslation(75.0f, 20.0f, 44.4f), false, 20.0f);
 		//sphere1->SetMaterial(std::make_shared<DiffuseMaterial>(whiteTexture));
-		sphere1->SetMaterial(/*std::make_shared<GlassMaterial>(whiteTexture, whiteTexture, indexTexture)*/
-			std::make_shared<PhongMaterial>(redTexture, redTexture, 
-			std::make_shared<ConstantTexture<float>>(60.0f)));
+		
+		/*sphere1->SetMaterial(std::make_shared<GlassMaterial>(whiteTexture, whiteTexture, indexTexture));*/
+
+		sphere1->SetMaterial(std::make_shared<PhongMaterial>(testTexture, testTexture, 
+				std::make_shared<ConstantTexture<float>>(60.0f)));
+
+		/*sphere1->SetMaterial(std::make_shared<PlasticMaterial>(redTexture, redTexture, 
+			std::make_shared<ConstantTexture<float>>(0.1f)));*/
+
 		mKDTree->AddShape(sphere1);
 
-		//shared_ptr<Shape> sphere2 = std::make_shared<Sphere>(CreateTranslation(25.0f, 20.0f, 75.0f), false, 20.0f, -20.0f, 20.0f, Mathf::TWO_PI);
-		////shared_ptr<Shape> sphere2 = std::make_shared<Sphere>(CreateTranslation(50.0f, 50.0f, 50.0f), false, 20.0f, -20.0f, 20.0f, Mathf::TWO_PI);
-		////shared_ptr<Shape> sphere2 = std::make_shared<Sphere>(CreateTranslation(25.0f, 20.0f, 75.0f), false, 20.0f);
-		////sphere2->SetMaterial(std::make_shared<MirrorMaterial>(whiteTexture));
-		//sphere2->SetMaterial(std::make_shared<PhongMaterial>(redTexture, redTexture, 
-		//	std::make_shared<ConstantTexture<float>>(30.0f)));
-		//mKDTree->AddShape(sphere2);
+		shared_ptr<Shape> sphere2 = std::make_shared<Sphere>(CreateTranslation(25.0f, 20.0f, 75.0f), false, 20.0f, -20.0f, 20.0f, Mathf::TWO_PI);
+		sphere2->SetMaterial(std::make_shared<MirrorMaterial>(whiteTexture));
+		/*sphere2->SetMaterial(std::make_shared<PhongMaterial>(redTexture, redTexture, 
+			std::make_shared<ConstantTexture<float>>(30.0f)));*/
+		mKDTree->AddShape(sphere2);
 
 		mKDTree->BuildTree();
 	}
@@ -165,8 +170,8 @@ void CreateScene()
 		new Film(int2(width, height), new GaussianFilter(4.0f, 1.0f)));
 
 	gSampler = new StratifiedSampler(0, width, 0, height, 4, 4);
-	gSurfaceIntegrator = new DirectLightingIntegrator();
-	//gSurfaceIntegrator = new PathIntegrator(100);
+	//gSurfaceIntegrator = new DirectLightingIntegrator();
+	gSurfaceIntegrator = new PathIntegrator(100);
 	//gSurfaceIntegrator = new WhittedIntegrator;
 }
 

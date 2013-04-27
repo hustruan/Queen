@@ -453,7 +453,6 @@ ColorRGB SpecularTransmission::Sample( const float3& wo, float3* wi, float u1, f
 	return (ColorRGB(1.0f)-F) * mT / AbsCosTheta(*wi);
 }
 
-
 ColorRGB Phong::Eval( const float3& wo, const float3& wi ) const
 {
 	ColorRGB result(0.0f);
@@ -461,10 +460,16 @@ ColorRGB Phong::Eval( const float3& wo, const float3& wi ) const
 	// diffuse
 	result += mKd * Mathf::INV_PI;
 
+	float s, ss;
+
 	// specular
 	float alpha = Dot(wo, ReflectDirection(wi));
 	if (alpha > 0.0f)
+	{
+		 s = (mExponent + 2) * Mathf::INV_TWO_PI;
+		 ss = powf(alpha, mExponent);
 		result += mKs* ((mExponent + 2) * Mathf::INV_TWO_PI * powf(alpha, mExponent));
+	}
 
 	return result;
 }
@@ -521,12 +526,12 @@ ColorRGB Phong::Sample( const float3& wo, float3* wi, float u1, float u2, float*
 		if (wo.Z() < 0.)
 			wi->Z() *= -1.f;
 
-		float3 Axis0;
+		/*float3 Axis0;
 		float3 Axis1;
 		float3 Axis2 = R;
 
 		CoordinateSystem(R, &Axis0, &Axis1);
-		*wi = Axis0 * wi->X() + Axis1 * wi->Y() + Axis2 * wi->Z();
+		*wi = Axis0 * wi->X() + Axis1 * wi->Y() + Axis2 * wi->Z();*/
 
 		/*if (wi->Z() < 0)
 			return ColorRGB(0.0f);*/

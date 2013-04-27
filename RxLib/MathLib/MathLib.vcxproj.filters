@@ -48,6 +48,9 @@
     <ClInclude Include="BoundingSphere.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Quaternion.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="MathUtil.inl">

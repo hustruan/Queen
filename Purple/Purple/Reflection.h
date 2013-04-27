@@ -344,8 +344,8 @@ struct MicrofacetDistribution
 class TorranceSparrow : public BxDF
 {
 public:
-	TorranceSparrow(const ColorRGB& reflectance, Fresnel* fresnel)
-		: BxDF(BSDF_Reflection | BSDF_Glossy), mR(reflectance), mFresnel(fresnel) {}
+	TorranceSparrow(const ColorRGB& reflectance, Fresnel* fresnel, MicrofacetDistribution* d)
+		: BxDF(BSDF_Reflection | BSDF_Glossy), mR(reflectance), mFresnel(fresnel), mD(d) {}
 
 	ColorRGB Eval(const float3& wo, const float3& wi) const;
 
@@ -387,7 +387,7 @@ class Phong : public BxDF
 {
 public:
 	Phong(const ColorRGB& kd, const ColorRGB& ks, float exponent)
-		: BxDF(BSDF_Reflection | BSDF_Glossy), mKd(kd), mKs(ks), mExponent(exponent) {}
+		: BxDF(BSDF_Reflection | BSDF_Glossy | BSDF_Diffuse), mKd(kd), mKs(ks), mExponent(exponent) {}
 
 	ColorRGB Eval(const float3& wo, const float3& wi) const;
 

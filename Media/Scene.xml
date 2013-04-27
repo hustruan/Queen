@@ -21,7 +21,7 @@
 	</camera>
 	
 	<shape type="mesh">
-		<filename value="plane.md"/>		
+		<filename value="../../Media/plane.md"/>
 		<transform reverseOrientation="true">
 			<tranlation x="0.0" y="100.0" z="-100.0"/>
 			<scale x="200.0" y="200.0" z="200.0"/>
@@ -32,7 +32,7 @@
 	</shape>
 	
 	<shape type="mesh">
-		<filename value="plane.md"/>
+		<filename value="../../Media/plane.md"/>
 		<transform>
 			<tranlation x="0.0" y="0.0" z="-100.0"/>
 			<scale x="200.0" y="200.0" z="200.0"/>
@@ -43,7 +43,7 @@
 	</shape>
 	
 	<shape type="mesh">
-		<filename value="plane.md"/>
+		<filename value="../../Media/plane.md"/>
 		<transform reverseOrientation="true">
 			<tranlation x="0.0" y="100.0" z="-100.0"/>
 			<rotation w="90" x="0" y="0" z="1"/>
@@ -55,7 +55,7 @@
 	</shape>
 	
 	<shape type="mesh">
-		<filename value="plane.md"/>
+		<filename value="../../Media/plane.md"/>
 		<transform>
 			<tranlation x="0.0" y="100.0" z="-100.0"/>
 			<rotation w="90" x="0" y="0" z="1"/>
@@ -69,7 +69,7 @@
 	</shape>
 	
 	<shape type="mesh">
-		<filename value="plane.md"/>	
+		<filename value="../../Media/plane.md"/>
 		<transform reverseOrientation="true">
 			<tranlation x="0.0" y="0.0" z="-100.0"/>
 			<rotation w="-90" x="1.0" y="0.0" z="0.0"/>
@@ -81,21 +81,21 @@
 	</shape>
 	
 	<shape type="mesh">
-		<filename value="plane.md"/>
+		<filename value="../../Media/plane.md"/>
 		<transform>
 			<tranlation x="0.0" y="0.0" z="100.0"/>
 			<rotation w="-90" x="1.0" y="0.0" z="0.0"/>
 			<scale x="200.0" y="200.0" z="200.0"/>
 		</transform>
 		<material type="diffuse">
-			<kd type="texture" filename="wall.img"/>
+			<kd type="image" filename="wall.img"/>
 		</material>
 	</shape>
 	
 	
-	<light type="spot">
+	<light type="area">
 		<shape type="mesh">
-			<filename value="plane.md"/>
+			<filename value="../../Media/plane.md"/>
 			<transform reverseOrientation="true">
 				<tranlation x="0.0" y="0.0" z="100.0"/>
 				<rotation w="-90" x="1.0" y="0.0" z="0.0"/>

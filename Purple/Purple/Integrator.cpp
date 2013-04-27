@@ -361,6 +361,11 @@ ColorRGB DirectLightingIntegrator::Li( const Scene* scene, const Renderer* rende
 		}
 	}
 
+	if (L.R*L.R+L.B*L.B+L.G*L.G > 10)
+	{
+		int a = 0;
+	}
+
 	if (ray.Depth + 1 < mMaxDepth) 
 	{
 		//// Trace rays for specular reflection and refraction

@@ -80,7 +80,7 @@ void SamplerRenderer::Render( const Scene *scene )
 	//const uint32_t CpuCores = std::thread::hardware_concurrency();
 
 	pool& tp = GlobalThreadPool();
-	for (size_t iCore = 0; iCore < tp.size(); ++iCore)
+	//for (size_t iCore = 0; iCore < tp.size(); ++iCore)
 	{
 		tp.schedule(std::bind(&SamplerRenderer::BlockRender, this, scene, sampleTemplate, film, std::ref(blockGenerator)));
 		//std::bind(&SamplerRenderer::BlockRender, this, scene, sampleTemplate, film, std::ref(blockGenerator))();

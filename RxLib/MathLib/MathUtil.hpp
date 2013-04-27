@@ -7,6 +7,7 @@
 #include "Plane.hpp"
 #include "BoundingBox.hpp"
 #include "BoundingSphere.hpp"
+#include "Quaternion.hpp"
 
 namespace RxLib {
 
@@ -94,6 +95,14 @@ template<typename Real>
 inline Vector<Real,3>
 ScaleFromMatrix( const Matrix4<Real>& transformMat );
 
+template<typename Real>
+inline Matrix4<Real> 
+CreateTransformMatrix( const Vector<Real, 3>& sacle, const Quaternion<Real>& rotation, const Vector<Real, 3>& translation );
+
+template<typename Real>
+inline void 
+MatrixDecompose(Vector<Real, 3>& sacle, Quaternion<Real>& rotation, Vector<Real, 3>& translation, const Matrix4<Real>& mat);
+
 /**
  * Transforms the vector by the matrix.
  */
@@ -147,6 +156,32 @@ BoundingSphere<Real> FromBox( const BoundingBox<Real>& box );
 template<typename Real>
 void CoordinateSystem(const Vector<Real, 3>& v1, Vector<Real, 3>* v2, Vector<Real, 3>* v3);
 
+/************************************************************************/
+/* Quaternion                                                           */
+/************************************************************************/
+template <typename Real>
+inline Quaternion<Real> 
+QuaternionFromRotationMatrix(const Matrix4<Real>& rotMat);
+
+template <typename Real>
+inline Matrix4<Real>
+QuaternionToRotationMatrix(const Quaternion<Real>& rotQuat);
+
+template <typename Real>
+inline Quaternion<Real> 
+QuaternionFromRotationAxis(const Vector<Real, 3>& axis, Real angleRadius);
+
+template <typename Real>
+inline void
+QuaternionToAxisAngle(const Quaternion<Real>& quat, Vector<Real, 3>& axis, Real& angle);
+
+template <typename Real>
+inline Quaternion<Real> 
+QuaternionFromRotationYawPitchRoll(Real yaw, Real pitch, Real roll);
+
+template <typename Real>
+inline void 
+QuaternionToRotationYawPitchRoll(Real& yaw, Real& pitch, Real& roll, const Quaternion<Real>& quat);
 
 
 #include "MathUtil.inl"

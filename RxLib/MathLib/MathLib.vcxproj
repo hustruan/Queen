@@ -91,6 +91,7 @@
     <ClInclude Include="MathUtil.hpp" />
     <ClInclude Include="Matrix.hpp" />
     <ClInclude Include="Plane.hpp" />
+    <ClInclude Include="Quaternion.hpp" />
     <ClInclude Include="SoveEquation.hpp" />
     <ClInclude Include="SSEUtility.hpp" />
     <ClInclude Include="Vector.hpp" />

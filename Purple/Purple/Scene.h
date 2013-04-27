@@ -38,7 +38,6 @@ public:
 
 	SurfaceIntegrator* mSurfaceIntegrator;
 
-protected:
 	KDTree* mKDTree;
 
 };

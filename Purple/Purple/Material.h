@@ -63,6 +63,18 @@ private:
 	shared_ptr<Texture<float>> mExp;
 };
 
+class PlasticMaterial : public Material
+{
+public:
+	PlasticMaterial(const shared_ptr<Texture<ColorRGB> >& kd, const shared_ptr<Texture<ColorRGB> >& ks, const shared_ptr<Texture<float> >& rough);
+
+	BSDF* GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, MemoryArena &arena);
+private:
+	// PlasticMaterial Private Data
+	shared_ptr<Texture<ColorRGB>> mKd, mKs;
+	shared_ptr<Texture<float>> mRoughness;
+};
+
 
 }
 
