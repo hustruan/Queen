@@ -24,15 +24,23 @@ public:
 public:
 	vector<Light*> Lights;	
 
+	std::string Name;
+
+	Camera* mCamera;
+
+	Sampler* mSampler;
+
 	mutable clock_t mTime, mTimeP;
-
-	KDTree* mKDTree;
-
-protected:
 
 	BoundingBoxf mWorldBound;
 	
 	vector<shared_ptr<Shape> > mShapes;
+
+	SurfaceIntegrator* mSurfaceIntegrator;
+
+protected:
+	KDTree* mKDTree;
+
 };
 
 }

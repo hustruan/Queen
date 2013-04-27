@@ -52,7 +52,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../RxLib/CoreLib;../../RxLib/MathLib;../../3rdParty/boost;../../3rdParty/threadpool;../../3rdParty/nvImage/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../RxLib/CoreLib;../../RxLib/MathLib;../../3rdParty/boost;../../3rdParty/threadpool;../../3rdParty/nvImage/include;../../3rdParty/rapidxml%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
       <FloatingPointModel>Fast</FloatingPointModel>
@@ -73,7 +73,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../RxLib/CoreLib;../../RxLib/MathLib;../../3rdParty/boost;../../3rdParty/threadpool;../../3rdParty/nvImage/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../RxLib/CoreLib;../../RxLib/MathLib;../../3rdParty/boost;../../3rdParty/threadpool;../../3rdParty/nvImage/include;../../3rdParty/rapidxml;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FloatingPointModel>Fast</FloatingPointModel>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -103,6 +103,7 @@
     <ClInclude Include="MentoCarlo.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="MipMap.h" />
+    <ClInclude Include="Parser.h" />
     <ClInclude Include="pfm.h" />
     <ClInclude Include="Prerequisites.h" />
     <ClInclude Include="Profiler.h" />
@@ -130,6 +131,7 @@
     <ClCompile Include="MentoCarlo.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="MipMap.cpp" />
+    <ClCompile Include="Parser.cpp" />
     <ClCompile Include="pfm.cpp" />
     <ClCompile Include="Profiler.cpp" />
     <ClCompile Include="Random.cpp" />

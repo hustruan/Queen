@@ -1,0 +1,114 @@
+<?xml version="1.0" ?>
+
+<scene name="c">
+	<integrator type="path" maxDepth="100"/>
+	
+	<film width="512" height="512">
+		<filter type="gaussian" radius="4.0" alpha="1.0"/>
+	</film>
+	
+	<sampler type="stratified">
+		<spp x="4" y="4"/>
+	</sampler>
+	
+	<camera type="perspective">
+		<fov value="60"/>
+		<lookat>
+			<origin x="50" y="50" z="-80"/>
+			<target x="50" y="50" z="1"/>
+			<up x="0.0" y="1.0" z="0.0"/>
+		</lookat>
+	</camera>
+	
+	<shape type="mesh">
+		<filename value="plane.md"/>		
+		<transform reverseOrientation="true">
+			<tranlation x="0.0" y="100.0" z="-100.0"/>
+			<scale x="200.0" y="200.0" z="200.0"/>
+		</transform>	
+		<material type="diffuse">
+			<kd type="constant" r="1.0" g="1.0" b="1.0"/>
+		</material>		
+	</shape>
+	
+	<shape type="mesh">
+		<filename value="plane.md"/>
+		<transform>
+			<tranlation x="0.0" y="0.0" z="-100.0"/>
+			<scale x="200.0" y="200.0" z="200.0"/>
+		</transform>
+		<material type="diffuse">
+			<kd type="constant" r="1.0" g="1.0" b="1.0"/>
+		</material>	
+	</shape>
+	
+	<shape type="mesh">
+		<filename value="plane.md"/>
+		<transform reverseOrientation="true">
+			<tranlation x="0.0" y="100.0" z="-100.0"/>
+			<rotation w="90" x="0" y="0" z="1"/>
+			<scale x="200.0" y="200.0" z="200.0"/>
+		</transform>
+		<material type="diffuse">
+			<kd type="constant" r="0.75" g="0.25" b="0.25"/>
+		</material>	
+	</shape>
+	
+	<shape type="mesh">
+		<filename value="plane.md"/>
+		<transform>
+			<tranlation x="0.0" y="100.0" z="-100.0"/>
+			<rotation w="90" x="0" y="0" z="1"/>
+			<scale x="200.0" y="200.0" z="200.0"/>
+		</transform>
+		<material type="diffuse">
+			<kd type="constant" r="0.25" g="0.25" b="0.75"/>
+		</material>	
+		
+		
+	</shape>
+	
+	<shape type="mesh">
+		<filename value="plane.md"/>	
+		<transform reverseOrientation="true">
+			<tranlation x="0.0" y="0.0" z="-100.0"/>
+			<rotation w="-90" x="1.0" y="0.0" z="0.0"/>
+			<scale x="200.0" y="200.0" z="200.0"/>
+		</transform>
+		<material type="diffuse">
+			<kd type="constant" r="0.0" g="0.0" b="0.0"/>
+		</material>	
+	</shape>
+	
+	<shape type="mesh">
+		<filename value="plane.md"/>
+		<transform>
+			<tranlation x="0.0" y="0.0" z="100.0"/>
+			<rotation w="-90" x="1.0" y="0.0" z="0.0"/>
+			<scale x="200.0" y="200.0" z="200.0"/>
+		</transform>
+		<material type="diffuse">
+			<kd type="texture" filename="wall.img"/>
+		</material>
+	</shape>
+	
+	
+	<light type="spot">
+		<shape type="mesh">
+			<filename value="plane.md"/>
+			<transform reverseOrientation="true">
+				<tranlation x="0.0" y="0.0" z="100.0"/>
+				<rotation w="-90" x="1.0" y="0.0" z="0.0"/>
+				<scale x="200.0" y="200.0" z="200.0"/>
+			</transform>
+			<material type="diffuse">
+				<kd type="constant" r="0.0" g="0.0" b="0.0"/>
+			</material>
+		</shape>
+		<radiance r="10.0" g="10.0" b="10.0"/>	
+	</light>
+	
+</scene>
+
+
+		

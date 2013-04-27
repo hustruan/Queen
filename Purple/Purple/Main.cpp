@@ -11,6 +11,7 @@
 #include "Film.h"
 #include "Mesh.h"
 #include "Texture.h"
+#include "Parser.h"
 #include <MathUtil.hpp>
 
 using namespace RxLib;
@@ -168,6 +169,8 @@ void CreateScene()
 
 int main(int argc, char** argv)
 {	
+
+	auto s = LoadScene("../../Media/Scene.xml");
     CreateScene();
 
 	gRenderer = new SamplerRenderer(gSampler, gCamera, gSurfaceIntegrator);
