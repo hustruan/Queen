@@ -7,7 +7,7 @@ namespace Purple {
 
 using namespace Purple;
 
-
+//-------------------------------------------------------------------------------------------------------------------------
 DiffuseMaterial::DiffuseMaterial( const shared_ptr<Texture<ColorRGB>>& kd )
 	: mKd(kd)
 {
@@ -25,9 +25,24 @@ BSDF* DiffuseMaterial::GetBSDF( const DifferentialGeometry &dgGeom, const Differ
 	return bsdf;
 }
 
+//-------------------------------------------------------------------------------------------------------------------------
+PhongMaterial::PhongMaterial( const shared_ptr<Texture<ColorRGB> >& kd, const shared_ptr<Texture<ColorRGB> >& ks, const shared_ptr<Texture<float> >& exp )
+	:mKd(kd), mKs(ks), mExp(exp)
+{
+
+}
+
 BSDF* PhongMaterial::GetBSDF( const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, MemoryArena &arena )
 {
-	BSDF *bsdf = BSDF_ALLOC(arena, BSDF)(dgShading, dgGeom.Normal);
+	BSDF* bsdf = BSDF_ALLOC(arena, BSDF)(dgShading, dgGeom.Normal);
+
+	// Evaluate textures for _MatteMaterial_ material and allocate BRDF
+	ColorRGB kd = Saturate(mKd->Evaluate(dgShading));
+	ColorRGB ks = Saturate(mKs->Evaluate(dgShading));
+	float e = mExp->Evaluate(dgShading);
+
+	bsdf->Add(BSDF_ALLOC(arena, Phong)(kd, ks, e));
+
 	return bsdf;
 }
 

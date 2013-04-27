@@ -1,12 +1,13 @@
 #include "Reflection.h"
 #include "MentoCarlo.h"
 #include "Sampler.h"
+#include <MathUtil.hpp>
 
 namespace {
 
 using namespace RxLib;
 using namespace Purple;
-	
+
 
 // BxDF Utility Functions
 ColorRGB FrDiel(float cosi, float cost, const ColorRGB &etai, const ColorRGB &etat) 
@@ -450,6 +451,102 @@ ColorRGB SpecularTransmission::Sample( const float3& wo, float3* wi, float u1, f
 
 	ColorRGB F = mFresnel.Evaluate(CosTheta(wo));
 	return (ColorRGB(1.0f)-F) * mT / AbsCosTheta(*wi);
+}
+
+
+ColorRGB Phong::Eval( const float3& wo, const float3& wi ) const
+{
+	ColorRGB result(0.0f);
+
+	// diffuse
+	result += mKd * Mathf::INV_PI;
+
+	// specular
+	float alpha = Dot(wo, ReflectDirection(wi));
+	if (alpha > 0.0f)
+		result += mKs* ((mExponent + 2) * Mathf::INV_TWO_PI * powf(alpha, mExponent));
+
+	return result;
+}
+
+float Phong::Pdf( const float3& wo, const float3& wi ) const
+{
+	if( !SameHemisphere(wo, wi) )
+		return 0.0f; 
+
+	float diffuseProb = 0.0f, specProb = 0.0f;
+
+	diffuseProb = CosineHemispherePdf(AbsCosTheta(wi));
+
+
+	float alpha = Dot(wo, ReflectDirection(wi));
+	if (alpha > 0.0f)
+	{
+		specProb = powf(alpha, mExponent) * (mExponent + 1.0f) / (2.0f * Mathf::PI);
+		
+		float specularSamplingWeight = Luminance(mKs)  / (Luminance(mKs) + Luminance(mKd));
+		return specularSamplingWeight * specProb + (1-specularSamplingWeight) * diffuseProb;
+	}
+	else
+		return diffuseProb;
+
+}
+
+ColorRGB Phong::Sample( const float3& wo, float3* wi, float u1, float u2, float* pdf ) const
+{
+	float specularSamplingWeight = Luminance(mKs)  / (Luminance(mKs) + Luminance(mKd));
+
+	bool choseSpecular = true;
+
+	if (u1 <= specularSamplingWeight)
+		u1 /= specularSamplingWeight;
+	else
+	{
+		choseSpecular = false;
+		u1 = (u1 - specularSamplingWeight) / (1-specularSamplingWeight);
+	}
+
+	if (choseSpecular)
+	{
+		float3 R = ReflectDirection(wo);
+		
+	
+		/* Sample from a Phong lobe centered around (0, 0, 1) */
+		float sinAlpha = sqrtf( (std::max(0.f, 1-std::pow(u2, 2/(mExponent + 1)))) );
+		float cosAlpha = powf(u2, 1/(mExponent + 1));
+		float phi = (2.0f * Mathf::PI) * u1;
+
+		*wi = SphericalDirection(cosAlpha, sinAlpha, phi);
+		
+		if (wo.Z() < 0.)
+			wi->Z() *= -1.f;
+
+		float3 Axis0;
+		float3 Axis1;
+		float3 Axis2 = R;
+
+		CoordinateSystem(R, &Axis0, &Axis1);
+		*wi = Axis0 * wi->X() + Axis1 * wi->Y() + Axis2 * wi->Z();
+
+		/*if (wi->Z() < 0)
+			return ColorRGB(0.0f);*/
+	}
+	else
+	{
+		*wi = CosineSampleHemisphere(u1, u2);
+
+		if (wo.Z() < 0.) wi->Z() *= -1.f;
+
+		/*if (wi->Z() < 0)
+		return ColorRGB(0.0f);*/	
+	}
+
+	*pdf = Pdf(wo, *wi);
+	
+	if (*pdf == 0.f)
+		return ColorRGB(0.0f);
+	else
+		return Eval(wo, *wi);
 }
 
 }
