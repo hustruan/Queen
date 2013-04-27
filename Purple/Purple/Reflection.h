@@ -383,6 +383,24 @@ private:
 	float mExponent;
 };
 
+class Phong : public BxDF
+{
+public:
+	Phong(const ColorRGB& kd, const ColorRGB& ks, float exponent)
+		: BxDF(BSDF_Reflection | BSDF_Glossy), mKd(kd), mKs(ks), mExponent(exponent) {}
+
+	ColorRGB Eval(const float3& wo, const float3& wi) const;
+
+	float Pdf(const float3& wo, const float3& wi) const;
+
+	ColorRGB Sample(const float3& wo, float3* wi, float u1, float u2, float* pdf) const;
+
+
+private:
+	ColorRGB mKd, mKs;
+	float mExponent;
+};
+
 
 }
 

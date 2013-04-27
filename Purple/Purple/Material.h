@@ -53,13 +53,14 @@ private:
 class PhongMaterial : public Material
 {
 public:
-	PhongMaterial(const ColorRGB& abedo);
-	virtual ~PhongMaterial(void);
+	PhongMaterial(const shared_ptr<Texture<ColorRGB> >& kd, const shared_ptr<Texture<ColorRGB> >& ks, 
+		const shared_ptr<Texture<float> >& exp);
 
-	virtual BSDF* GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, MemoryArena &arena);
+    BSDF* GetBSDF(const DifferentialGeometry &dgGeom, const DifferentialGeometry &dgShading, MemoryArena &arena);
 
 private:
-	ColorRGB mAbedo;
+	shared_ptr<Texture<ColorRGB>> mKd, mKs;
+	shared_ptr<Texture<float>> mExp;
 };
 
 
