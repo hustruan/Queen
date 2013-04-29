@@ -7,7 +7,7 @@ using RxLib::ColorRGB;
 
 int main(int argc, char** argv)
 {
-	std::string filename = "../../Media/wall.dds";
+	std::string filename = "../../Media/p1030775829.dds";
 
 	nv::Image image;
 	bool b = image.loadImageFromFile(filename.c_str());
