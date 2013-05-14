@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <memory>
+#include <cassert>
 
 #ifdef USE_SIMD
 #include <pmmintrin.h>  // SSE3 including

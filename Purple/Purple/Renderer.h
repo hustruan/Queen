@@ -25,6 +25,8 @@ public:
 	
 	virtual ColorRGB Transmittance(const Scene *scene, const RayDifferential &ray, const Sample *sample,
 		Random &rng, MemoryArena &arena) const = 0;
+
+	bool Debug;
 };
 
 class BlockGenerator;

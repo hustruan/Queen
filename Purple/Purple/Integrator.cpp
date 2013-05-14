@@ -413,6 +413,7 @@ ColorRGB PathIntegrator::Li( const Scene* scene, const Renderer* renderer, const
 
 	for (int bounces = 0; ; ++bounces)
 	{
+
 		if (bounces == 0 || specularBounce)
 		{
 			L += pathThroughput * isectp->Le(-ray.Direction);
@@ -434,6 +435,11 @@ ColorRGB PathIntegrator::Li( const Scene* scene, const Renderer* renderer, const
 			L += pathThroughput * UniformSampleOneLight(scene, renderer, arena, p, n, wo, 0.0f, bsdf, sample, rng);
 		}
 
+		/*if (renderer->Debug)
+		{
+			printf("Bounces = %d, PathThroughput=(%f, %f, %f)\n", bounces, pathThroughput.R, pathThroughput.G, pathThroughput.B);
+		}*/
+
 		BSDFSample outgoingBSDFSample;
 		if (bounces < SAMPLE_DEPTH)
 			outgoingBSDFSample = BSDFSample(sample, mPathSampleOffsets[bounces], 0);
@@ -453,18 +459,40 @@ ColorRGB PathIntegrator::Li( const Scene* scene, const Renderer* renderer, const
 
 		specularBounce = (sampledBSDFflags & BSDF_Specular) != 0;
 		pathThroughput *= f * AbsDot(wi, n) / pdf;
+
+		/*if (renderer->Debug)
+		{
+			printf("Bounces = %d, BRDF=(%f, %f, %f) AbsDot=%f, pdf=%f\n", bounces, 
+				f.R, f.G, f.B, AbsDot(wi, n), pdf);
+
+			auto ff = f * AbsDot(wi, n) / pdf;
+
+			printf("\t multiply: %f, %f, %f\n", ff.R, ff.G, ff.B);
+		}*/
+
 		ray = RayDifferential(p, wi, ray, 1e-3f);
 
 		// Possibly terminate the path
 		if (bounces > 3)
 		{
-			float continueProbability = std::min(0.5f, Luminance(pathThroughput));
-			
-			if (rng.RandomFloat() > continueProbability)
-				break;
+			// max
+			/*float maxElem = pathThroughput.R;
+			if(pathThroughput.G > maxElem) maxElem = pathThroughput.G;
+			if(pathThroughput.B > maxElem) maxElem = pathThroughput.B;*/
 
+
+			float continueProbability = std::min(0.5f, Luminance(pathThroughput));
+
+			if (rng.RandomFloat() > continueProbability)
+			{
+				break;
+			}
+		
 			// Russian roulette weight
 			pathThroughput *= 1.0f / continueProbability;  
+
+			/*if (renderer->Debug)
+				printf("Bounces = %d, Probability = %f, Russian=%f\n", bounces, continueProbability, 1.0f / continueProbability);*/
 		}
 
 		if (bounces == mMaxDepth)

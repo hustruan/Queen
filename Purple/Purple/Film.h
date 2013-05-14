@@ -62,6 +62,10 @@ public:
 	void FillBuffer(ColorRGB* buffer) const;
 	void Clear();
 
+
+	// Test
+	int32_t BlockID;
+
 private:
 	int2 mSize;
 	int2 mOffset;

@@ -55,6 +55,7 @@ uint32_t StratifiedSampler::GetMoreSamples( Sample* samples, Random& rng )
 	StratifiedSample2D(lensSamplesBuffer, mPixelSamplesX, mPixelSamplesY, rng);
 	StratifiedSample1D(timeSamplesBuffer, numSamples, rng);
 
+
 	// add pixel offset
 	for (int32_t i = 0; i < 2 * numSamples; i += 2)
 	{

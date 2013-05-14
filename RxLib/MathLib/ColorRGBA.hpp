@@ -20,6 +20,8 @@ public:
 		Tuple[0] = f;
 		Tuple[1] = f;
 		Tuple[2] = f;
+
+		assert(!HasNaNs());
 	}
 
 	ColorRGB (float fR, float fG, float fB)
@@ -27,6 +29,8 @@ public:
 		Tuple[0] = fR;
 		Tuple[1] = fG;
 		Tuple[2] = fB;
+
+		assert(!HasNaNs());
 	}
 
 	ColorRGB (const float* tuple)

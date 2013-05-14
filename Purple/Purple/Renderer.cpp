@@ -28,6 +28,8 @@ SamplerRenderer::SamplerRenderer( Sampler* sampler, Camera* cam, SurfaceIntegrat
 	mCamera = cam;
 	mSurfaceIntegrator = si;
 
+	Debug = false;
+
 	msRenderer = this;
 	atexit(SamplerRenderer::Close);
 }
@@ -134,7 +136,7 @@ void SamplerRenderer::BlockRender( const Scene* scene, const Sample* sample, Fil
 		int2 size  = block.GetSize();
 
 		// Declare local variables used for rendering loop
-		Random rng(offset.Y()*FILM_BLOCK_SIZE + offset.X());
+		Random rng(/*offset.Y()*FILM_BLOCK_SIZE + offset.X()*/block.BlockID);
 
 		// Create sampler for this block
 		Sampler* sampler = mMainSampler->Clone(offset.X(), offset.X() + size.X(), offset.Y(), offset.Y() + size.Y());
@@ -154,7 +156,25 @@ void SamplerRenderer::BlockRender( const Scene* scene, const Sample* sample, Fil
 				// Evaluate radiance along camera ray
 				if (rayWeight > 0.f)
 				{
+	
+					/*if (fabsf(samples[i].ImageSample.X() - 325.762085) < 0.0001f &&
+						fabsf(samples[i].ImageSample.Y() - 292.127441) < 0.0001f)
+					{
+						this->Debug = true;
+					}
+					else
+					{
+						this->Debug =false;
+					}*/
+
+
 					Ls[i] = rayWeight * Li(scene, rays[i], &samples[i], rng, arena, &isects[i], &Ts[i]);
+
+					if (Ls[i].R > 30.0)
+					{
+						printf("(%f, %f): R=%f, G=%f, B=%f\n", samples[i].ImageSample.X(),  samples[i].ImageSample.Y(),
+							Ls[i].R, Ls[i].G, Ls[i].B);
+					}
 				}
 				else
 				{

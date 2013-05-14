@@ -88,7 +88,7 @@ public:
 		frontWall->SetMaterial(std::make_shared<DiffuseMaterial>(blackTexture));
 		mKDTree->AddShape(frontWall);
 
-		////// standford bunny
+		//// standford bunny
 		//shared_ptr<Shape> bunny = LoadMesh("../../Media/bunny.md", CreateScaling(300.0f, 300.0f, 300.0f) * 
 		//	CreateRotationY(Mathf::PI) * CreateRotationY(Mathf::PI / 4) * CreateTranslation(68.0f, -10.0f, 25.0f));
 		//bunny->SetMaterial(std::make_shared<PhongMaterial>(testTexture, testTexture, 
@@ -99,10 +99,10 @@ public:
 		shared_ptr<Shape> sphere1 = std::make_shared<Sphere>(CreateTranslation(75.0f, 20.0f, 44.4f), false, 20.0f, -20.0f, 20.0f, Mathf::TWO_PI);
 		//sphere1->SetMaterial(std::make_shared<DiffuseMaterial>(whiteTexture));
 		
-		sphere1->SetMaterial(std::make_shared<GlassMaterial>(whiteTexture, whiteTexture, indexTexture));
+		//sphere1->SetMaterial(std::make_shared<GlassMaterial>(whiteTexture, whiteTexture, indexTexture));
 
-		/*sphere1->SetMaterial(std::make_shared<PhongMaterial>(testTexture, testTexture, 
-				std::make_shared<ConstantTexture<float>>(60.0f)));*/
+		sphere1->SetMaterial(std::make_shared<PhongMaterial>(testTexture, testTexture, 
+				std::make_shared<ConstantTexture<float>>(60.0f)));
 
 		/*sphere1->SetMaterial(std::make_shared<PlasticMaterial>(redTexture, redTexture, 
 			std::make_shared<ConstantTexture<float>>(0.1f)));*/
@@ -111,9 +111,9 @@ public:
 
 		shared_ptr<Shape> sphere2 = std::make_shared<Sphere>(CreateTranslation(25.0f, 20.0f, 75.0f), false, 20.0f, -20.0f, 20.0f, Mathf::TWO_PI);
 		
-		//sphere2->SetMaterial(std::make_shared<DiffuseMaterial>(whiteTexture));
+		sphere2->SetMaterial(std::make_shared<DiffuseMaterial>(whiteTexture));
 
-		sphere2->SetMaterial(std::make_shared<MirrorMaterial>(whiteTexture));
+		//sphere2->SetMaterial(std::make_shared<MirrorMaterial>(whiteTexture));
 		/*sphere2->SetMaterial(std::make_shared<PhongMaterial>(redTexture, redTexture, 
 			std::make_shared<ConstantTexture<float>>(30.0f)));*/
 
@@ -173,9 +173,9 @@ void CreateScene()
 	gCamera = new PerspectiveCamera(camTrans, ToRadian(60.0f), 0, 1,
 		new Film(int2(width, height), new GaussianFilter(4.0f, 1.0f)));
 
-	gSampler = new StratifiedSampler(0, width, 0, height, 4, 4);
-	gSurfaceIntegrator = new DirectLightingIntegrator();
-	//gSurfaceIntegrator = new PathIntegrator(100);
+	gSampler = new StratifiedSampler(0, width, 0, height, 8, 8);
+	//gSurfaceIntegrator = new DirectLightingIntegrator();
+	gSurfaceIntegrator = new PathIntegrator(10);
 	//gSurfaceIntegrator = new WhittedIntegrator;
 }
 

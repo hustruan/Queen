@@ -217,6 +217,8 @@ BlockGenerator::BlockGenerator( const int2& size, int blockSize ) : mSize(size),
 
 bool BlockGenerator::Next( FilmBlock& block )
 {
+	static int32_t id = 0;
+
 	mMutex.lock();
 
 	if (mBlocksLeft == 0)
@@ -230,6 +232,8 @@ bool BlockGenerator::Next( FilmBlock& block )
 
 	int2 left = mSize - pos;
 	block.SetSize(int2(std::min(left.X(), mBockSize), std::min(left.Y(), mBockSize)));
+
+	block.BlockID = id++;
 
 	if (--mBlocksLeft == 0)
 	{
