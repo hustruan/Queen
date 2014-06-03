@@ -1247,10 +1247,12 @@ void Rasterizer::DrawTiled( PrimitiveType primitiveType, uint32_t primitiveCount
 	// allocate each thread's vertex and face buffer
 	for (idx = 0; idx < numWorkThreads; ++idx)
 	{
+		mNumVerticesThreads[idx] = 0;
+
 		const uint32_t primCount = (mThreadPackage[idx].End - mThreadPackage[idx].Start);
 
 		// after frustum clip, one triangle can generate maximum 5 vertices, maximum 3 triangle faces
-		mVerticesThreads[idx].resize( primCount * 5 );
+		mVerticesThreads[idx].resize(primCount * 5);
 		mFacesThreads[idx].resize(primCount * 3);
 	}
 

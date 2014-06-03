@@ -136,6 +136,7 @@ void RenderDevice::DrawIndexed( PrimitiveType primitiveType, uint32_t indexCount
 	uint32_t numBatch = 0;
 	while (currIndex + MaxVertexBufferSize < indexCount)
 	{
+		//mRasterizerStage->DrawTiled(primitiveType, MaxVertexBufferSize / 3);
 		mRasterizerStage->Draw(primitiveType, MaxVertexBufferSize / 3);
 		mStartIndexLoc += MaxVertexBufferSize;
 		currIndex += MaxVertexBufferSize;
@@ -144,12 +145,11 @@ void RenderDevice::DrawIndexed( PrimitiveType primitiveType, uint32_t indexCount
 
 	if (currIndex < indexCount)
 	{
-	mRasterizerStage->Draw(primitiveType, (indexCount - currIndex) / 3);
-	numBatch++;
+		//mRasterizerStage->DrawTiled(primitiveType, (indexCount - currIndex) / 3);
+		mRasterizerStage->Draw(primitiveType, (indexCount - currIndex) / 3);
+		numBatch++;
 	}
-	
-	//mRasterizerStage->DrawTiled(primitiveType, primitive);
-	
+
 	mRasterizerStage->PostDraw();
 }
 
