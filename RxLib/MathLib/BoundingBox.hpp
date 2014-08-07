@@ -163,6 +163,14 @@ public:
 	}
 
 	/**
+	 * Return which axis has maximum extent, 0-x, 1-y, 2-z
+	 */
+	Vector<Real,3> Extent() const 
+	{
+		return Max - Min;
+	}
+
+	/**
 	 * Return Surface of this box
 	 */
 	Real SurfaceArea() const 

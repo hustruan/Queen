@@ -1046,7 +1046,6 @@ void Rasterizer::ClipTriangleTiled(  VS_Output* vertices, uint32_t threadIdx )
 		if (!ccw)
 			Binning(vertices[clipVertices[srcStage][0]], vertices[clipVertices[srcStage][i]], vertices[clipVertices[srcStage][i-1]], threadIdx);
 		else
-
 			Binning(vertices[clipVertices[srcStage][0]], vertices[clipVertices[srcStage][i-1]], vertices[clipVertices[srcStage][i]], threadIdx);
 	}
 }
