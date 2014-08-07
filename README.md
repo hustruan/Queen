@@ -89,5 +89,10 @@ Purple is a physically based ray tracer.
 
 
 ================ 
+<<<<<<< HEAD
 Note: 
 I have put all 3rd libraries in 3rdParty directory except for boost, it's a little bit huge, so I don't upload it. 
+=======
+note: 
+I have put all 3rd libraries in 3rdParty directory except for boost, it's a little bit huge, so I don't upload it. 
+>>>>>>> 9eddbb376d397c7d3076a65447e6582a4e63a5ee
