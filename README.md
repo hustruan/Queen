@@ -3,7 +3,10 @@ Purple Queen
 
 Queen is a D3D10 like multi-thread software rasterizer renderer. I implement classic scanline algorithm and a simple tile-based half-space method. It supports programmable vertex and pixel shader which are writen directly in Cpp file.
 
-### Simple Shader
+**Project Report**   [How to write a simple software rasterizer](http://www.cnblogs.com/hust-ruan/archive/2013/03/16/2962077.html)
+
+
+**Simple Shader**
 ```cpp   
        
 class SimpleVertexShader : public VertexShader
@@ -86,7 +89,7 @@ public:
 
 ``` 
 
-### Screenshort
+**Screenshort**
 ![](https://github.com/hustruan/Queen/blob/master/Media/Head.png)
 
 ================
